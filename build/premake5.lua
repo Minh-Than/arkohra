@@ -186,35 +186,36 @@ debugdir("$(SolutionDir)")
 
 filter({ "action:gmake*" }) -- Uncoment if you need to force StaticLib
 --          buildoptions { "-static" }
-filter({})
+        filter{}
 
-vpaths({
-	["Header Files/*"] = { "../include/**.h", "../include/**.hpp", "../src/**.h", "../src/**.hpp" },
-	["Source Files/*"] = { "../src/**.c", "src/**.cpp" },
-	["Windows Resource Files/*"] = { "../src/**.rc", "../src/**.ico" },
-	["Game Resource Files/*"] = { "../resources/**" },
-})
+        vpaths 
+        {
+            ["Header Files/*"] = { "../src/**.h",  "../src/**.hpp"},
+            ["Source Files/*"] = {"../src/**.c", "src/**.cpp"},
+            ["Windows Resource Files/*"] = {"../src/**.rc", "../src/**.ico"},
+            ["Game Resource Files/*"] = {"../resources/**"},
+        }
+        
+        files {"../src/**.c", "../src/**.cpp", "../src/**.h", "../src/**.hpp"}
+        
+        filter {"system:windows", "action:vs*"}
+            files {"../src/*.rc", "../src/*.ico"}
+            files {"../resources/**"}
 
-files({ "../src/**.c", "../src/**.cpp", "../src/**.h", "../src/**.hpp", "../include/**.h", "../include/**.hpp" })
+        filter{}
+        
+        includedirs { "../src" }
+        includedirs { "../include" }
 
-filter({ "system:windows", "action:vs*" })
-files({ "../src/*.rc", "../src/*.ico" })
-files({ "../resources/**" })
+        links {"raylib"}
 
-filter({})
+        cdialect "C23"
+        cppdialect "C++20"
 
-includedirs({ "../src" })
-includedirs({ "../include" })
+        includedirs {raylib_dir .. "/src" }
 
-links({ "raylib" })
-
-cdialect("C23")
-cppdialect("C++20")
-
-includedirs({ raylib_dir .. "/src" })
-
-flags({ "ShadowedVariables" })
-platform_defines()
+        flags { "ShadowedVariables"}
+        platform_defines()
 
 filter("action:vs*")
 defines({ "_WINSOCK_DEPRECATED_NO_WARNINGS", "_CRT_SECURE_NO_WARNINGS" })
