@@ -1,0 +1,338 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include "chart_reader.h"
+#include "data/chart_timing_groups/chart_timing_group.h"
+#include "data/custom_types/custom_types.h"
+#include "data/gameplay_events/arc.h"
+#include "data/gameplay_events/gameplay_events.h"
+#include "gameplay/arc_formula.h"
+#include "render/render_service.h"
+#include "render/texture/texture_service.h"
+#include "rlgl.h"
+
+static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
+{
+  tg->arctaps.size = 0;
+
+  // Pass 1: rebuild tg->arctaps from arc->arctaps
+  for (int j = 0; j < tg->arcs.size; j++)
+  {
+    Arc *arc = (Arc *)list_get(&tg->arcs, j);
+    for (int k = 0; k < arc->arctaps.size; k++)
+    {
+      ArcTap *arc_at = (ArcTap *)list_get(&arc->arctaps, k);
+      arc_at->arc = arc;
+      arc_at->fp  = get_floor_position(&tg->timing_events, arc_at->timing);
+      list_push(&tg->arctaps, arc_at);
+    }
+  }
+
+  // Pass 2: set arc pointers on tg->arctaps copies
+  //         (tg->arcs buffer is frozen — no more pushes to it)
+  int idx = 0;
+  for (int j = 0; j < tg->arcs.size; j++)
+  {
+    Arc *arc = (Arc *)list_get(&tg->arcs, j);
+    for (int k = 0; k < arc->arctaps.size; k++)
+    {
+      if (idx < tg->arctaps.size)
+      {
+        ArcTap *tg_at = (ArcTap *)list_get(&tg->arctaps, idx);
+        tg_at->arc = arc;
+        idx++;
+      }
+    }
+  }
+}
+
+static bool parse_aff_header(char *line, ChartSettings *chart_settings)
+{
+  bool end_of_header = strstr(line, (const char*)"-") != NULL;
+
+  if (strstr(line, (const char*)"AudioOffset") != NULL)
+  {
+    if(strncmp(line, "AudioOffset:", 12) == 0)
+    {
+      int offset;
+      int matched = sscanf(line, "AudioOffset:%d", &offset);
+      if (matched != 1) return end_of_header;
+      chart_settings->audio_offset = offset;
+    }
+  }
+
+  return end_of_header;
+}
+
+static int count_arctaps(const char *line)
+{
+  const char *lb = strchr(line, '['); if (!lb) return 0; 
+  const char *rb = strchr(lb  , ']'); if (!rb) return 0;
+
+  int count = 0;
+  const char *p = lb + 1;
+
+  while (p < rb)
+  {
+    const char *tap = strstr(p, "arctap(");
+    if (!tap || tap >= rb) break;
+
+    count++;
+    p = tap + 7;
+    // skip past the number
+    while (p < rb && *p != ',' && *p != ')') p++;
+    p++; // skip the comma or paren
+  }
+  return count;
+}
+
+static int parse_arctaps(const char *line, List *out, int max)
+{
+  const char *lb = strchr(line, '['); if (!lb) return 0;
+  const char *rb = strchr(lb  , ']'); if (!rb) return 0;
+
+  int count = 0;
+  const char *p = lb + 1;
+
+  while (p < rb && count < max)
+  {
+    const char *tap = strstr(p, "arctap(");
+    if (!tap || tap >= rb) break;
+
+    p = tap + 7; // Start at character after "arctap("
+    char *end;
+    int val = strtol(p, &end, 10);
+
+    // No number found, skip ahead
+    if (end == p) { p++; continue; }
+
+    list_push(out, &val);
+    p = end; // end points past the number, at ')'
+  }
+
+  return count;
+}
+
+static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count, int *current_tg)
+{
+  ChartTimingGroup *tg = (ChartTimingGroup *)list_get(&chart_reader->timing_groups, *current_tg);
+  RawEventType type = determine_type(line);
+  switch (type)
+  {
+    case TIMING_GROUP:
+      {
+        ChartTimingGroup init_tg = timing_group_init();
+        list_push(&chart_reader->timing_groups, &init_tg);
+        *tg_count += 1;
+        *current_tg = *tg_count - 1;
+        break;
+      }
+    case TIMING_EVENT:
+      {
+        int timing;
+        float bpm, divisor;
+        int matched = sscanf(line, "timing(%d,%f,%f);", &timing, &bpm, &divisor);
+        if (matched == 3)
+        {
+          TimingEvent t_event = {.fp = 0, .bpm = bpm, .divisor = divisor, .timing = timing, .timing_group = *current_tg, .is_selected = false};
+          list_push(&tg->timing_events, &t_event);
+        }
+        break;
+      }
+    case TAP:
+      {
+        int timing;
+        float lane;
+        int matched = sscanf(line, "(%d,%f);", &timing, &lane);
+        if (matched == 2)
+        {
+          Tap tap = (Tap) { .lane = lane, .timing = timing, .timing_group = *current_tg, .is_selected = false };
+          list_push(&tg->taps, &tap);
+        }
+        break;
+      }
+    case HOLD:
+      {
+        int start_timing, end_timing;
+        float lane;
+        int matched = sscanf(line, "hold(%d,%d,%f);", &start_timing, &end_timing, &lane);
+        if (matched == 3)
+        {
+          Hold hold = {
+            .lane = lane,
+            .start_timing = start_timing,
+            .end_timing   = end_timing,
+            .timing_group = *current_tg,
+            .is_selected  = false,
+            .is_active    = false
+          };
+          list_push(&tg->holds, &hold);
+        }
+        break;
+      }
+    case ARC:
+      {
+        int start_timing, end_timing;
+        float x1, y1, x2, y2;
+        char arc_type[8];
+        int color;
+        char sfx[256], is_void[8];
+        int matched = sscanf(line, "arc(%d,%d,%f,%f,%7[^,],%f,%f,%d,%255[^,],%7[^)])",
+                             &start_timing, &end_timing, &x1, &x2, arc_type, &y1, &y2, &color, sfx, is_void);
+        if (matched == 10)
+        {
+          List arctaps; list_init(&arctaps, sizeof(ArcTap));
+          Arc arc = {
+            .arctaps      = arctaps,
+            .x1 = x1, .y1 = y1,
+            .x2 = x2, .y2 = y2,
+            .arc_res      = 1.0f,
+            .start_timing = start_timing,
+            .end_timing   = end_timing,
+            .timing_group = *current_tg,
+            .color        = color,
+            .type         = arctype_get_by_string(arc_type),
+            .is_void      = strncmp(is_void, "true", 4) == 0 ? true : false,
+          };
+          strncpy(arc.sfx, sfx, sizeof(arc.sfx) - 1);
+
+          int n = count_arctaps(line);
+          if(n != 0)
+          {
+            List arctap_timings; list_init(&arctap_timings, sizeof(int));
+            parse_arctaps(line, &arctap_timings, n);
+            for (int i = 0; i < arctap_timings.size; i++)
+            {
+              int *timing = (int *)list_get(&arctap_timings, i);
+              ArcTap arctap = { .arc = NULL, .width = 1.0f, .timing = *timing, .timing_group = *current_tg, .is_selected = false };
+              list_push(&arc.arctaps, &arctap);
+            }
+          }
+          list_push(&tg->arcs, &arc);
+        }
+      }
+      break;
+    default: break;
+  }
+}
+
+ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Texture2D *arc_texture)
+{
+  ChartReader chart_reader = { 0 };
+
+  char *aff_data = LoadFileText(file_path);
+  if (aff_data == NULL) return chart_reader;
+
+  List tgs; list_init(&tgs, sizeof(ChartTimingGroup));
+  ChartTimingGroup init_tg = timing_group_init();
+  list_push(&tgs, &init_tg);
+  chart_reader.timing_groups = tgs;
+
+  int line_count = 0;
+  char **lines = LoadTextLines(aff_data, &line_count);
+
+  bool is_header = true;
+  int tg_count   = 1;
+  int current_tg = 0;
+  for (int i = 0; i < line_count; i++)
+  {
+    char *line = lines[i];
+    line = trim_whitespace(line);
+
+    if (is_header)
+    {
+      if (parse_aff_header(line, &render_ctx->chart_settings)) is_header = false;
+      continue;
+    }
+
+    if(strcmp(line, "};")  == 0) { current_tg = 0; continue; }
+
+    parse_aff_lines(line, &chart_reader, &tg_count, &current_tg);
+
+  }
+  UnloadFileText(aff_data);
+
+  // --- Post parsing ---
+  for(int i = 0; i < chart_reader.timing_groups.size; i++)
+  {
+    ChartTimingGroup *tg = (ChartTimingGroup *)list_get(&chart_reader.timing_groups, i);
+    list_sort_by(&tg->timing_events, timing_event_compare_timing_asc);
+    recalculate_floor_position(tg);
+
+    chart_reader_rebuild_arctaps(tg);
+
+    // Pre-calculate the notes's floor position
+    // Arctaps' floor position is already calculated in `chart_reader_rebuild_arctaps`
+    for (int j = 0; j < tg->holds.size; j++)
+    {
+      Hold *hold = (Hold *)list_get(&tg->holds, j);
+      hold->start_fp = get_floor_position(&tg->timing_events, hold->start_timing);
+      hold->end_fp   = get_floor_position(&tg->timing_events, hold->end_timing);
+    }
+
+    for (int j = 0; j < tg->taps.size; j++)
+    {
+      Tap *tap = (Tap *)list_get(&tg->taps, j);
+      tap->fp  = get_floor_position(&tg->timing_events, tap->timing);
+    }
+
+    for (int j = 0; j < tg->arcs.size; j++)
+    {
+      Arc *arc = (Arc *)list_get(&tg->arcs, j);
+      arc->start_fp = get_floor_position(&tg->timing_events, arc->start_timing);
+      arc->end_fp   = get_floor_position(&tg->timing_events, arc->end_timing);
+      arc->mesh_r   = arc_generate_mesh(arc, arc_texture, &tg->timing_events, render_ctx);
+      arc->shadow_r = shadow_generate_mesh(arc, &tg->timing_events, render_ctx);
+    }
+  }
+
+  chart_reader.initialized = true;
+  return chart_reader;
+}
+
+void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_reader,
+                               HoldTapRenderer *hold_tap_renderer, ShadowRenderer *shadow_renderer, ArcRenderer *arc_renderer, ArctapRenderer *arctap_renderer,
+                               float current_ms)
+{
+  textures_reload_note_render_layer(&hold_tap_renderer->layer);
+  textures_reload_note_render_layer(&shadow_renderer->layer);
+  textures_reload_note_render_layer(&arc_renderer->layer);
+  textures_reload_note_render_layer(&arctap_renderer->layer);
+
+  if (chart_reader->initialized)
+  {
+    float base_bpm     = render_ctx->chart_settings.base_bpm;
+    float scroll_speed = render_ctx->chart_settings.scroll_speed;
+    chart_reader_render_holds_taps(&chart_reader->timing_groups, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed);
+    chart_reader_render_shadows   (&chart_reader->timing_groups, render_ctx, shadow_renderer  , current_ms, base_bpm, scroll_speed);
+    chart_reader_render_arcs      (&chart_reader->timing_groups, render_ctx, arc_renderer     , current_ms, base_bpm, scroll_speed);
+    chart_reader_render_arctaps   (&chart_reader->timing_groups, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed);
+
+    Rectangle tap_hold_src  = { 0, 0, (float)hold_tap_renderer->layer.texture.width, -(float)hold_tap_renderer->layer.texture.height };
+    Rectangle shadow_src    = { 0, 0, (float)shadow_renderer->layer.texture.width  , -(float)shadow_renderer->layer.texture.height };
+    Rectangle arc_src       = { 0, 0, (float)arc_renderer->layer.texture.width     , -(float)arc_renderer->layer.texture.height };
+    Rectangle arctap_src    = { 0, 0, (float)arctap_renderer->layer.texture.width  , -(float)arctap_renderer->layer.texture.height };
+    Rectangle dest          = { 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() };
+    DrawTexturePro(hold_tap_renderer->layer.texture, tap_hold_src, dest, (Vector2){0,0}, 0.0f, WHITE);
+    DrawTexturePro(shadow_renderer->layer.texture  , shadow_src  , dest, (Vector2){0,0}, 0.0f, WHITE);
+    DrawTexturePro(arc_renderer->layer.texture     , arc_src     , dest, (Vector2){0,0}, 0.0f, WHITE);
+    DrawTexturePro(arctap_renderer->layer.texture  , arctap_src  , dest, (Vector2){0,0}, 0.0f, WHITE);
+  }
+}
+
+void chart_reader_print(ChartReader *chart_reader)
+{
+  for (int i = 0; i < chart_reader->timing_groups.size; i++)
+  {
+    printf("Timing group %d:\n", i);
+    timing_group_print((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
+  }
+}
+
+void chart_reader_unload(ChartReader *chart_reader)
+{
+  chart_reader->initialized = false;
+  for (int i = 0; i < chart_reader->timing_groups.size; i++)
+    timing_group_unload((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
+}
