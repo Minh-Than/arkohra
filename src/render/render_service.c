@@ -6,6 +6,7 @@
 #include "data/chart_timing_groups/chart_timing_group.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
+#include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
 
@@ -102,6 +103,10 @@ void render_note_shadows(List *timing_groups, RenderContext *render_ctx, ShadowR
                                                                   0.0f, arctap_z_pos));
               DrawMesh(shadow_renderer->arctap_shadow.mesh, shadow_renderer->arctap_shadow.material, arctap_mt);
             }
+            int is_void_shader = arc->is_void ? 1 : 0;
+            int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+            SetShaderValue(arc->shadow_r.material.shader, render_ctx->arc_clip_shader.isVoid_loc, &is_void_shader, SHADER_UNIFORM_INT);
+            SetShaderValue(arc->shadow_r.material.shader, render_ctx->arc_clip_shader.shouldClip_loc, &should_clip_shader, SHADER_UNIFORM_INT);
             DrawMesh(arc->shadow_r.mesh, arc->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
           }
         }
@@ -141,10 +146,10 @@ void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *ar
             float z_scale = floor_position_to_z(arc->end_fp - arc->start_fp , base_bpm, scroll_speed);
             if (z_pos < -100.0f || (z_pos > 9.0f && z_scale > 9.0f)) continue;
 
-            // TODO: why the fuck isn't this working
-            // float clip_z = 0.0f;
-            // SetShaderValue(arc_clip_shader->shader, arc_clip_shader->clipZ_loc, &clip_z, SHADER_UNIFORM_FLOAT);
-            // BeginShaderMode(arc_clip_shader->shader);
+            int is_void_shader = arc->is_void ? 1 : 0;
+            int should_clip_shader = arc->is_void && arc->start_timing - current_ms <= 0 ? 1 : 0;
+            SetShaderValue(arc->shadow_r.material.shader, render_ctx->arc_clip_shader.isVoid_loc, &is_void_shader, SHADER_UNIFORM_INT);
+            SetShaderValue(arc->shadow_r.material.shader, render_ctx->arc_clip_shader.shouldClip_loc, &should_clip_shader, SHADER_UNIFORM_INT);
             DrawMesh(arc->mesh_r.mesh, arc->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
           }
         }

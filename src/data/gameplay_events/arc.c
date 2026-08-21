@@ -219,6 +219,7 @@ MeshRenderable arc_generate_mesh(Arc *arc, Texture2D *texture, List *timing_even
 
   r.material = LoadMaterialDefault();
   r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
+  r.material.shader = render_ctx->arc_clip_shader.shader;
 
   set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 
@@ -319,6 +320,7 @@ MeshRenderable shadow_generate_mesh(Arc *arc, List *timing_events, RenderContext
 
   r.material = LoadMaterialDefault();
   r.material.maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 255, 255, 255, 97 };
+  r.material.shader = render_ctx->arc_clip_shader.shader;
 
   set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 

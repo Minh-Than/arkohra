@@ -30,7 +30,7 @@ static const float SINGLE_LINE_SIZE_Y     = 100.0f;
 
 static const float ARC_SEGMENT_LENGTH  = 1000.0f / 14.0f;
 static const float TRACE_MESH_SCALE    = 2.0f;
-static const float ARC_MESH_SCALE      = 11.0f;
+static const float ARC_MESH_SCALE      = 11.5f;
 static const float ARC_Y0              = 1.0f;
 static const float ARC_Y1              = 5.5f;
 

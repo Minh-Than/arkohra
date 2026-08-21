@@ -61,8 +61,6 @@ void hud_services_render(TextureGroup *texture_group, ChartSettings *chart_setti
         BeginShaderMode(font_services->hud_sdf_shader);
         rlPushMatrix();
           rlTranslatef(0.0f, 2, 0.0f);
-          if (diff_m.x > diff_max)
-          {
             float s = diff_max / diff_m.x;
             diff_off = (JACKET_HUD_SIZE - diff_m.x * s) * 0.5f;
             rlPushMatrix();
@@ -70,10 +68,6 @@ void hud_services_render(TextureGroup *texture_group, ChartSettings *chart_setti
               rlScalef(s, 1.0f, 1.0f);
               DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, Vector2Zero(), 44.0f, diff_spacing, WHITE);
             rlPopMatrix();
-          } else 
-          {
-            DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, (Vector2){ diff_off, JACKET_HUD_SIZE }, 44.0f, diff_spacing, WHITE);
-          }
         rlPopMatrix();
         EndShaderMode();
       rlPopMatrix();

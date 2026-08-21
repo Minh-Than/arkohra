@@ -25,5 +25,6 @@ void renderable_unload(MeshRenderable *renderable)
     UnloadMesh(renderable->mesh);
 
     renderable->material.maps[MATERIAL_MAP_DIFFUSE].texture = (Texture2D){ 0 };
+    renderable->material.shader = (Shader){ 0 };
     UnloadMaterial(renderable->material);
 }

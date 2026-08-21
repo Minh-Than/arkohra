@@ -56,15 +56,16 @@ int main()
       // 0,
       TextFormat("resources/shaders/glsl%i/arc_clip.fs", GLSL_VERSION)
   );
-  int clipZ_loc = GetShaderLocation(arc_clip_shader, "clipZ");
+  int isVoid_loc = GetShaderLocation(arc_clip_shader, "isVoid");
+  int shouldClip_loc = GetShaderLocation(arc_clip_shader, "shouldClip");
+  printf("isVoid: %d\n", isVoid_loc);
   printf("mvp loc: %d\n", arc_clip_shader.locs[SHADER_LOC_MATRIX_MVP]);
   printf("matModel loc: %d\n", arc_clip_shader.locs[SHADER_LOC_MATRIX_MODEL]);
-  printf("clipZ loc: %d\n", clipZ_loc);
 
   RenderContext render_ctx = {
     .camera          = camera,
     .chart_settings  = chart_settings,
-    .arc_clip_shader = { .shader = arc_clip_shader, .clipZ_loc = clipZ_loc },
+    .arc_clip_shader = { .shader = arc_clip_shader, .isVoid_loc = isVoid_loc, .shouldClip_loc = shouldClip_loc },
     .audio_clock     = { 0 },
   };
 
