@@ -17,7 +17,7 @@ void single_line_load(SingleLineType sl_type, TextureGroup *texture_group)
     case SL_LIGHT:      texture_group->single_line = LoadTexture("resources/gameplay/SingleLine/SingleLineLight.png"); break;
     case SL_CONFLICT:   texture_group->single_line = LoadTexture("resources/gameplay/SingleLine/SingleLineConflict.png"); break;
     case SL_NEO:        texture_group->single_line = LoadTexture("resources/gameplay/SingleLine/SingleLineNeo.png"); break;
-    default:            texture_group->single_line = (Texture2D){ 0 }; break;
+    default:            texture_group->single_line = LoadTexture("resources/gameplay/SingleLine/SingleLineNone.png"); break;
   }
 }
 

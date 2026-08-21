@@ -319,16 +319,16 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
   {
     float base_bpm     = render_ctx->chart_settings.base_bpm;
     float scroll_speed = render_ctx->chart_settings.scroll_speed;
-    chart_reader_render_holds_taps(&chart_reader->timing_groups, &render_ctx->camera, hold_tap_renderer, current_ms, base_bpm, scroll_speed, render_ctx->chart_settings.skin_side);
-    chart_reader_render_shadows   (&chart_reader->timing_groups, &render_ctx->camera, shadow_renderer  , current_ms, base_bpm, scroll_speed);
-    chart_reader_render_arcs      (&chart_reader->timing_groups, render_ctx         , arc_renderer     , current_ms, base_bpm, scroll_speed);
-    chart_reader_render_arctaps   (&chart_reader->timing_groups, &render_ctx->camera, arctap_renderer  , current_ms, base_bpm, scroll_speed);
+    render_holds_taps   (&chart_reader->timing_groups, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed);
+    render_note_shadows (&chart_reader->timing_groups, render_ctx, shadow_renderer  , current_ms, base_bpm, scroll_speed);
+    render_arcs         (&chart_reader->timing_groups, render_ctx, arc_renderer     , current_ms, base_bpm, scroll_speed);
+    render_arctaps      (&chart_reader->timing_groups, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed);
 
+    Rectangle dest = { 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() };
     Rectangle tap_hold_src  = { 0, 0, (float)hold_tap_renderer->layer.texture.width, -(float)hold_tap_renderer->layer.texture.height };
     Rectangle shadow_src    = { 0, 0, (float)shadow_renderer->layer.texture.width  , -(float)shadow_renderer->layer.texture.height };
     Rectangle arc_src       = { 0, 0, (float)arc_renderer->layer.texture.width     , -(float)arc_renderer->layer.texture.height };
     Rectangle arctap_src    = { 0, 0, (float)arctap_renderer->layer.texture.width  , -(float)arctap_renderer->layer.texture.height };
-    Rectangle dest          = { 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() };
     DrawTexturePro(hold_tap_renderer->layer.texture, tap_hold_src, dest, (Vector2){0,0}, 0.0f, WHITE);
     DrawTexturePro(shadow_renderer->layer.texture  , shadow_src  , dest, (Vector2){0,0}, 0.0f, WHITE);
     DrawTexturePro(arc_renderer->layer.texture     , arc_src     , dest, (Vector2){0,0}, 0.0f, WHITE);

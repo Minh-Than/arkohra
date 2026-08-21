@@ -11,8 +11,7 @@ TextureGroup textures_init()
   Texture2D critical_line_texture   = LoadTexture("resources/gameplay/CriticalLine/TrackCriticalLine.png");
   Texture2D sky_input_line_texture  = LoadTexture("resources/gameplay/CriticalLine/SkyInputLine.png");
   Texture2D sky_label_texture       = LoadTexture("resources/gameplay/CriticalLine/SkyInputLabel.png");
-  Texture2D single_line_texture     = LoadTexture("resources/gameplay/SingleLine/SingleLineLight.png");
-  //Texture2D single_line_texture     = { 0 };
+  Texture2D single_line_texture     = LoadTexture("resources/gameplay/SingleLine/SingleLineNone.png");
   Texture2D pause_button_texture    = LoadTexture("resources/gameplay/HUD/PauseLight.png");
   Texture2D info_panel_texture      = LoadTexture("resources/gameplay/HUD/InfoLight.png");
   Texture2D jacket_bg_texture       = LoadTexture("resources/gameplay/HUD/JacketBackground.png");

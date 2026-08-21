@@ -8,6 +8,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "render/mesh_renderable.h"
+#include "render/texture/single_line_type.h"
 #include "rlgl.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -205,7 +206,7 @@ void playfield_render(
       rlEnableDepthTest();
     rlPopMatrix();
 
-    if (IsTextureValid(texture_group->single_line))
+    if (render_ctx->chart_settings.sl_type != SL_NONE)
     {
       BeginBlendMode(BLEND_ALPHA);
         rlDisableBackfaceCulling();

@@ -9,12 +9,12 @@
 #include "raymath.h"
 #include "rlgl.h"
 
-void chart_reader_render_holds_taps(List *timing_groups, Camera *camera, HoldTapRenderer *hold_tap_renderer,
-                                           float current_ms, float base_bpm, float scroll_speed, SkinSide side)
+void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRenderer *hold_tap_renderer,
+                       float current_ms, float base_bpm, float scroll_speed)
 {
   BeginTextureMode(hold_tap_renderer->layer);
     ClearBackground(BLANK);
-    BeginMode3D(*camera);
+    BeginMode3D(render_ctx->camera);
       rlPushMatrix();
         rlScalef(1.7896f, 1.0f, 1.0f);
         rlDisableBackfaceCulling();
@@ -53,7 +53,7 @@ void chart_reader_render_holds_taps(List *timing_groups, Camera *camera, HoldTap
                 DrawThickLine3D((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos },
                                 (Vector3){ x, y, z_pos },
                                 Lerp(0.07f, 0.12f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
-                                side == SK_CONFLICT ? color_from_rgba(CONFICT_CONNECTOR_CL) : color_from_rgba(LIGHT_CONNECTOR_CL));
+                                render_ctx->chart_settings.skin_side == SK_CONFLICT ? color_from_rgba(CONFICT_CONNECTOR_CL) : color_from_rgba(LIGHT_CONNECTOR_CL));
               }
             }
           }
@@ -63,12 +63,12 @@ void chart_reader_render_holds_taps(List *timing_groups, Camera *camera, HoldTap
   EndTextureMode();
 }
 
-void chart_reader_render_shadows(List *timing_groups, Camera *camera, ShadowRenderer *shadow_renderer,
-                                     float current_ms, float base_bpm, float scroll_speed)
+void render_note_shadows(List *timing_groups, RenderContext *render_ctx, ShadowRenderer *shadow_renderer,
+                        float current_ms, float base_bpm, float scroll_speed)
 {
   BeginTextureMode(shadow_renderer->layer);
     ClearBackground(BLANK);
-    BeginMode3D(*camera);
+    BeginMode3D(render_ctx->camera);
       rlPushMatrix();
         rlScalef(1.7896f, 1.0f, 1.0f);
         rlDisableBackfaceCulling();
@@ -113,8 +113,8 @@ void chart_reader_render_shadows(List *timing_groups, Camera *camera, ShadowRend
   EndTextureMode();
 }
 
-void chart_reader_render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
-                                     float current_ms, float base_bpm, float scroll_speed)
+void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
+                 float current_ms, float base_bpm, float scroll_speed)
 {
   BeginTextureMode(arc_renderer->layer);
     ClearBackground(BLANK);
@@ -154,12 +154,12 @@ void chart_reader_render_arcs(List *timing_groups, RenderContext *render_ctx, Ar
   EndTextureMode();
 }
 
-void chart_reader_render_arctaps(List *timing_groups, Camera *camera, ArctapRenderer *arctap_renderer,
-                                 float current_ms, float base_bpm, float scroll_speed)
+void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRenderer *arctap_renderer,
+                    float current_ms, float base_bpm, float scroll_speed)
 {
   BeginTextureMode(arctap_renderer->layer);
     ClearBackground(BLANK);
-    BeginMode3D(*camera);
+    BeginMode3D(render_ctx->camera);
       rlPushMatrix();
         rlScalef(1.7896f, 1.0f, 1.0f);
         rlDisableBackfaceCulling();
