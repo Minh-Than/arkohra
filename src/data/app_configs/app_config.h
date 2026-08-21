@@ -43,7 +43,7 @@ FontServices font_services_init(int glsl);
 Font GenerateSDF(char *font_file_path, int base_size, int *codepoints, int glyph_count);
 void font_services_unload(FontServices *font_services);
 void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height, float length, Color color);
-void DrawConnectorLine(Vector3 start, Vector3 end, float thick, Color color);
+void DrawThickLine3D(Vector3 start, Vector3 end, float thick, Color color);
 void AddCodepointRange(Font *font, const char *fontPath, int start, int stop);
 void AddStringToCodepointList(List *list, const char *text);
 

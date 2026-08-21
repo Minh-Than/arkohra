@@ -28,7 +28,7 @@ void chart_reader_render_holds_taps(List *timing_groups, Camera *camera, HoldTap
               Hold *hold    = (Hold *)list_get(&tg->holds, j);
               float z_pos   = floor_position_to_z(hold->start_fp - curr_fp, base_bpm, scroll_speed);
               float z_scale = floor_position_to_z(hold->end_fp - hold->start_fp, base_bpm, scroll_speed);
-              if ((z_pos < -100.0f && z_scale < -100.0f) || (z_pos > 9.0f && z_scale > 9.0f)) continue;
+              if (z_pos < -100.0f || (z_pos > 9.0f && z_scale > 9.0f)) continue;
               float alpha   = hold->start_timing < current_ms && !hold->is_active ? 0.4f : 1.0f;
               hold_render_test(&hold_tap_renderer->hold, hold, z_pos, z_scale, alpha);
             }
@@ -40,11 +40,9 @@ void chart_reader_render_holds_taps(List *timing_groups, Camera *camera, HoldTap
               float diff_fp = tap->fp - curr_fp;
               float z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
               if (z_pos < -100.0f || z_pos > 9.0f) continue;
-              // TODO: Scaling sometimes has issues (for tap and connector)
-              float delta_ms_fp = get_floor_position(&tg->timing_events, tap->timing - current_ms);
               float z_scale = Clamp(
-                Lerp(1.8f, 5.0f, floor_position_to_z(delta_ms_fp, base_bpm, scroll_speed) / -100.0f),
-                1.8f, 5.0f
+                Lerp(1.8f, 5.8f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
+                1.8f, 5.8f
               );
               tap_render_test(&hold_tap_renderer->tap, tap, z_pos, z_scale);
 
@@ -52,10 +50,10 @@ void chart_reader_render_holds_taps(List *timing_groups, Camera *camera, HoldTap
               {
                 float x = *(float *)list_get(&tap->connector_x, k);
                 float y = *(float *)list_get(&tap->connector_y, k);
-                DrawConnectorLine((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos },
-                                  (Vector3){ x, y, z_pos },
-                                  Lerp(0.07f, 0.12f, floor_position_to_z(delta_ms_fp, base_bpm, scroll_speed) / -100.0f),
-                                  side == SK_CONFLICT ? color_from_rgba(CONFICT_CONNECTOR_CL) : color_from_rgba(LIGHT_CONNECTOR_CL));
+                DrawThickLine3D((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos },
+                                (Vector3){ x, y, z_pos },
+                                Lerp(0.07f, 0.12f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
+                                side == SK_CONFLICT ? color_from_rgba(CONFICT_CONNECTOR_CL) : color_from_rgba(LIGHT_CONNECTOR_CL));
               }
             }
           }
@@ -93,7 +91,7 @@ void chart_reader_render_shadows(List *timing_groups, Camera *camera, ShadowRend
 
             float z_pos   = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
             float z_scale = floor_position_to_z(arc->end_fp - arc->start_fp , base_bpm, scroll_speed);
-            if ((z_pos < -100.0f && z_scale < -100.0f) || (z_pos > 9.0f && z_scale > 9.0f)) continue;
+            if (z_pos < -100.0f || (z_pos > 9.0f && z_scale > 9.0f)) continue;
 
             for (int k = 0; k < arc->arctaps.size; k++)
             {
@@ -141,7 +139,7 @@ void chart_reader_render_arcs(List *timing_groups, RenderContext *render_ctx, Ar
 
             float z_pos   = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
             float z_scale = floor_position_to_z(arc->end_fp - arc->start_fp , base_bpm, scroll_speed);
-            if ((z_pos < -100.0f && z_scale < -100.0f) || (z_pos > 9.0f && z_scale > 9.0f)) continue;
+            if (z_pos < -100.0f || (z_pos > 9.0f && z_scale > 9.0f)) continue;
 
             // TODO: why the fuck isn't this working
             // float clip_z = 0.0f;

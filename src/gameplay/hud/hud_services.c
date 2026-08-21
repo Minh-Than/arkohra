@@ -6,14 +6,14 @@
 #include "rlgl.h"
 #include "raymath.h"
 
-static void draw_fit_text(Font font, const char *text, Vector2 pos, float font_size, float max_width, Color color)
+static void draw_fit_text(Font font, const char *text, Vector2 pos, float font_size, float max_width, float spacing, Color color)
 {
-  Vector2 m = MeasureTextEx(font, text, font_size, 0);
+  Vector2 m = MeasureTextEx(font, text, font_size, spacing);
   float scale = m.x <= max_width ? 1.0f : max_width / m.x;
   rlPushMatrix();
     rlTranslatef(pos.x, pos.y, 0.0f);
     rlScalef(scale, 1.0f, 1.0f);
-    DrawTextEx(font, text, Vector2Zero(), font_size, 0, color);
+    DrawTextEx(font, text, Vector2Zero(), font_size, spacing, color);
   rlPopMatrix();
 }
 
@@ -53,24 +53,28 @@ void hud_services_render(TextureGroup *texture_group, ChartSettings *chart_setti
         DrawTextureEx(texture_group->jacket_diff, (Vector2){ 0, JACKET_HUD_SIZE }, 0.0f, diff_scale, color_from_hex(chart_settings->difficulty_color));
 
         // Difficulty text
-        Vector2 diff_m = MeasureTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, 44.0f, 0);
+        float diff_spacing = 1.0f;
+        Vector2 diff_m = MeasureTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, 44.0f, diff_spacing);
         float diff_max = JACKET_HUD_SIZE - 50.0f;
         float diff_off = (JACKET_HUD_SIZE - diff_m.x) * 0.5f;
 
         BeginShaderMode(font_services->hud_sdf_shader);
-        if (diff_m.x > diff_max)
-        {
-          float s = diff_max / diff_m.x;
-          diff_off = (JACKET_HUD_SIZE - diff_m.x * s) * 0.5f;
-          rlPushMatrix();
-            rlTranslatef(diff_off, JACKET_HUD_SIZE, 0.0f);
-            rlScalef(s, 1.0f, 1.0f);
-              DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, Vector2Zero(), 44.0f, 0, WHITE);
-          rlPopMatrix();
-        } else 
-        {
-          DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, (Vector2){ diff_off, JACKET_HUD_SIZE }, 44.0f, 0, WHITE);
-        }
+        rlPushMatrix();
+          rlTranslatef(0.0f, 2, 0.0f);
+          if (diff_m.x > diff_max)
+          {
+            float s = diff_max / diff_m.x;
+            diff_off = (JACKET_HUD_SIZE - diff_m.x * s) * 0.5f;
+            rlPushMatrix();
+              rlTranslatef(diff_off, JACKET_HUD_SIZE, 0.0f);
+              rlScalef(s, 1.0f, 1.0f);
+              DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, Vector2Zero(), 44.0f, diff_spacing, WHITE);
+            rlPopMatrix();
+          } else 
+          {
+            DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, (Vector2){ diff_off, JACKET_HUD_SIZE }, 44.0f, diff_spacing, WHITE);
+          }
+        rlPopMatrix();
         EndShaderMode();
       rlPopMatrix();
     rlPopMatrix();
@@ -79,7 +83,6 @@ void hud_services_render(TextureGroup *texture_group, ChartSettings *chart_setti
     rlPushMatrix();
       rlTranslatef(panel_x + 180.0f, 0.0f, 0.0f);
 
-      float max_w = (panel_w - jacket_w + 20.0f) / hud_scale;
 
       BeginShaderMode(font_services->hud_sdf_shader);
         // Score
@@ -87,10 +90,12 @@ void hud_services_render(TextureGroup *texture_group, ChartSettings *chart_setti
         DrawTextEx(font_services->saira_regular, "00000000", (Vector2){ -7, 41 }, 140.0f, 0, WHITE);
 
         // Title + Composer
+        float tit_cum_spacing = 1.0f;
+        float max_w = (panel_w - jacket_w + 20.0f) / hud_scale;
         rlPushMatrix();
           rlTranslatef(0.0f, 190.0f, 0.0f);
-          draw_fit_text(font_services->hud_notosans_tc_reg, chart_settings->title   , Vector2Zero(), 66.0f, max_w, WHITE);
-          draw_fit_text(font_services->hud_notosans_tc_reg, chart_settings->composer, (Vector2){ 0, 75 }, 42.0f, max_w, WHITE);
+          draw_fit_text(font_services->hud_notosans_tc_reg, chart_settings->title   , Vector2Zero(), 66.0f, max_w, tit_cum_spacing, WHITE);
+          draw_fit_text(font_services->hud_notosans_tc_reg, chart_settings->composer, (Vector2){ 0, 75 }, 42.0f, max_w, tit_cum_spacing, WHITE);
         rlPopMatrix();
       EndShaderMode();
     rlPopMatrix();

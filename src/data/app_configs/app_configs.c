@@ -189,7 +189,7 @@ void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float hei
 
     rlSetTexture(0);
 }
-void DrawConnectorLine(Vector3 start, Vector3 end, float thick, Color color)
+void DrawThickLine3D(Vector3 start, Vector3 end, float thick, Color color)
 {
   float half_thick = thick / 2;
   float dx = end.x - start.x;
