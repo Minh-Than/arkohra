@@ -2,6 +2,10 @@
 #include <_string.h>
 #include <stdlib.h>
 #include "chart_settings.h"
+#include "color_services.h"
+#include "constants.h"
+#include "raylib.h"
+#include "render/texture/single_line_type.h"
 #include "render/texture/skin_side.h"
 
 ChartSettings chart_settings_init(AppConfigs *app_configs, TextureGroup *texture_group)
@@ -12,8 +16,12 @@ ChartSettings chart_settings_init(AppConfigs *app_configs, TextureGroup *texture
   settings.audio_offset = 0;
   settings.chart_constant = 0.0f;
   settings.scroll_speed = app_configs->scroll_speed;
-  settings.skin_side = LIGHT;
-  settings.skin_track = LIGHT;
+  settings.skin_side = SK_LIGHT;
+  settings.skin_track = SK_LIGHT;
+  settings.sl_type = SL_NONE;
+  TextCopy(settings.title, "Title");
+  TextCopy(settings.composer, "Composer");
+  TextCopy(settings.difficulty_color, color_rgba_to_hex(FTR_DIFF_COLOR));
 
   return settings;
 }
@@ -38,4 +46,5 @@ void chart_settings_print(ChartSettings *chart_settings)
   printf("Difficulty Color: %s\n", chart_settings->difficulty_color);
   printf("Scroll Speed: %f\n", chart_settings->scroll_speed);
   skin_side_print(chart_settings->skin_side);
+  single_line_print(chart_settings->sl_type);
 }

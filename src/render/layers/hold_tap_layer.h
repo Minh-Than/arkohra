@@ -6,7 +6,7 @@
 
 typedef struct
 {
-  MeshRenderable hold, tap;
+  MeshRenderable hold, tap, connector;
   RenderTexture2D layer;
 } HoldTapRenderer;
 

@@ -19,9 +19,7 @@ ChartTimingGroup timing_group_init()
 
 void timing_group_print(ChartTimingGroup *chart_data)
 {
-  // for (size_t i = 0; i < chart_data->arctaps.size; i++)
-  //   timing_event_print((TimingEvent *)list_get(&chart_data->arctaps, i));
-
+  printf("Timing group:\n");
   list_print(&chart_data->timing_events, timing_event_print, "Timing event");
   list_print(&chart_data->taps, tap_print, "Taps");
   list_print(&chart_data->holds, hold_print, "Holds");
@@ -30,7 +28,13 @@ void timing_group_print(ChartTimingGroup *chart_data)
 
 void timing_group_unload(ChartTimingGroup (*chart_data))
 {
-  // Arcs: free its arctaps and generated mesh
+  for (size_t i = 0; i < chart_data->taps.size; i++)
+  {
+    Tap *tap = (Tap *)list_get(&chart_data->taps, i);
+    list_free(&tap->connector_x);
+    list_free(&tap->connector_y);
+  }
+
   for (size_t i = 0; i < chart_data->arcs.size; i++)
   {
     Arc *arc = (Arc *)list_get(&chart_data->arcs, i);

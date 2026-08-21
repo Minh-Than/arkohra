@@ -10,7 +10,7 @@ uniform mat4 matModel;
 
 out vec2 fragTexCoord;
 out vec4 fragColor;
-out vec3 fragPosition;   // world coord to into fragment shitter
+out vec3 fragPosition;   // world-space position, passer to clip against
 
 void main()
 {

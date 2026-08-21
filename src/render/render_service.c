@@ -1,18 +1,20 @@
 #include <math.h>
 #include "render_service.h"
+#include "color_services.h"
 #include "constants.h"
+#include "data/app_configs/app_config.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
 #include "raymath.h"
 #include "rlgl.h"
 
-void chart_reader_render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRenderer *hold_tap_renderer,
-                                           float current_ms, float base_bpm, float scroll_speed)
+void chart_reader_render_holds_taps(List *timing_groups, Camera *camera, HoldTapRenderer *hold_tap_renderer,
+                                           float current_ms, float base_bpm, float scroll_speed, SkinSide side)
 {
   BeginTextureMode(hold_tap_renderer->layer);
     ClearBackground(BLANK);
-    BeginMode3D(render_ctx->camera);
+    BeginMode3D(*camera);
       rlPushMatrix();
         rlScalef(1.7896f, 1.0f, 1.0f);
         rlDisableBackfaceCulling();
@@ -38,13 +40,23 @@ void chart_reader_render_holds_taps(List *timing_groups, RenderContext *render_c
               float diff_fp = tap->fp - curr_fp;
               float z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
               if (z_pos < -100.0f || z_pos > 9.0f) continue;
-              // TODO: Tap scaling has issues
+              // TODO: Scaling sometimes has issues (for tap and connector)
               float delta_ms_fp = get_floor_position(&tg->timing_events, tap->timing - current_ms);
               float z_scale = Clamp(
                 Lerp(1.8f, 5.0f, floor_position_to_z(delta_ms_fp, base_bpm, scroll_speed) / -100.0f),
                 1.8f, 5.0f
               );
               tap_render_test(&hold_tap_renderer->tap, tap, z_pos, z_scale);
+
+              for (int k = 0; k < tap->connector_x.size; k++)
+              {
+                float x = *(float *)list_get(&tap->connector_x, k);
+                float y = *(float *)list_get(&tap->connector_y, k);
+                DrawConnectorLine((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos },
+                                  (Vector3){ x, y, z_pos },
+                                  Lerp(0.07f, 0.12f, floor_position_to_z(delta_ms_fp, base_bpm, scroll_speed) / -100.0f),
+                                  side == SK_CONFLICT ? color_from_rgba(CONFICT_CONNECTOR_CL) : color_from_rgba(LIGHT_CONNECTOR_CL));
+              }
             }
           }
         rlEnableBackfaceCulling();
@@ -53,17 +65,17 @@ void chart_reader_render_holds_taps(List *timing_groups, RenderContext *render_c
   EndTextureMode();
 }
 
-void chart_reader_render_shadows(List *timing_groups, RenderContext *render_ctx, ShadowRenderer *shadow_renderer,
+void chart_reader_render_shadows(List *timing_groups, Camera *camera, ShadowRenderer *shadow_renderer,
                                      float current_ms, float base_bpm, float scroll_speed)
 {
   BeginTextureMode(shadow_renderer->layer);
     ClearBackground(BLANK);
-    BeginMode3D(render_ctx->camera);
-      BeginBlendMode(BLEND_ALPHA);
+    BeginMode3D(*camera);
       rlPushMatrix();
         rlScalef(1.7896f, 1.0f, 1.0f);
         rlDisableBackfaceCulling();
         rlDisableDepthTest();
+        BeginBlendMode(BLEND_ALPHA);
         for (int i = 0; i < timing_groups->size; i++)
         {
           ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
@@ -95,10 +107,10 @@ void chart_reader_render_shadows(List *timing_groups, RenderContext *render_ctx,
             DrawMesh(arc->shadow_r.mesh, arc->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
           }
         }
+        EndBlendMode();
         rlEnableDepthTest();
         rlEnableBackfaceCulling();
       rlPopMatrix();
-      EndBlendMode();
     EndMode3D();
   EndTextureMode();
 }
@@ -131,11 +143,11 @@ void chart_reader_render_arcs(List *timing_groups, RenderContext *render_ctx, Ar
             float z_scale = floor_position_to_z(arc->end_fp - arc->start_fp , base_bpm, scroll_speed);
             if ((z_pos < -100.0f && z_scale < -100.0f) || (z_pos > 9.0f && z_scale > 9.0f)) continue;
 
-            // float clip_z = 0.0f; // TODO: why the fuck isn't this working
+            // TODO: why the fuck isn't this working
+            // float clip_z = 0.0f;
             // SetShaderValue(arc_clip_shader->shader, arc_clip_shader->clipZ_loc, &clip_z, SHADER_UNIFORM_FLOAT);
             // BeginShaderMode(arc_clip_shader->shader);
-            Matrix tr = MatrixTranslate(0.0f, 0.0f, z_pos);
-            DrawMesh(arc->mesh_r.mesh, arc->mesh_r.material  , tr);
+            DrawMesh(arc->mesh_r.mesh, arc->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
           }
         }
         rlEnableBackfaceCulling();
@@ -144,12 +156,12 @@ void chart_reader_render_arcs(List *timing_groups, RenderContext *render_ctx, Ar
   EndTextureMode();
 }
 
-void chart_reader_render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRenderer *arctap_renderer,
-                                        float current_ms, float base_bpm, float scroll_speed)
+void chart_reader_render_arctaps(List *timing_groups, Camera *camera, ArctapRenderer *arctap_renderer,
+                                 float current_ms, float base_bpm, float scroll_speed)
 {
   BeginTextureMode(arctap_renderer->layer);
     ClearBackground(BLANK);
-    BeginMode3D(render_ctx->camera);
+    BeginMode3D(*camera);
       rlPushMatrix();
         rlScalef(1.7896f, 1.0f, 1.0f);
         rlDisableBackfaceCulling();
@@ -161,7 +173,7 @@ void chart_reader_render_arctaps(List *timing_groups, RenderContext *render_ctx,
           for (int j = 0; j < tg->arctaps.size; j++)
           {
             ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, j);
-            float z_pos    = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
+            float z_pos = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
             if (z_pos < -100.0f || z_pos > 9.0f) continue;
             arctap_render_test(&arctap_renderer->arctap, arctap, z_pos);
           }

@@ -12,7 +12,7 @@ out vec4 finalColor;
 
 void main()
 {
-    if (fragPosition.z < clipZ) discard;   // cut everything past the current playhead position
+    if (fragPosition.z > 0) discard;   // cut everything past the current playhead position
 
     vec4 texelColor = texture(texture0, fragTexCoord);
     finalColor = texelColor * colDiffuse * fragColor;

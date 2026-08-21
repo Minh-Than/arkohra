@@ -1,12 +1,13 @@
 #include <stdlib.h>
+#include <string.h>
 #include <regex.h>
 #include <stdbool.h>
 #include "color_services.h"
 #include "raylib.h"
 
-Color from_rgba(const unsigned char rgba[4]) { return (Color){rgba[0], rgba[1], rgba[2], rgba[3]}; }
+Color color_from_rgba(const unsigned char rgba[4]) { return (Color){rgba[0], rgba[1], rgba[2], rgba[3]}; }
 
-Color from_hex(const char* hex)
+Color color_from_hex(const char* hex)
 {
   Color color = (Color){ 0, 0, 0, 255 };
 
@@ -40,4 +41,10 @@ Color from_hex(const char* hex)
   }
 
   return color;
+}
+
+const char* color_rgba_to_hex(const unsigned char rgba[4])
+{
+  return rgba[3] == 255 ? TextFormat("#%x%x%x%x", rgba[0], rgba[1], rgba[2], rgba[3])
+                        : TextFormat("#%x%x%x", rgba[0], rgba[1], rgba[2]);
 }

@@ -1,3 +1,9 @@
+#if defined(__x86_64__) || defined(__i386__)
+  #include <immintrin.h>
+#elif defined(__aarch64__) || defined(__arm__)
+  #include <arm_neon.h>
+#endif
+
 #include <math.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -10,10 +16,56 @@ float lane_to_world_x(float lane)
   return (LANE_WIDTH * lane) + (-LANE_WIDTH * 2.5f);
 }
 
-float floor_position_to_z(double fp, float base_bpm, float scroll_speed)
+float floor_position_to_z(float fp, float base_bpm, float scroll_speed)
 {
-  return (float)(fp / base_bpm / -32 * scroll_speed);
+  return fp / base_bpm / -32 * scroll_speed;
 }
+
+#if defined(__x86_64__) || defined(__i386__)
+void batch_fp_to_z(float *fp_list, float *out, int count, float base_bpm, float scroll_speed)
+{
+  __m128 base_bpm_v     = _mm_set1_ps(base_bpm);
+  __m128 constant_v     = _mm_set1_ps(-32.0f);
+  __m128 scroll_speed_v = _mm_set1_ps(scroll_speed);
+
+  int i = 0;
+  for (; i + 4 <= count; i += 4)
+  {
+    __m128 fp = _mm_loadu_ps(&fp_list[i]);
+    __m128 z  = _mm_div_ps(fp, base_bpm_v);
+    z         = _mm_div_ps(z, constant_v);
+    z         = _mm_mul_ps(z, scroll_speed_v);
+    _mm_storeu_ps(&out[i], z);
+  }
+  for (; i < count; i++)
+    out[i] = floor_position_to_z(fp_list[i], base_bpm, scroll_speed);
+}
+#elif defined(__aarch64__) || defined(__arm__)
+void batch_fp_to_z(float *fp_list, float *out, int count, float base_bpm, float scroll_speed)
+{
+  float32x4_t base_bpm_v     = vdupq_n_f32(base_bpm);
+  float32x4_t constant_v     = vdupq_n_f32(-32.0f);
+  float32x4_t scroll_speed_v = vdupq_n_f32(scroll_speed);
+
+  int i = 0;
+  for (; i + 4 <= count; i += 4)
+  {
+    float32x4_t fp = vld1q_f32(&fp_list[i]);
+    float32x4_t z  = vdivq_f32(fp, base_bpm_v);
+    z              = vdivq_f32(z, constant_v);
+    z              = vmulq_f32(z, scroll_speed_v);
+    vst1q_f32(&out[i], z);
+  }
+  for (; i < count; i++)
+    out[i] = floor_position_to_z(fp_list[i], base_bpm, scroll_speed);
+}
+#else
+void batch_fp_to_z(float *fp_list, float *out, int count, float base_bpm, float scroll_speed)
+{
+  for (int i = 0; i < count; i++)
+    out[i] = floor_position_to_z(fp_list[i], base_bpm, scroll_speed);
+}
+#endif
 
 void recalculate_floor_position(ChartTimingGroup *timing_group)
 {

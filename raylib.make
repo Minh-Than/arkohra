@@ -47,8 +47,8 @@ TARGETDIR = bin/Debug
 TARGET = $(TARGETDIR)/libraylib.a
 OBJDIR = obj/x64/Debug/raylib
 DEFINES += -DDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_FILEFORMAT_JPG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O3 -g -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O3 -g -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -g -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -g -Wno-deprecated-declarations
 ALL_LDFLAGS += $(LDFLAGS) -m64
 
 else ifeq ($(config),debug_x86)
@@ -56,8 +56,8 @@ TARGETDIR = bin/Debug
 TARGET = $(TARGETDIR)/libraylib.a
 OBJDIR = obj/x86/Debug/raylib
 DEFINES += -DDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_FILEFORMAT_JPG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m32 -O3 -g -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m32 -O3 -g -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m32 -O2 -g -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m32 -O2 -g -Wno-deprecated-declarations
 ALL_LDFLAGS += $(LDFLAGS) -m32
 
 else ifeq ($(config),debug_arm64)
@@ -65,8 +65,8 @@ TARGETDIR = bin/Debug
 TARGET = $(TARGETDIR)/libraylib.a
 OBJDIR = obj/ARM64/Debug/raylib
 DEFINES += -DDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_FILEFORMAT_JPG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O3 -g -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O3 -g -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -g -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -g -Wno-deprecated-declarations
 ALL_LDFLAGS += $(LDFLAGS)
 
 else ifeq ($(config),release_x64)
@@ -74,8 +74,8 @@ TARGETDIR = bin/Release
 TARGET = $(TARGETDIR)/libraylib.a
 OBJDIR = obj/x64/Release/raylib
 DEFINES += -DNDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_FILEFORMAT_JPG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -g -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -g -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O3 -g -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O3 -g -Wno-deprecated-declarations
 ALL_LDFLAGS += $(LDFLAGS) -m64
 
 else ifeq ($(config),release_x86)
@@ -83,8 +83,8 @@ TARGETDIR = bin/Release
 TARGET = $(TARGETDIR)/libraylib.a
 OBJDIR = obj/x86/Release/raylib
 DEFINES += -DNDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_FILEFORMAT_JPG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m32 -O2 -g -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m32 -O2 -g -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m32 -O3 -g -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m32 -O3 -g -Wno-deprecated-declarations
 ALL_LDFLAGS += $(LDFLAGS) -m32
 
 else ifeq ($(config),release_arm64)
@@ -92,8 +92,8 @@ TARGETDIR = bin/Release
 TARGET = $(TARGETDIR)/libraylib.a
 OBJDIR = obj/ARM64/Release/raylib
 DEFINES += -DNDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_FILEFORMAT_JPG
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O2 -g -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O2 -g -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -O3 -g -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -O3 -g -Wno-deprecated-declarations
 ALL_LDFLAGS += $(LDFLAGS)
 
 endif

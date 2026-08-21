@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "data/app_configs/app_config.h"
+#include "render/texture/single_line_type.h"
 #include "render/texture/texture_service.h"
 #include "render/texture/skin_side.h"
 
@@ -25,6 +26,7 @@ typedef struct {
   char  difficulty_color[16];
 
   SkinSide skin_side, skin_track;
+  SingleLineType sl_type;
   float scroll_speed;
 } ChartSettings;
 

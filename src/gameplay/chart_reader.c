@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -135,7 +136,7 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
         int matched = sscanf(line, "timing(%d,%f,%f);", &timing, &bpm, &divisor);
         if (matched == 3)
         {
-          TimingEvent t_event = {.fp = 0, .bpm = bpm, .divisor = divisor, .timing = timing, .timing_group = *current_tg, .is_selected = false};
+          TimingEvent t_event = { .fp = 0, .bpm = bpm, .divisor = divisor, .timing = timing, .timing_group = *current_tg };
           list_push(&tg->timing_events, &t_event);
         }
         break;
@@ -147,7 +148,9 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
         int matched = sscanf(line, "(%d,%f);", &timing, &lane);
         if (matched == 2)
         {
-          Tap tap = (Tap) { .lane = lane, .timing = timing, .timing_group = *current_tg, .is_selected = false };
+          List connector_x; list_init(&connector_x, sizeof(float));
+          List connector_y; list_init(&connector_y, sizeof(float));
+          Tap tap = (Tap) { .connector_x = connector_x, .connector_y = connector_y, .lane = lane, .timing = timing, .timing_group = *current_tg };
           list_push(&tg->taps, &tap);
         }
         break;
@@ -164,8 +167,6 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
             .start_timing = start_timing,
             .end_timing   = end_timing,
             .timing_group = *current_tg,
-            .is_selected  = false,
-            .is_active    = false
           };
           list_push(&tg->holds, &hold);
         }
@@ -205,7 +206,7 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
             for (int i = 0; i < arctap_timings.size; i++)
             {
               int *timing = (int *)list_get(&arctap_timings, i);
-              ArcTap arctap = { .arc = NULL, .width = 1.0f, .timing = *timing, .timing_group = *current_tg, .is_selected = false };
+              ArcTap arctap = { .arc = NULL, .width = 1.0f, .timing = *timing, .timing_group = *current_tg };
               list_push(&arc.arctaps, &arctap);
             }
           }
@@ -214,6 +215,53 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
       }
       break;
     default: break;
+  }
+}
+
+static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_reader, Texture2D *arc_texture)
+{
+  for(int i = 0; i < chart_reader->timing_groups.size; i++)
+  {
+    ChartTimingGroup *tg = (ChartTimingGroup *)list_get(&chart_reader->timing_groups, i);
+    list_sort_by(&tg->timing_events, timing_event_compare_timing_asc);
+    recalculate_floor_position(tg);
+
+    chart_reader_rebuild_arctaps(tg);
+
+    // Pre-calculate the notes's floor position
+    // Arctaps' floor position is already calculated in `chart_reader_rebuild_arctaps`
+    for (int j = 0; j < tg->holds.size; j++)
+    {
+      Hold *hold = (Hold *)list_get(&tg->holds, j);
+      hold->start_fp = get_floor_position(&tg->timing_events, hold->start_timing);
+      hold->end_fp   = get_floor_position(&tg->timing_events, hold->end_timing);
+    }
+
+    for (int j = 0; j < tg->taps.size; j++)
+    {
+      Tap *tap = (Tap *)list_get(&tg->taps, j);
+      tap->fp  = get_floor_position(&tg->timing_events, tap->timing);
+      for (int k = 0; k < tg->arctaps.size; k++)
+      {
+        ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, k);
+        if (roundf(fabsf((float)(arctap->timing - tap->timing))) < 2)
+        {
+          float x = arc_world_x_at(arctap->timing, arctap->arc, arctap->arc->x1);
+          float y = arc_world_y_at(arctap->timing, arctap->arc, arctap->arc->y1);
+          list_push(&tap->connector_x, &x);
+          list_push(&tap->connector_y, &y);
+        }
+      }
+    }
+
+    for (int j = 0; j < tg->arcs.size; j++)
+    {
+      Arc *arc = (Arc *)list_get(&tg->arcs, j);
+      arc->start_fp = get_floor_position(&tg->timing_events, arc->start_timing);
+      arc->end_fp   = get_floor_position(&tg->timing_events, arc->end_timing);
+      arc->mesh_r   = arc_generate_mesh(arc, arc_texture, &tg->timing_events, render_ctx);
+      arc->shadow_r = shadow_generate_mesh(arc, &tg->timing_events, render_ctx);
+    }
   }
 }
 
@@ -253,40 +301,7 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
   }
   UnloadFileText(aff_data);
 
-  // --- Post parsing ---
-  for(int i = 0; i < chart_reader.timing_groups.size; i++)
-  {
-    ChartTimingGroup *tg = (ChartTimingGroup *)list_get(&chart_reader.timing_groups, i);
-    list_sort_by(&tg->timing_events, timing_event_compare_timing_asc);
-    recalculate_floor_position(tg);
-
-    chart_reader_rebuild_arctaps(tg);
-
-    // Pre-calculate the notes's floor position
-    // Arctaps' floor position is already calculated in `chart_reader_rebuild_arctaps`
-    for (int j = 0; j < tg->holds.size; j++)
-    {
-      Hold *hold = (Hold *)list_get(&tg->holds, j);
-      hold->start_fp = get_floor_position(&tg->timing_events, hold->start_timing);
-      hold->end_fp   = get_floor_position(&tg->timing_events, hold->end_timing);
-    }
-
-    for (int j = 0; j < tg->taps.size; j++)
-    {
-      Tap *tap = (Tap *)list_get(&tg->taps, j);
-      tap->fp  = get_floor_position(&tg->timing_events, tap->timing);
-    }
-
-    for (int j = 0; j < tg->arcs.size; j++)
-    {
-      Arc *arc = (Arc *)list_get(&tg->arcs, j);
-      arc->start_fp = get_floor_position(&tg->timing_events, arc->start_timing);
-      arc->end_fp   = get_floor_position(&tg->timing_events, arc->end_timing);
-      arc->mesh_r   = arc_generate_mesh(arc, arc_texture, &tg->timing_events, render_ctx);
-      arc->shadow_r = shadow_generate_mesh(arc, &tg->timing_events, render_ctx);
-    }
-  }
-
+  parse_post_process(render_ctx, &chart_reader, arc_texture);
   chart_reader.initialized = true;
   return chart_reader;
 }
@@ -304,10 +319,10 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
   {
     float base_bpm     = render_ctx->chart_settings.base_bpm;
     float scroll_speed = render_ctx->chart_settings.scroll_speed;
-    chart_reader_render_holds_taps(&chart_reader->timing_groups, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed);
-    chart_reader_render_shadows   (&chart_reader->timing_groups, render_ctx, shadow_renderer  , current_ms, base_bpm, scroll_speed);
-    chart_reader_render_arcs      (&chart_reader->timing_groups, render_ctx, arc_renderer     , current_ms, base_bpm, scroll_speed);
-    chart_reader_render_arctaps   (&chart_reader->timing_groups, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed);
+    chart_reader_render_holds_taps(&chart_reader->timing_groups, &render_ctx->camera, hold_tap_renderer, current_ms, base_bpm, scroll_speed, render_ctx->chart_settings.skin_side);
+    chart_reader_render_shadows   (&chart_reader->timing_groups, &render_ctx->camera, shadow_renderer  , current_ms, base_bpm, scroll_speed);
+    chart_reader_render_arcs      (&chart_reader->timing_groups, render_ctx         , arc_renderer     , current_ms, base_bpm, scroll_speed);
+    chart_reader_render_arctaps   (&chart_reader->timing_groups, &render_ctx->camera, arctap_renderer  , current_ms, base_bpm, scroll_speed);
 
     Rectangle tap_hold_src  = { 0, 0, (float)hold_tap_renderer->layer.texture.width, -(float)hold_tap_renderer->layer.texture.height };
     Rectangle shadow_src    = { 0, 0, (float)shadow_renderer->layer.texture.width  , -(float)shadow_renderer->layer.texture.height };
@@ -324,10 +339,7 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
 void chart_reader_print(ChartReader *chart_reader)
 {
   for (int i = 0; i < chart_reader->timing_groups.size; i++)
-  {
-    printf("Timing group %d:\n", i);
     timing_group_print((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
-  }
 }
 
 void chart_reader_unload(ChartReader *chart_reader)

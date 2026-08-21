@@ -1,4 +1,5 @@
 #include "playfield_services.h"
+#include "color_services.h"
 #include "constants.h"
 #include "data/gameplay_events/arctap.h"
 #include "data/gameplay_events/gameplay_events.h"
@@ -149,11 +150,18 @@ PlayfieldObjs playfield_objs_init(TextureGroup *texture_group) {
     1
   );
 
+  Mesh connector_mesh = GenMeshPlane(0.1f, 1, 1, 1);
+  UploadMesh(&connector_mesh, false);
+  Material connector_material = LoadMaterialDefault();
+  connector_material.maps[MATERIAL_MAP_DIFFUSE].color = color_from_hex("#983C8E");
+
   objs.tap_hold_renderer = (HoldTapRenderer){
     .hold  = hold_load_mesh(&texture_group->hold),
     .tap   = tap_load_mesh(&texture_group->tap),
+    .connector = (MeshRenderable){ .mesh = connector_mesh, .material = connector_material },
     .layer = LoadRenderTexture(GetScreenWidth() * SUPERSAMPLE_SCALE, GetScreenHeight() * SUPERSAMPLE_SCALE),
   };
+  set_mesh_transforms(&objs.tap_hold_renderer.connector, (Matrix[]){MatrixIdentity()}, 1);
   SetTextureFilter(objs.tap_hold_renderer.layer.texture, TEXTURE_FILTER_BILINEAR);
 
   objs.arc_renderer = (ArcRenderer){
@@ -185,7 +193,7 @@ void playfield_render(
   float bg_scale = (float)GetScreenWidth() / (float)texture_group->background.width;
   DrawTextureEx(texture_group->background, (Vector2){0.0f, Lerp(-180.0f, 0.0f, get_aspect_ratio_adjustment()) * bg_scale}, 0.0f, bg_scale, WHITE);
 
-  // Tracks n shi
+  // Track-related
   BeginMode3D(render_ctx->camera);
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
@@ -194,7 +202,17 @@ void playfield_render(
       renderable_draw(&playfield_objs->track);
       renderable_draw(&playfield_objs->lane_div);
       renderable_draw(&playfield_objs->critical_line);
+      rlEnableDepthTest();
     rlPopMatrix();
+
+    if (IsTextureValid(texture_group->single_line))
+    {
+      BeginBlendMode(BLEND_ALPHA);
+        rlDisableBackfaceCulling();
+          renderable_draw(&playfield_objs->single_line);
+        rlEnableBackfaceCulling();
+      EndBlendMode();
+    }
   EndMode3D();
 
   // Gameplay notes
@@ -216,15 +234,6 @@ void playfield_render(
         rlEnableBackfaceCulling();
       rlPopMatrix();
     rlPopMatrix();
-
-    if (IsTextureValid(texture_group->single_line))
-    {
-      BeginBlendMode(BLEND_ALPHA);
-        rlDisableBackfaceCulling();
-          renderable_draw(&playfield_objs->single_line);
-        rlEnableBackfaceCulling();
-      EndBlendMode();
-    }
     rlEnableDepthTest();
   EndMode3D();
 }
@@ -239,6 +248,7 @@ void playfield_objs_unload(PlayfieldObjs *scene) {
 
   renderable_unload(&scene->tap_hold_renderer.tap);
   renderable_unload(&scene->tap_hold_renderer.hold);
+  renderable_unload(&scene->tap_hold_renderer.connector);
   UnloadRenderTexture(scene->tap_hold_renderer.layer);
 
   renderable_unload(&scene->shadow_renderer.arctap_shadow);

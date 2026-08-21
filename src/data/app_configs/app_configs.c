@@ -1,4 +1,6 @@
+#include "data/custom_types/custom_types.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "rlgl.h"
 #include "resource_util.h"
 #include "app_config.h"
@@ -17,10 +19,10 @@ AppConfigs app_configs_init(rini_data *d)
   AppConfigs configs = { 0 };
   configs.playfield_ratio   = (AspectRatio)rini_get_value_fallback(*d, "playfield_ratio" , 0);
 
-  configs.app_window_scale = rini_get_float_fallback(*d, "app_window_scale" , 1.0f);
-  configs.scroll_speed     = rini_get_float_fallback(*d, "scroll_speed"     , 3.0f);
-  configs.music_volume     = rini_get_float_fallback(*d, "music_volume"     , 1.0f);
-  configs.hit_volume       = rini_get_float_fallback(*d, "hit_volume"       , 0.2f);
+  configs.app_window_scale = rini_get_float_fallback(*d, "app_window_scale", 1.0f);
+  configs.scroll_speed     = rini_get_float_fallback(*d, "scroll_speed"    , 3.0f);
+  configs.music_volume     = rini_get_float_fallback(*d, "music_volume"    , 1.0f);
+  configs.hit_volume       = rini_get_float_fallback(*d, "hit_volume"      , 0.2f);
   TextCopy(configs.ffmpeg_path   , rini_get_value_text_fallback(*d, "ffmpeg_path"   , ""));
   TextCopy(configs.recent_project, rini_get_value_text_fallback(*d, "recent_project", ""));
 
@@ -35,13 +37,13 @@ AppConfigs app_configs_init(rini_data *d)
 
 void app_configs_write_to_file(AppConfigs *app_configs, rini_data *d)
 {
-  rini_set_value     (d, "playfield_ratio"  , app_configs->playfield_ratio  , rini_get_value_description(*d, "app_window_scale"));
-  rini_set_float     (d, "app_window_scale" , app_configs->app_window_scale , rini_get_value_description(*d, "app_window_scale"));
-  rini_set_float     (d, "scroll_speed"     , app_configs->scroll_speed     , rini_get_value_description(*d, "scroll_speed"));
-  rini_set_float     (d, "music_volume"     , app_configs->music_volume     , rini_get_value_description(*d, "music_volume"));
-  rini_set_float     (d, "hit_volume"       , app_configs->hit_volume       , rini_get_value_description(*d, "hit_volume"));
-  rini_set_value_text(d, "ffmpeg_path"      , app_configs->ffmpeg_path      , rini_get_value_description(*d, "ffmpeg_path"));
-  rini_set_value_text(d, "recent_project"   , app_configs->recent_project   , rini_get_value_description(*d, "recent_project"));
+  rini_set_value     (d, "playfield_ratio" , app_configs->playfield_ratio , rini_get_value_description(*d, "app_window_scale"));
+  rini_set_float     (d, "app_window_scale", app_configs->app_window_scale, rini_get_value_description(*d, "app_window_scale"));
+  rini_set_float     (d, "scroll_speed"    , app_configs->scroll_speed    , rini_get_value_description(*d, "scroll_speed"));
+  rini_set_float     (d, "music_volume"    , app_configs->music_volume    , rini_get_value_description(*d, "music_volume"));
+  rini_set_float     (d, "hit_volume"      , app_configs->hit_volume      , rini_get_value_description(*d, "hit_volume"));
+  rini_set_value_text(d, "ffmpeg_path"     , app_configs->ffmpeg_path     , rini_get_value_description(*d, "ffmpeg_path"));
+  rini_set_value_text(d, "recent_project"  , app_configs->recent_project  , rini_get_value_description(*d, "recent_project"));
 
   char app_dir [MAX_PATH_LEN];
   char ini_path[MAX_PATH_LEN];
@@ -59,29 +61,62 @@ void app_configs_write_to_file(AppConfigs *app_configs, rini_data *d)
   rini_save(*d, ini_path);
 }
 
-static Font GenerateSDF(char *font_file_path, int base_size, int glyph_count) 
+Font GenerateSDF(char *font_file_path, int base_size, int *codepoints, int glyph_count)
 {
   int fileSize = 0;
   unsigned char *font_file_data = LoadFileData(font_file_path, &fileSize);
   Font font_sdf = { 0 };
-  font_sdf.baseSize     = base_size;
-  font_sdf.glyphCount   = glyph_count;
-  font_sdf.glyphs       = LoadFontData(font_file_data, fileSize, font_sdf.baseSize, 0, 0, FONT_SDF, &font_sdf.glyphCount);
+  font_sdf.baseSize   = base_size;
+  font_sdf.glyphCount = glyph_count;
+  font_sdf.glyphs     = LoadFontData(font_file_data, fileSize,
+                                     font_sdf.baseSize,
+                                     codepoints, glyph_count,
+                                     FONT_SDF, &font_sdf.glyphCount);
 
-  Image atlas           = GenImageFontAtlas(font_sdf.glyphs, &font_sdf.recs, font_sdf.glyphCount, font_sdf.baseSize, 0, 1);
-  font_sdf.texture      = LoadTextureFromImage(atlas);
+  Image atlas = GenImageFontAtlas(font_sdf.glyphs, &font_sdf.recs,
+                                  font_sdf.glyphCount,
+                                  font_sdf.baseSize, 0, 1);
+  font_sdf.texture = LoadTextureFromImage(atlas);
   UnloadImage(atlas);
   UnloadFileData(font_file_data);
   SetTextureFilter(font_sdf.texture, TEXTURE_FILTER_BILINEAR);
   return font_sdf;
 }
 
+void AddStringToCodepointList(List *list, const char *text)
+{
+  if (!text) return;
+  int byteOffset = 0;
+  int codepointSize = 0;
+  while (text[byteOffset] != '\0')
+  {
+    int cp = GetCodepoint(&text[byteOffset], &codepointSize);
+    if (cp != 0)
+    {
+      // Optional: check for duplicates before adding to keep list unique
+      bool exists = false;
+      for (int i = 0; i < list->size; i++) {
+        int *cp_i = (int *)list_get(list, i);
+        if (*cp_i == cp) { exists = true; break; }
+      }
+      if (!exists) list_push(list, &cp);
+    }
+    byteOffset += codepointSize;
+  }
+}
+
 FontServices font_services_init(int glsl)
 {
   FontServices f    = { 0 };
-  f.sdf_shader      = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
-  f.saira_regular   = GenerateSDF((char *)"resources/fonts/Saira-Regular.ttf", 45, 95);
-  f.saira_medium    = GenerateSDF((char *)"resources/fonts/Saira-Medium.ttf", 45, 95);
+  f.hud_sdf_shader = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
+  f.saira_regular  = GenerateSDF((char *)"resources/fonts/Saira-Regular.ttf", 45, NULL, 95);
+  f.saira_medium   = GenerateSDF((char *)"resources/fonts/Saira-Medium.ttf", 45, NULL, 95);
+
+  // f.noto_sans_tc_regular = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, NULL, 95);
+  List hud_code_points; list_init(&hud_code_points, sizeof(int));
+  for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
+  f.hud_notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
+  list_free(&hud_code_points);
 
   return f;
 }
@@ -90,7 +125,8 @@ void font_services_unload(FontServices *font_services)
 {
   UnloadFont(font_services->saira_regular);
   UnloadFont(font_services->saira_medium);
-  UnloadShader(font_services->sdf_shader);
+  UnloadFont(font_services->hud_notosans_tc_reg);
+  UnloadShader(font_services->hud_sdf_shader);
 }
 
 void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height, float length, Color color)
@@ -152,4 +188,25 @@ void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float hei
     //rlPopMatrix();
 
     rlSetTexture(0);
+}
+void DrawConnectorLine(Vector3 start, Vector3 end, float thick, Color color)
+{
+  float half_thick = thick / 2;
+  float dx = end.x - start.x;
+  float dy = end.y - start.y;
+
+  Vector2 left  = { -dy, dx }; left = Vector2Scale(Vector2Normalize(left), half_thick);
+  Vector2 right = Vector2Scale(left, -1);
+
+  rlBegin(RL_TRIANGLES);
+    rlColor4ub(color.r, color.g, color.b, color.a);
+
+    rlVertex3f(start.x + left.x , start.y + left.y , start.z);
+    rlVertex3f(start.x + right.x, start.y + right.y, start.z);
+    rlVertex3f(end.x   + left.x , end.y   + left.y , end.z  );
+
+    rlVertex3f(start.x + right.x, start.y + right.y, start.z);
+    rlVertex3f(end.x   + right.x, end.y   + right.y, end.z  );
+    rlVertex3f(end.x   + left.x , end.y   + left.y , end.z  );
+  rlEnd();
 }

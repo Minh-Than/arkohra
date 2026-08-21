@@ -3,10 +3,11 @@ Cloned from quickstart `https://github.com/raylib-extras/raylib-quickstart` by J
 To view a copy of this license, visit https://creativecommons.org/publicdomain/zero/1.0/
 */
 
-#include "gameplay/hud/hud_services.h"
+#include "data/app_configs/app_config.h"
 #define RINI_IMPLEMENTATION
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
+#include "rlgl.h"
 
 #include <time.h>
 #include <math.h>
@@ -14,19 +15,19 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include <stdlib.h>
 #include <stdbool.h>
 #include "raylib.h"
-#include "rlgl.h"
 #include "cJSON.h"
 #include "constants.h"
 #include "resource_util.h"
-#include "data/app_configs/app_config.h"
 #include "data/chart_settings/chart_settings.h"
+#include "gameplay/audio_service.h"
 #include "gameplay/camera/camera_service.h"
 #include "gameplay/chart_reader.h"
-#include "gameplay/audio_service.h"
+#include "gameplay/hud/hud_services.h"
+#include "render/playfield/playfield_services.h"
 #include "render/render_service.h"
 #include "render/texture/texture_service.h"
 #include "render/texture/skin_side.h"
-#include "render/playfield/playfield_services.h"
+#include "render/texture/single_line_type.h"
 #include "render/mesh_renderable.h"
 #include "windows/window_inst.h"
 #include "windows/window_services.h"
@@ -52,6 +53,7 @@ int main()
   FontServices font_services    = font_services_init(GLSL_VERSION);
   Shader arc_clip_shader        = LoadShader(
       TextFormat("resources/shaders/glsl%i/arc_clip.vs", GLSL_VERSION),
+      // 0,
       TextFormat("resources/shaders/glsl%i/arc_clip.fs", GLSL_VERSION)
   );
   int clipZ_loc = GetShaderLocation(arc_clip_shader, "clipZ");
@@ -202,6 +204,10 @@ int main()
             cJSON *track = cJSON_GetObjectItemCaseSensitive(skin, "track");
             if (cJSON_IsString(track) && track->valuestring != NULL)
               render_ctx.chart_settings.skin_track = skin_side_get_by_string(track->valuestring);
+
+            cJSON *single_line= cJSON_GetObjectItemCaseSensitive(skin, "singleLine");
+            if (cJSON_IsString(single_line) && single_line->valuestring != NULL)
+              render_ctx.chart_settings.sl_type = single_line_get_by_string(single_line->valuestring);
           }
 
           status = true;
@@ -247,6 +253,18 @@ int main()
           UnloadTexture(texture_group.arctap);
           skin_side_load_arctap(render_ctx.chart_settings.skin_side, &texture_group);
           SetTextureFilter(texture_group.arctap, TEXTURE_FILTER_BILINEAR);
+
+          UnloadTexture(texture_group.single_line);
+          single_line_load(render_ctx.chart_settings.sl_type, &texture_group);
+          SetTextureWrap(texture_group.single_line, TEXTURE_WRAP_REPEAT);
+
+          List hud_code_points; list_init(&hud_code_points, sizeof(int));
+          for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
+          AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.title);
+          AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.composer);
+          AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.difficulty);
+          font_services.hud_notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
+          list_free(&hud_code_points);
 
           // Update music stream + audio clock
           pause = true;
@@ -338,7 +356,7 @@ int main()
       windows_services_render(&window_group);
 
       // Debug FPS
-      DrawText(TextFormat("FPS: %d", GetFPS()), 5, 5, 50, GREEN);
+      DrawFPS(5, 5); 
 
       if (has_kohra)
       {

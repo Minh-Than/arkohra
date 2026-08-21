@@ -4,17 +4,17 @@
 #include "render/texture/texture_service.h"
 typedef enum
 {
-  LIGHT,
-  CONFLICT,
-  COLORLESS,
+  SK_LIGHT,
+  SK_CONFLICT,
+  SK_COLORLESS,
   SK_BLACK,
-  NIJUUSEI,
-  REI,
-  CONFLICTVS,
-  TEMPESTISSIMO,
-  FINALE,
-  PENTIMENT,
-  ARCANA,
+  SK_NIJUUSEI,
+  SK_REI,
+  SK_CONFLICTVS,
+  SK_TEMPESTISSIMO,
+  SK_FINALE,
+  SK_PENTIMENT,
+  SK_ARCANA,
 } SkinSide;
 
 SkinSide skin_side_get_by_string(char *str);

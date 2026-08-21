@@ -37,11 +37,14 @@ static const float ARC_Y1              = 5.5f;
 static const short int ARC_WINDOW_MS_BEHIND = 25000;
 static const short int ARC_WINDOW_MS_AHEAD  = 25000;
 
-static const unsigned char PST_DIFF_COLOR[4] = { 58, 107, 120, 255 };
-static const unsigned char PRS_DIFF_COLOR[4] = { 86, 105, 71, 255 };
-static const unsigned char FTR_DIFF_COLOR[4] = { 72, 43, 84, 255 };
-static const unsigned char BYD_DIFF_COLOR[4] = { 124, 28, 48, 255 };
-static const unsigned char ETR_DIFF_COLOR[4] = { 67, 52, 85, 255 };
+static const unsigned char PST_DIFF_COLOR[4] = { 58 , 107, 120, 255 };
+static const unsigned char PRS_DIFF_COLOR[4] = { 86 , 105, 71 , 255 };
+static const unsigned char FTR_DIFF_COLOR[4] = { 72 , 43 , 84 , 255 };
+static const unsigned char BYD_DIFF_COLOR[4] = { 124, 28 , 48 , 255 };
+static const unsigned char ETR_DIFF_COLOR[4] = { 67 , 52 , 85 , 255 };
+
+static const unsigned char LIGHT_CONNECTOR_CL[4]   = { 104, 189, 211, 255 };
+static const unsigned char CONFICT_CONNECTOR_CL[4] = { 150, 85 , 142, 255 };
 
 static const unsigned short int CMD_PLT_Y          = 150;
 static const unsigned short int CMD_PLT_SIZE_X     = 450;

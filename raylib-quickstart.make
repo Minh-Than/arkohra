@@ -45,8 +45,8 @@ TARGETDIR = bin/Debug
 TARGET = $(TARGETDIR)/raylib-quickstart
 OBJDIR = obj/x64/Debug/raylib-quickstart
 DEFINES += -DDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -Wshadow -O3 -g -std=c23 -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -Wshadow -O3 -g -std=c++20 -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -Wshadow -O2 -g -std=c23 -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -Wshadow -O2 -g -std=c++20 -Wno-deprecated-declarations
 LIBS += bin/Debug/libraylib.a -framework OpenGL -framework Cocoa -framework IOKit -framework CoreFoundation -framework CoreAudio -framework CoreVideo -framework AudioToolbox
 LDDEPS += bin/Debug/libraylib.a
 ALL_LDFLAGS += $(LDFLAGS) -m64
@@ -56,8 +56,8 @@ TARGETDIR = bin/Debug
 TARGET = $(TARGETDIR)/raylib-quickstart
 OBJDIR = obj/x86/Debug/raylib-quickstart
 DEFINES += -DDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m32 -Wshadow -O3 -g -std=c23 -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m32 -Wshadow -O3 -g -std=c++20 -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m32 -Wshadow -O2 -g -std=c23 -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m32 -Wshadow -O2 -g -std=c++20 -Wno-deprecated-declarations
 LIBS += bin/Debug/libraylib.a -framework OpenGL -framework Cocoa -framework IOKit -framework CoreFoundation -framework CoreAudio -framework CoreVideo -framework AudioToolbox
 LDDEPS += bin/Debug/libraylib.a
 ALL_LDFLAGS += $(LDFLAGS) -m32
@@ -67,8 +67,8 @@ TARGETDIR = bin/Debug
 TARGET = $(TARGETDIR)/raylib-quickstart
 OBJDIR = obj/ARM64/Debug/raylib-quickstart
 DEFINES += -DDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Wshadow -O3 -g -std=c23 -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Wshadow -O3 -g -std=c++20 -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Wshadow -O2 -g -std=c23 -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Wshadow -O2 -g -std=c++20 -Wno-deprecated-declarations
 LIBS += bin/Debug/libraylib.a -framework OpenGL -framework Cocoa -framework IOKit -framework CoreFoundation -framework CoreAudio -framework CoreVideo -framework AudioToolbox
 LDDEPS += bin/Debug/libraylib.a
 ALL_LDFLAGS += $(LDFLAGS)
@@ -78,8 +78,8 @@ TARGETDIR = bin/Release
 TARGET = $(TARGETDIR)/raylib-quickstart
 OBJDIR = obj/x64/Release/raylib-quickstart
 DEFINES += -DNDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -Wshadow -O2 -g -std=c23 -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -Wshadow -O2 -g -std=c++20 -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -Wshadow -O3 -g -std=c23 -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -Wshadow -O3 -g -std=c++20 -Wno-deprecated-declarations
 LIBS += bin/Release/libraylib.a -framework OpenGL -framework Cocoa -framework IOKit -framework CoreFoundation -framework CoreAudio -framework CoreVideo -framework AudioToolbox
 LDDEPS += bin/Release/libraylib.a
 ALL_LDFLAGS += $(LDFLAGS) -m64
@@ -89,8 +89,8 @@ TARGETDIR = bin/Release
 TARGET = $(TARGETDIR)/raylib-quickstart
 OBJDIR = obj/x86/Release/raylib-quickstart
 DEFINES += -DNDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m32 -Wshadow -O2 -g -std=c23 -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m32 -Wshadow -O2 -g -std=c++20 -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m32 -Wshadow -O3 -g -std=c23 -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m32 -Wshadow -O3 -g -std=c++20 -Wno-deprecated-declarations
 LIBS += bin/Release/libraylib.a -framework OpenGL -framework Cocoa -framework IOKit -framework CoreFoundation -framework CoreAudio -framework CoreVideo -framework AudioToolbox
 LDDEPS += bin/Release/libraylib.a
 ALL_LDFLAGS += $(LDFLAGS) -m32
@@ -100,8 +100,8 @@ TARGETDIR = bin/Release
 TARGET = $(TARGETDIR)/raylib-quickstart
 OBJDIR = obj/ARM64/Release/raylib-quickstart
 DEFINES += -DNDEBUG -DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33
-ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Wshadow -O2 -g -std=c23 -Wno-deprecated-declarations
-ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Wshadow -O2 -g -std=c++20 -Wno-deprecated-declarations
+ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -Wshadow -O3 -g -std=c23 -Wno-deprecated-declarations
+ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -Wshadow -O3 -g -std=c++20 -Wno-deprecated-declarations
 LIBS += bin/Release/libraylib.a -framework OpenGL -framework Cocoa -framework IOKit -framework CoreFoundation -framework CoreAudio -framework CoreVideo -framework AudioToolbox
 LDDEPS += bin/Release/libraylib.a
 ALL_LDFLAGS += $(LDFLAGS)
@@ -139,6 +139,7 @@ GENERATED += $(OBJDIR)/mesh_renderable.o
 GENERATED += $(OBJDIR)/playfield_services.o
 GENERATED += $(OBJDIR)/render_service.o
 GENERATED += $(OBJDIR)/resource_util.o
+GENERATED += $(OBJDIR)/single_line_type.o
 GENERATED += $(OBJDIR)/skin_side.o
 GENERATED += $(OBJDIR)/tap.o
 GENERATED += $(OBJDIR)/texture_service.o
@@ -166,6 +167,7 @@ OBJECTS += $(OBJDIR)/mesh_renderable.o
 OBJECTS += $(OBJDIR)/playfield_services.o
 OBJECTS += $(OBJDIR)/render_service.o
 OBJECTS += $(OBJDIR)/resource_util.o
+OBJECTS += $(OBJDIR)/single_line_type.o
 OBJECTS += $(OBJDIR)/skin_side.o
 OBJECTS += $(OBJDIR)/tap.o
 OBJECTS += $(OBJDIR)/texture_service.o
@@ -296,6 +298,9 @@ $(OBJDIR)/playfield_services.o: src/render/playfield/playfield_services.c
 	@echo "$(notdir $<)"
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/render_service.o: src/render/render_service.c
+	@echo "$(notdir $<)"
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/single_line_type.o: src/render/texture/single_line_type.c
 	@echo "$(notdir $<)"
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/skin_side.o: src/render/texture/skin_side.c

@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 
-Color from_rgba(const unsigned char rgba[4]);
-Color from_hex(const char* hex);
+Color color_from_rgba(const unsigned char rgba[4]);
+Color color_from_hex(const char* hex);
+const char* color_rgba_to_hex(const unsigned char rgba[4]);
 #endif // COLOR_SERVICES_H
