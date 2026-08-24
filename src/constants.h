@@ -34,9 +34,6 @@ static const float ARC_MESH_SCALE      = 11.5f;
 static const float ARC_Y0              = 1.0f;
 static const float ARC_Y1              = 5.5f;
 
-static const short int ARC_WINDOW_MS_BEHIND = 25000;
-static const short int ARC_WINDOW_MS_AHEAD  = 25000;
-
 static const unsigned char PST_DIFF_COLOR[4] = { 58 , 107, 120, 255 };
 static const unsigned char PRS_DIFF_COLOR[4] = { 86 , 105, 71 , 255 };
 static const unsigned char FTR_DIFF_COLOR[4] = { 72 , 43 , 84 , 255 };

@@ -16,6 +16,11 @@ float lane_to_world_x(float lane)
   return (LANE_WIDTH * lane) + (-LANE_WIDTH * 2.5f);
 }
 
+float z_to_floor_position(float z, float base_bpm, float scroll_speed)
+{
+  return z * base_bpm * -32 / scroll_speed;
+}
+
 float floor_position_to_z(float fp, float base_bpm, float scroll_speed)
 {
   return fp / base_bpm / -32 * scroll_speed;

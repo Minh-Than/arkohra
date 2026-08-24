@@ -13,6 +13,8 @@
 void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRenderer *hold_tap_renderer,
                        float current_ms, float base_bpm, float scroll_speed)
 {
+  float low_z_clip  = z_to_floor_position(-9.0f, base_bpm, scroll_speed);
+  float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginTextureMode(hold_tap_renderer->layer);
     ClearBackground(BLANK);
     BeginMode3D(render_ctx->camera);
@@ -35,16 +37,19 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
             }
 
             // Taps
-            for (int j = 0; j < tg->taps.size; j++)
+            TapFP tap_low_z_fp  = { .fp = curr_fp - low_z_clip };
+            TapFP tap_high_z_fp = { .fp = curr_fp + high_z_clip };
+            int tap_start_index = bisect_left(&tg->tap_fps, &tap_low_z_fp , tapfp_compare_fp_asc);
+            int tap_end_index   = bisect_left(&tg->tap_fps, &tap_high_z_fp, tapfp_compare_fp_asc);
+            for (int j = tap_start_index; j < tap_end_index; j++)
             {
-              Tap *tap      = (Tap *)list_get(&tg->taps, j);
+              TapFP *tap_fp = (TapFP *)list_get(&tg->tap_fps, j);
+              Tap *tap      = tap_fp->tap;
               float diff_fp = tap->fp - curr_fp;
               float z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
-              if (z_pos < -100.0f || z_pos > 9.0f) continue;
-              float z_scale = Clamp(
-                Lerp(1.8f, 5.8f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
-                1.8f, 5.8f
-              );
+              float z_scale = Clamp(Lerp(1.8f, 5.8f,
+                                         floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
+                                    1.8f, 5.8f);
               tap_render_test(&hold_tap_renderer->tap, tap, z_pos, z_scale);
 
               for (int k = 0; k < tap->connector_x.size; k++)
@@ -53,8 +58,11 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
                 float y = *(float *)list_get(&tap->connector_y, k);
                 DrawThickLine3D((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos },
                                 (Vector3){ x, y, z_pos },
-                                Lerp(0.07f, 0.12f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
-                                render_ctx->chart_settings.skin_side == SK_CONFLICT ? color_from_rgba(CONFICT_CONNECTOR_CL) : color_from_rgba(LIGHT_CONNECTOR_CL));
+                                Lerp(0.04f, 0.11f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
+                                render_ctx->chart_settings.skin_side == SK_CONFLICT
+                                  ? color_from_rgba(CONFICT_CONNECTOR_CL)
+                                  : color_from_rgba(LIGHT_CONNECTOR_CL)
+                                );
               }
             }
           }
@@ -67,6 +75,8 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
 void render_note_shadows(List *timing_groups, RenderContext *render_ctx, ShadowRenderer *shadow_renderer,
                         float current_ms, float base_bpm, float scroll_speed)
 {
+  float low_z_clip  = z_to_floor_position(50.0f, base_bpm, scroll_speed);
+  float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginTextureMode(shadow_renderer->layer);
     ClearBackground(BLANK);
     BeginMode3D(render_ctx->camera);
@@ -75,41 +85,49 @@ void render_note_shadows(List *timing_groups, RenderContext *render_ctx, ShadowR
         rlDisableBackfaceCulling();
         rlDisableDepthTest();
         BeginBlendMode(BLEND_ALPHA);
-        for (int i = 0; i < timing_groups->size; i++)
-        {
-          ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
-          float curr_fp = get_floor_position(&tg->timing_events, current_ms);
-
-          // grab starting index withing certain +-ms padding
-          int start_index = 0;
-          Arc search_key = { .start_timing = (int)current_ms - ARC_WINDOW_MS_BEHIND };
-          start_index = bisect_right(&tg->arcs, &search_key, arc_compare_start_timing_asc);
-          start_index = (int)fmaxf(start_index - 1, 0);
-          for (int j = start_index; j < tg->arcs.size; j++)
+          for (int i = 0; i < timing_groups->size; i++)
           {
-            Arc *arc = (Arc *)list_get(&tg->arcs, j);
-            if (arc->start_timing > current_ms + ARC_WINDOW_MS_AHEAD) break;
+            ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
+            float curr_fp = get_floor_position(&tg->timing_events, current_ms);
+            float curr_event_bpm = get_event_at(&tg->timing_events, current_ms)->bpm;
 
-            float z_pos   = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
-            float z_scale = floor_position_to_z(arc->end_fp - arc->start_fp , base_bpm, scroll_speed);
-            if (z_pos < -100.0f || (z_pos > 9.0f && z_scale > 9.0f)) continue;
+            ArcSegment segment_low_fp  = { .start_fp = curr_fp + low_z_clip };
+            ArcSegment segment_high_fp = { .start_fp = curr_fp + high_z_clip };
+            int segment_start_index = bisect_left(&tg->arc_segments, &segment_low_fp , arc_segment_compare_start_fp_asc);
+            int segment_end_index   = bisect_left(&tg->arc_segments, &segment_high_fp, arc_segment_compare_start_fp_asc);
 
-            for (int k = 0; k < arc->arctaps.size; k++)
+            for (int j = segment_start_index; j < segment_end_index; j++)
             {
-              ArcTap *arctap     = (ArcTap *)list_get(&arc->arctaps, k);
+              ArcSegment *arc_segment = (ArcSegment *)list_get(&tg->arc_segments, j);
+              Arc *arc = arc_segment->arc;
+
+              int is_void_shader = arc->is_void ? 1 : 0;
+              int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+              int negative_bpm_shader = curr_event_bpm < 0.0f;
+              SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
+              SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+              SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+
+              float z_pos = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+              DrawMesh(arc_segment->shadow_r.mesh, arc_segment->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+            }
+
+            ArcTapFP arctap_low_fp  = { .fp = curr_fp + low_z_clip };
+            ArcTapFP arctap_high_fp = { .fp = curr_fp + high_z_clip };
+            int arctap_start_index = bisect_left(&tg->arctap_fps, &arctap_low_fp , arctapfp_compare_fp_asc);
+            int arctap_end_index   = bisect_left(&tg->arctap_fps, &arctap_high_fp, arctapfp_compare_fp_asc);
+
+            for (int j = arctap_start_index; j < arctap_end_index; j++)
+            {
+              ArcTapFP *arctap_fp = (ArcTapFP *)list_get(&tg->arctap_fps, j);
+              ArcTap *arctap = arctap_fp->arctap;
               float arctap_z_pos = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
               Matrix arctap_mt   = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
                                                   MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc, arctap->arc->x1),
                                                                   0.0f, arctap_z_pos));
               DrawMesh(shadow_renderer->arctap_shadow.mesh, shadow_renderer->arctap_shadow.material, arctap_mt);
             }
-            int is_void_shader = arc->is_void ? 1 : 0;
-            int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
-            SetShaderValue(arc->shadow_r.material.shader, render_ctx->arc_clip_shader.isVoid_loc, &is_void_shader, SHADER_UNIFORM_INT);
-            SetShaderValue(arc->shadow_r.material.shader, render_ctx->arc_clip_shader.shouldClip_loc, &should_clip_shader, SHADER_UNIFORM_INT);
-            DrawMesh(arc->shadow_r.mesh, arc->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
           }
-        }
         EndBlendMode();
         rlEnableDepthTest();
         rlEnableBackfaceCulling();
@@ -121,6 +139,8 @@ void render_note_shadows(List *timing_groups, RenderContext *render_ctx, ShadowR
 void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
                  float current_ms, float base_bpm, float scroll_speed)
 {
+  float low_z_clip  = z_to_floor_position(50.0f, base_bpm, scroll_speed);
+  float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginTextureMode(arc_renderer->layer);
     ClearBackground(BLANK);
     BeginMode3D(render_ctx->camera);
@@ -131,26 +151,28 @@ void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *ar
         {
           ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
           float curr_fp = get_floor_position(&tg->timing_events, current_ms);
+          float curr_event_bpm = get_event_at(&tg->timing_events, current_ms)->bpm;
 
           // grab starting index withing certain +-ms padding
-          int start_index = 0;
-          Arc search_key = { .start_timing = (int)current_ms - ARC_WINDOW_MS_BEHIND };
-          start_index = bisect_right(&tg->arcs, &search_key, arc_compare_start_timing_asc);
-          start_index = (int)fmaxf(start_index - 1, 0);
-          for (int j = start_index; j < tg->arcs.size; j++)
-          {
-            Arc *arc = (Arc *)list_get(&tg->arcs, j);
-            if (arc->start_timing > current_ms + ARC_WINDOW_MS_AHEAD) break;
+          ArcSegment low_segment  = { .start_fp = curr_fp + low_z_clip };
+          ArcSegment high_segment = { .start_fp = curr_fp + high_z_clip };
+          int start_index = bisect_left(&tg->arc_segments, &low_segment , arc_segment_compare_start_fp_asc);
+          int end_index   = bisect_left(&tg->arc_segments, &high_segment, arc_segment_compare_start_fp_asc);
 
-            float z_pos   = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
-            float z_scale = floor_position_to_z(arc->end_fp - arc->start_fp , base_bpm, scroll_speed);
-            if (z_pos < -100.0f || (z_pos > 9.0f && z_scale > 9.0f)) continue;
+          for (int j = start_index; j < end_index; j++)
+          {
+            ArcSegment *arc_segment = (ArcSegment *)list_get(&tg->arc_segments, j);
+            Arc *arc = arc_segment->arc;
 
             int is_void_shader = arc->is_void ? 1 : 0;
-            int should_clip_shader = arc->is_void && arc->start_timing - current_ms <= 0 ? 1 : 0;
-            SetShaderValue(arc->shadow_r.material.shader, render_ctx->arc_clip_shader.isVoid_loc, &is_void_shader, SHADER_UNIFORM_INT);
-            SetShaderValue(arc->shadow_r.material.shader, render_ctx->arc_clip_shader.shouldClip_loc, &should_clip_shader, SHADER_UNIFORM_INT);
-            DrawMesh(arc->mesh_r.mesh, arc->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+            int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+            int negative_bpm_shader = curr_event_bpm < 0.0f;
+            SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
+            SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+            SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+
+            float z_pos = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+            DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
           }
         }
         rlEnableBackfaceCulling();
@@ -162,6 +184,8 @@ void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *ar
 void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRenderer *arctap_renderer,
                     float current_ms, float base_bpm, float scroll_speed)
 {
+  float low_z_clip  = z_to_floor_position(-9.0f, base_bpm, scroll_speed);
+  float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginTextureMode(arctap_renderer->layer);
     ClearBackground(BLANK);
     BeginMode3D(render_ctx->camera);
@@ -173,11 +197,16 @@ void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRender
           ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
           float curr_fp = get_floor_position(&tg->timing_events, current_ms);
 
-          for (int j = 0; j < tg->arctaps.size; j++)
+          ArcTapFP arctap_low_z_fp  = { .fp = curr_fp - low_z_clip };
+          ArcTapFP arctap_high_z_fp = { .fp = curr_fp + high_z_clip };
+          int arctap_start_index = bisect_left(&tg->arctap_fps, &arctap_low_z_fp , arctapfp_compare_fp_asc);
+          int arctap_end_index   = bisect_left(&tg->arctap_fps, &arctap_high_z_fp, arctapfp_compare_fp_asc);
+
+          for (int j = arctap_start_index; j < arctap_end_index; j++)
           {
-            ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, j);
+            ArcTapFP *arctap_fp = (ArcTapFP *)list_get(&tg->arctap_fps, j);
+            ArcTap *arctap = arctap_fp->arctap;
             float z_pos = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
-            if (z_pos < -100.0f || z_pos > 9.0f) continue;
             arctap_render_test(&arctap_renderer->arctap, arctap, z_pos);
           }
         }

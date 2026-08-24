@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include "data/app_configs/app_config.h"
 #include "render/texture/single_line_type.h"
-#include "render/texture/texture_service.h"
 #include "render/texture/skin_side.h"
 
 typedef struct {
@@ -30,7 +29,7 @@ typedef struct {
   float scroll_speed;
 } ChartSettings;
 
-ChartSettings chart_settings_init(AppConfigs *app_configs, TextureGroup *texture_group);
+ChartSettings chart_settings_init(AppConfigs *app_configs);
 void chart_settings_print(ChartSettings *chart_settings);
 
 #endif // CHART_SETTINGS_H

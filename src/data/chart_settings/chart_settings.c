@@ -8,7 +8,7 @@
 #include "render/texture/single_line_type.h"
 #include "render/texture/skin_side.h"
 
-ChartSettings chart_settings_init(AppConfigs *app_configs, TextureGroup *texture_group)
+ChartSettings chart_settings_init(AppConfigs *app_configs)
 {
   ChartSettings settings = { 0 };
   settings.base_bpm = 100.0f;

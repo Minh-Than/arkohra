@@ -44,7 +44,7 @@ int main()
   AppConfigs app_configs        = app_configs_init(&rini_d);
   Camera3D camera               = camera_init_playfield();
   TextureGroup texture_group    = textures_init();
-  ChartSettings chart_settings  = chart_settings_init(&app_configs, &texture_group);
+  ChartSettings chart_settings  = chart_settings_init(&app_configs);
   ChartReader chart_reader      = { 0 };
 
   WindowGroup window_group      = window_services_init();
@@ -58,14 +58,20 @@ int main()
   );
   int isVoid_loc = GetShaderLocation(arc_clip_shader, "isVoid");
   int shouldClip_loc = GetShaderLocation(arc_clip_shader, "shouldClip");
-  printf("isVoid: %d\n", isVoid_loc);
+  int negativeBPM_loc = GetShaderLocation(arc_clip_shader, "negativeBPM");
+  printf("negativeBPM: %d\n", negativeBPM_loc);
   printf("mvp loc: %d\n", arc_clip_shader.locs[SHADER_LOC_MATRIX_MVP]);
   printf("matModel loc: %d\n", arc_clip_shader.locs[SHADER_LOC_MATRIX_MODEL]);
 
   RenderContext render_ctx = {
     .camera          = camera,
     .chart_settings  = chart_settings,
-    .arc_clip_shader = { .shader = arc_clip_shader, .isVoid_loc = isVoid_loc, .shouldClip_loc = shouldClip_loc },
+    .arc_clip_shader = {
+      .shader = arc_clip_shader,
+      .isVoid_loc = isVoid_loc,
+      .shouldClip_loc = shouldClip_loc,
+      .negativeBPM_loc = negativeBPM_loc
+    },
     .audio_clock     = { 0 },
   };
 
@@ -138,7 +144,7 @@ int main()
           if (!cJSON_IsString(audio_path)) goto parsing_project_end;
 
           // Reset chart settings
-          render_ctx.chart_settings = chart_settings_init(&app_configs, &texture_group);
+          render_ctx.chart_settings = chart_settings_init(&app_configs);
 
           render_ctx.chart_settings.scroll_speed = app_configs.scroll_speed;
           TextCopy(render_ctx.chart_settings.chart_path, TextFormat("%s/%s", dir, chart_path->valuestring));
@@ -226,6 +232,8 @@ int main()
           chart_settings_print(&render_ctx.chart_settings);
 
           // Update texture group
+          textures_unload(&texture_group);
+          texture_group = textures_init();
           if (!TextIsEqual(render_ctx.chart_settings.jacket_path, ""))
           {
             UnloadTexture(texture_group.jacket_img);
@@ -241,7 +249,7 @@ int main()
 
           UnloadTexture(texture_group.track);
           skin_side_load_track(render_ctx.chart_settings.skin_track, &texture_group);
-          SetTextureFilter(texture_group.track, TEXTURE_FILTER_BILINEAR);
+          SetTextureWrap(texture_group.track, TEXTURE_WRAP_REPEAT);
 
           UnloadTexture(texture_group.hold);
           skin_side_load_hold(render_ctx.chart_settings.skin_side, &texture_group);

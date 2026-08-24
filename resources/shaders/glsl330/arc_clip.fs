@@ -9,12 +9,14 @@ uniform vec4 colDiffuse;
 
 uniform bool isVoid;
 uniform bool shouldClip;
+uniform bool negativeBPM;
 
 out vec4 finalColor;
 
 void main()
 {
-  if (shouldClip && isVoid && fragPosition.z > 0.0) discard;   // cut everything past the current playhead position
+  float sign = negativeBPM ? -1.0 : 1.0;
+  if (shouldClip && isVoid && (sign * fragPosition.z > 0.0)) discard;   // cut everything past the current playhead position
 
   vec4 texelColor = texture(texture0, fragTexCoord);
   finalColor = texelColor * colDiffuse * fragColor;

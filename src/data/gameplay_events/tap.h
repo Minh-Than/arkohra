@@ -17,4 +17,11 @@ void tap_print(const void *elem);
 void tap_render_test(MeshRenderable *tap_r, Tap *tap, float fp, float z_scale);
 MeshRenderable tap_load_mesh(Texture2D *texture);
 
+typedef struct {
+  Tap   *tap;
+  float fp;
+} TapFP;
+
+int tapfp_compare_fp_asc(const void *a, const void *b);
+
 #endif // TAP_H

@@ -5,6 +5,7 @@
 #include "data/chart_timing_groups/chart_timing_group.h"
 
 float lane_to_world_x(float lane);
+float z_to_floor_position(float z, float base_bpm, float scroll_speed);
 float floor_position_to_z(float fp, float base_bpm, float scroll_speed);
 void batch_fp_to_z(float *fp_list, float *out, int count, float base_bpm, float scroll_speed);
 void recalculate_floor_position(ChartTimingGroup *timing_group);

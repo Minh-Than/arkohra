@@ -23,10 +23,10 @@ static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
     Arc *arc = (Arc *)list_get(&tg->arcs, j);
     for (int k = 0; k < arc->arctaps.size; k++)
     {
-      ArcTap *arc_at = (ArcTap *)list_get(&arc->arctaps, k);
-      arc_at->arc = arc;
-      arc_at->fp  = get_floor_position(&tg->timing_events, arc_at->timing);
-      list_push(&tg->arctaps, arc_at);
+      ArcTap *arctap = (ArcTap *)list_get(&arc->arctaps, k);
+      arctap->arc = arc;
+      arctap->fp  = get_floor_position(&tg->timing_events, arctap->timing);
+      list_push(&tg->arctaps, arctap);
     }
   }
 
@@ -45,6 +45,7 @@ static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
         idx++;
       }
     }
+
   }
 }
 
@@ -241,6 +242,10 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
     {
       Tap *tap = (Tap *)list_get(&tg->taps, j);
       tap->fp  = get_floor_position(&tg->timing_events, tap->timing);
+
+      TapFP tap_fp = { .tap = tap, .fp = tap->fp };
+      list_push(&tg->tap_fps, &tap_fp);
+
       for (int k = 0; k < tg->arctaps.size; k++)
       {
         ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, k);
@@ -253,15 +258,36 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
         }
       }
     }
+    list_sort_by(&tg->tap_fps, tapfp_compare_fp_asc);
 
     for (int j = 0; j < tg->arcs.size; j++)
     {
       Arc *arc = (Arc *)list_get(&tg->arcs, j);
       arc->start_fp = get_floor_position(&tg->timing_events, arc->start_timing);
       arc->end_fp   = get_floor_position(&tg->timing_events, arc->end_timing);
-      arc->mesh_r   = arc_generate_mesh(arc, arc_texture, &tg->timing_events, render_ctx);
-      arc->shadow_r = shadow_generate_mesh(arc, &tg->timing_events, render_ctx);
+
+      int arc_duration      = arc->end_timing - arc->start_timing;
+      float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res);
+      int segment_count     = (int)ceilf(arc_duration / segment_length);
+      segment_count         = (int)fmax(segment_count, 1);
+
+      for (int k = 0; k < segment_count; k++)
+      {
+        ArcSegment arc_segment = { .arc = arc };
+        list_push(&tg->arc_segments, &arc_segment);
+      }
+      arc_segment_generate_mesh(&tg->arc_segments, arc, arc_texture, &tg->timing_events, render_ctx);
+      shadow_segment_generate_mesh(&tg->arc_segments, arc, &tg->timing_events, render_ctx);
+    };
+    list_sort_by(&tg->arc_segments, arc_segment_compare_start_fp_asc);
+
+    for (int j = 0; j < tg->arctaps.size; j++)
+    {
+      ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, j);
+      ArcTapFP arctap_fp = { .arctap = arctap, .fp = arctap->fp };
+      list_push(&tg->arctap_fps, &arctap_fp);
     }
+    list_sort_by(&tg->arctap_fps, arctapfp_compare_fp_asc);
   }
 }
 

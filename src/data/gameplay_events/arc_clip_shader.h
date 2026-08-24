@@ -6,7 +6,7 @@
 typedef struct
 {
   Shader shader;
-  int isVoid_loc, shouldClip_loc;
+  int isVoid_loc, shouldClip_loc, negativeBPM_loc;
 } ArcClipShader;
 
 #endif // ARC_CLIP_SHADER_H

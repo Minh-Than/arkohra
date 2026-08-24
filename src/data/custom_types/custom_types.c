@@ -51,6 +51,23 @@ int bisect_right(List *list, const void *target, int (*compare)(const void *a, c
   return low;
 }
 
+int bisect_left(List *list, const void *target, int (*compare)(const void *a, const void *b))
+{
+  int low = 0;
+  int high = (int)list->size;
+  int mid;
+
+  while (low < high)
+  {
+    mid = low + (high - low) / 2;
+    void *mid_item = list_get(list, mid);
+    if (compare(target, mid_item) > 0) low = mid + 1;
+    else high = mid;
+  }
+
+  return low;
+}
+
 void list_free(List *list)
 {
   if (!list) return;

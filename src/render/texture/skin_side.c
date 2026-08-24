@@ -20,9 +20,9 @@ SkinSide skin_side_get_by_string(char *str)
 
 void skin_side_load_track(SkinSide side, TextureGroup *texture_group)
 {
+  skin_side_print(side);
   switch (side)
   {
-    default:
     case SK_LIGHT:         texture_group->track = LoadTexture("resources/gameplay/Track/TrackWhite.png"); break;
     case SK_CONFLICT:      texture_group->track = LoadTexture("resources/gameplay/Track/TrackConflict.png"); break;
     case SK_COLORLESS:     texture_group->track = LoadTexture("resources/gameplay/Track/TrackColorless.png"); break;
@@ -41,9 +41,9 @@ void skin_side_load_hold(SkinSide side, TextureGroup *texture_group)
 {
   switch (side)
   {
-    default:
     case SK_LIGHT:    texture_group->hold = LoadTexture("resources/gameplay/Note/Light/HoldNoteLight.png"); break;
     case SK_CONFLICT: texture_group->hold = LoadTexture("resources/gameplay/Note/Conflict/HoldNoteConflict.png"); break;
+    default:    texture_group->hold = LoadTexture("resources/gameplay/Note/Light/HoldNoteLight.png"); break;
   }
 }
 
@@ -51,9 +51,9 @@ void skin_side_load_tap(SkinSide side, TextureGroup *texture_group)
 {
   switch (side)
   {
-    default:
     case SK_LIGHT:    texture_group->tap = LoadTexture("resources/gameplay/Note/Light/TapNoteLight.png"); break;
     case SK_CONFLICT: texture_group->tap = LoadTexture("resources/gameplay/Note/Conflict/TapNoteConflict.png"); break;
+    default: texture_group->tap = LoadTexture("resources/gameplay/Note/Light/TapNoteLight.png"); break;
   }
 }
 
@@ -61,9 +61,9 @@ void skin_side_load_arctap(SkinSide side, TextureGroup *texture_group)
 {
   switch (side)
   {
-    default:
     case SK_LIGHT:    texture_group->arctap = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png"); break;
     case SK_CONFLICT: texture_group->arctap = LoadTexture("resources/gameplay/Note/Conflict/ArcTapConflict.png"); break;
+    default: texture_group->arctap = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png"); break;
   }
 }
 
@@ -75,7 +75,7 @@ void skin_side_print(SkinSide side)
     case SK_LIGHT:         TextCopy(str, "Light"); break;
     case SK_CONFLICT:      TextCopy(str, "Conflict"); break;
     case SK_COLORLESS:     TextCopy(str, "Colorless"); break;
-    case SK_BLACK:      TextCopy(str, "Black"); break;
+    case SK_BLACK:         TextCopy(str, "Black"); break;
     case SK_NIJUUSEI:      TextCopy(str, "Nijuusei"); break;
     case SK_REI:           TextCopy(str, "Rei"); break;
     case SK_CONFLICTVS:    TextCopy(str, "ConflictVs"); break;

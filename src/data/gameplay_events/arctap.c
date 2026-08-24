@@ -122,3 +122,16 @@ MeshRenderable arctap_shadow_load_mesh(Texture2D *texture)
 
   return r;
 }
+
+void arctap_fp_print(const void *elem)
+{
+  ArcTapFP *arctap_fp = (ArcTapFP *)elem;
+  printf("%f %zu", arctap_fp->fp, (unsigned long)arctap_fp->arctap);
+}
+
+int arctapfp_compare_fp_asc(const void *a, const void *b)
+{
+  const ArcTapFP *arctap_a = (const ArcTapFP *) a;
+  const ArcTapFP *arctap_b = (const ArcTapFP *) b;
+  return arctap_a->fp - arctap_b->fp;
+}
