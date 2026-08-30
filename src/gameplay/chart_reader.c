@@ -211,6 +211,7 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
               ArcTap arctap = { .arc = NULL, .width = 1.0f, .timing = *timing, .timing_group = *current_tg };
               list_push(&arc.arctaps, &arctap);
             }
+            list_free(&arctap_timings);
           }
           list_push(&tg->arcs, &arc);
         }
@@ -228,8 +229,8 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
     list_sort_by(&tg->timing_events, timing_event_compare_timing_asc);
     recalculate_floor_position(tg);
 
-    chart_reader_rebuild_arctaps(tg);
     list_sort_by(&tg->arcs, arc_compare_start_timing_asc);
+    chart_reader_rebuild_arctaps(tg);
 
     // Pre-calculate the notes's floor position
     // Arctaps' floor position is already calculated in `chart_reader_rebuild_arctaps`
@@ -253,8 +254,8 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
         ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, k);
         if (roundf(fabsf((float)(arctap->timing - tap->timing))) < 2)
         {
-          float x = arc_world_x_at(arctap->timing, arctap->arc, arctap->arc->x1);
-          float y = arc_world_y_at(arctap->timing, arctap->arc, arctap->arc->y1);
+          float x = arc_world_x_at(arctap->timing, arctap->arc);
+          float y = arc_world_y_at(arctap->timing, arctap->arc);
           list_push(&tap->connector_x, &x);
           list_push(&tap->connector_y, &y);
         }

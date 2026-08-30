@@ -124,8 +124,13 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
       // condition match => front of arc
       bool is_front_of_arc = j == 0 || j == 1 || j == 4 || j == 5;
       float target_timing = is_front_of_arc ? curr_timing : curr_timing + increment;
-      float world_x = arc_world_x_at(target_timing, &temp_arc, is_front_of_arc ? arc->x1 : arc->x2);
-      float world_y = arc_world_y_at(target_timing, &temp_arc, is_front_of_arc ? arc->y1 : arc->y2);
+      bool zero_duration = (arc->end_timing == arc->start_timing);
+      float world_x = zero_duration
+        ? arc_x_to_world(is_front_of_arc ? arc->x1 : arc->x2)
+        : arc_world_x_at(target_timing, &temp_arc);
+      float world_y = zero_duration
+        ? arc_y_to_world(is_front_of_arc ? arc->y1 : arc->y2)
+        : arc_world_y_at(target_timing, &temp_arc);
       if (is_front_of_arc) start_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
       if (!is_front_of_arc)  end_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
 
@@ -269,8 +274,13 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
       // condition match => front of arc
       bool is_front_of_arc = j == 0 || j == 1 || j == 4 || j == 5;
       float target_timing = is_front_of_arc ? curr_timing : curr_timing + increment;
-      float world_x = arc_world_x_at(target_timing, &temp_arc, is_front_of_arc ? arc->x1 : arc->x2);
-      float world_y = arc_world_y_at(target_timing, &temp_arc, is_front_of_arc ? arc->y1 : arc->y2);
+      bool zero_duration = (arc->end_timing == arc->start_timing);
+      float world_x = zero_duration
+        ? arc_x_to_world(is_front_of_arc ? arc->x1 : arc->x2)
+        : arc_world_x_at(target_timing, &temp_arc);
+      float world_y = zero_duration
+        ? arc_y_to_world(is_front_of_arc ? arc->y1 : arc->y2)
+        : arc_world_y_at(target_timing, &temp_arc);
       if (is_front_of_arc) start_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
       if (!is_front_of_arc)  end_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
 
@@ -399,7 +409,7 @@ void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timin
       // condition match => front of arc
       bool is_front_of_arc = j == 0 || j == 1;
       float target_timing = is_front_of_arc ? curr_timing : curr_timing + increment;
-      float world_x = arc_world_x_at(target_timing, &temp_arc, is_front_of_arc ? arc->x1 : arc->x2);
+      float world_x = arc_world_x_at(target_timing, &temp_arc);
 
       // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
       float segment_start_timing = curr_timing + arc->start_timing;

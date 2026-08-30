@@ -182,17 +182,17 @@ float arc_x_to_world(float x) { return (LANE_WIDTH * 2 * x) - LANE_WIDTH; }
 
 float arc_y_to_world(float y) { return ARC_Y0 + ((ARC_Y1 - ARC_Y0) * y); }
 
-float arc_world_x_at(int timing, Arc *arc, float fallback_x)
+float arc_world_x_at(int timing, Arc *arc)
 {
-  if (arc->end_timing == arc->start_timing) return arc_x_to_world(fallback_x);
+  if (arc->end_timing == arc->start_timing) return arc_x_to_world(timing <= arc->start_timing ? arc->x1 : arc->x2);
 
   float p = Clamp((float)(timing - arc->start_timing) / (arc->end_timing - arc->start_timing), 0, 1);
   return arc_x_to_world(_x(arc->x1, arc->x2, p, arc->type));
 }
 
-float arc_world_y_at(int timing, Arc *arc, float fallback_y)
+float arc_world_y_at(int timing, Arc *arc)
 {
-  if (arc->end_timing == arc->start_timing) return arc_y_to_world(fallback_y);
+  if (arc->end_timing == arc->start_timing) return arc_y_to_world(timing <= arc->start_timing ? arc->y1 : arc->y2);
 
   float p = Clamp((float)(timing - arc->start_timing) / (arc->end_timing - arc->start_timing), 0, 1);
   return arc_y_to_world(_y(arc->y1, arc->y2, p, arc->type));

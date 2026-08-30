@@ -17,7 +17,7 @@ float arc_y_to_world(float y);
 float calculate_arc_segment_length(int duration, float arc_resolution);
 float _x(float start, float end, float t, ArcType type);
 float _y(float start, float end, float t, ArcType type);
-float arc_world_x_at(int timing, Arc *arc, float fallback_x);
-float arc_world_y_at(int timing, Arc *arc, float fallback_y);
+float arc_world_x_at(int timing, Arc *arc);
+float arc_world_y_at(int timing, Arc *arc);
 
 #endif // ARC_FORMULA_H

@@ -121,7 +121,7 @@ void render_note_shadows(List *timing_groups, RenderContext *render_ctx, ShadowR
             ArcTap *arctap = arctap_fp->arctap;
             float arctap_z_pos = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
             Matrix arctap_mt   = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
-                                                MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc, arctap->arc->x1),
+                                                MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc),
                                                                 0.0f, arctap_z_pos));
             DrawMesh(shadow_renderer->arctap_shadow.mesh, shadow_renderer->arctap_shadow.material, arctap_mt);
           }

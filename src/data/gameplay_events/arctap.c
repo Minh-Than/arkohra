@@ -7,8 +7,8 @@
 void arctap_render_test(MeshRenderable *arctap_r, ArcTap *arctap, float z_pos)
 {
   Matrix tr = MatrixTranslate(
-    arc_world_x_at(arctap->timing, arctap->arc, arctap->arc->x1),
-    arc_world_y_at(arctap->timing, arctap->arc, arctap->arc->y1),
+    arc_world_x_at(arctap->timing, arctap->arc),
+    arc_world_y_at(arctap->timing, arctap->arc),
     z_pos
   );
   DrawMesh(arctap_r->mesh, arctap_r->material, tr);
@@ -135,5 +135,6 @@ int arctapfp_compare_fp_asc(const void *a, const void *b)
   const ArcTapFP *arctap_a = (const ArcTapFP *) a;
   const ArcTapFP *arctap_b = (const ArcTapFP *) b;
   if(arctap_a->fp < arctap_b->fp) return -1;
-  else return 1;
+  if (arctap_a->fp > arctap_b->fp) return 1;
+  return 0;
 }

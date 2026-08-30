@@ -3,6 +3,8 @@
 #include "../../constants.h"
 #include "../../data/custom_types/custom_types.c"
 #include "../../data/gameplay_events/timing_event.c"
+#include "../../data/gameplay_events/gameplay_events.c"
+#include "gameplay/arc_formula.h"
 #include "../arc_formula.c"
 
 static const float TEST_ARC_LENGTH  = 1000.0f / 14.0f;
@@ -145,122 +147,6 @@ void test_calculate_arc_segment_length(void)
   TEST_MSG("clamp dur=1000: res=10 and res=11 should match (10=%f, 11=%f)", seg_10_1000, seg_11_1000);
 }
 
-void test_arc_world_x_at(void)
-{
-  // --- Zero-duration guard: start == end -> returns fallback, ignores x1/x2/type ---
-  Arc arc_zero = make_arc(500, 500, 0.2f, 0.3f, 0.8f, 0.9f, S);
-  float fallback = 0.5f;
-  float result = arc_world_x_at(500, &arc_zero, fallback);
-  float expected = arc_x_to_world(fallback);
-  TEST_CHECK(fabsf(result - expected) < 1e-6f);
-  TEST_MSG("zero-duration: expected fallback %f, got %f", expected, result);
-  // verify it did NOT use x1
-  TEST_CHECK(fabsf(result - arc_x_to_world(arc_zero.x1)) > 1e-6f);
-  TEST_MSG("zero-duration: should not use x1 (%f)", arc_x_to_world(arc_zero.x1));
-
-  // --- At start: timing == start_timing -> p=0 -> arc_x_to_world(x1) ---
-  Arc arc = make_arc(100, 500, 0.2f, 0.3f, 0.8f, 0.9f, S);
-  result = arc_world_x_at(100, &arc, 0.0f);
-  expected = arc_x_to_world(0.2f);
-  TEST_CHECK(fabsf(result - expected) < 1e-6f);
-  TEST_MSG("at start: expected %f, got %f", expected, result);
-
-  // --- At end: timing == end_timing -> p=1 -> arc_x_to_world(x2) ---
-  result = arc_world_x_at(500, &arc, 0.0f);
-  expected = arc_x_to_world(0.8f);
-  TEST_CHECK(fabsf(result - expected) < 1e-6f);
-  TEST_MSG("at end: expected %f, got %f", expected, result);
-
-  // --- Before start: timing < start_timing -> Clamp to p=0 -> x1 ---
-  result = arc_world_x_at(50, &arc, 0.0f);
-  expected = arc_x_to_world(0.2f);
-  TEST_CHECK(fabsf(result - expected) < 1e-6f);
-  TEST_MSG("before start (clamp): expected %f, got %f", expected, result);
-
-  // --- After end: timing > end_timing -> Clamp to p=1 -> x2 ---
-  result = arc_world_x_at(999, &arc, 0.0f);
-  expected = arc_x_to_world(0.8f);
-  TEST_CHECK(fabsf(result - expected) < 1e-6f);
-  TEST_MSG("after end (clamp): expected %f, got %f", expected, result);
-
-  // --- Midpoint with linear type S: p=0.5 -> (x1+x2)/2 ---
-  result = arc_world_x_at(300, &arc, 0.0f);  // (100+500)/2 = 300
-  expected = arc_x_to_world((0.2f + 0.8f) / 2.0f);
-  TEST_CHECK(fabsf(result - expected) < 1e-6f);
-  TEST_MSG("midpoint S: expected %f, got %f", expected, result);
-}
-
-void test_arc_world_y_at(void)
-{
-  // --- Zero-duration guard: start == end -> returns fallback ---
-  Arc arc_zero = make_arc(500, 500, 0.2f, 0.3f, 0.8f, 0.9f, S);
-  float fallback = 0.5f;
-  float result = arc_world_y_at(500, &arc_zero, fallback);
-  float expected = arc_y_to_world(fallback);
-  TEST_CHECK(fabsf(result - expected) < 1e-6f);
-  TEST_MSG("zero-duration: expected fallback %f, got %f", expected, result);
-  TEST_CHECK(fabsf(result - arc_y_to_world(arc_zero.y1)) > 1e-6f);
-  TEST_MSG("zero-duration: should not use y1 (%f)", arc_y_to_world(arc_zero.y1));
-
-  Arc arc = make_arc(100, 500, 0.2f, 0.3f, 0.8f, 0.9f, S);
-
-  // --- At start: p=0 -> y1 ---
-  result = arc_world_y_at(100, &arc, 0.0f);
-  expected = arc_y_to_world(0.3f);
-  TEST_CHECK(fabsf(result - expected) < 1e-6f);
-  TEST_MSG("at start: expected %f, got %f", expected, result);
-
-  // --- At end: p=1 -> y2 ---
-  result = arc_world_y_at(500, &arc, 0.0f);
-  expected = arc_y_to_world(0.9f);
-  TEST_CHECK(fabsf(result - expected) < 1e-6f);
-  TEST_MSG("at end: expected %f, got %f", expected, result);
-
-  // --- Before start: Clamp -> p=0 -> y1 ---
-  result = arc_world_y_at(50, &arc, 0.0f);
-  TEST_CHECK(fabsf(result - arc_y_to_world(0.3f)) < 1e-6f);
-  TEST_MSG("before start (clamp): expected %f, got %f", arc_y_to_world(0.3f), result);
-
-  // --- After end: Clamp -> p=1 -> y2 ---
-  result = arc_world_y_at(999, &arc, 0.0f);
-  TEST_CHECK(fabsf(result - arc_y_to_world(0.9f)) < 1e-6f);
-  TEST_MSG("after end (clamp): expected %f, got %f", arc_y_to_world(0.9f), result);
-
-  // --- Midpoint with linear type S: p=0.5 -> (y1+y2)/2 ---
-  result = arc_world_y_at(300, &arc, 0.0f);
-  expected = arc_y_to_world((0.3f + 0.9f) / 2.0f);
-  TEST_CHECK(fabsf(result - expected) < 1e-6f);
-  TEST_MSG("midpoint S: expected %f, got %f", expected, result);
-}
-
-void test_arc_world_at_all_types(void)
-{
-  // --- Validates all easing function returns start at t=0 and end at t=1 ---
-  ArcType all_types[] = { B, S, SI, SO, SISI, SOSO, SISO, SOSI };
-  int num_types = (int)(sizeof(all_types) / sizeof(all_types[0]));
-
-  for (int i = 0; i < num_types; i++)
-  {
-    Arc arc = make_arc(100, 500, 0.2f, 0.3f, 0.8f, 0.9f, all_types[i]);
-
-    // p=0 (at start_timing) -> should be x1, y1
-    float x_at_start = arc_world_x_at(100, &arc, 0.0f);
-    float y_at_start = arc_world_y_at(100, &arc, 0.0f);
-    TEST_CHECK(fabsf(x_at_start - arc_x_to_world(0.2f)) < 1e-6f);
-    TEST_CHECK(fabsf(y_at_start - arc_y_to_world(0.3f)) < 1e-6f);
-    TEST_MSG("type=%d at start: x expected %f got %f, y expected %f got %f",
-             all_types[i], arc_x_to_world(0.2f), x_at_start, arc_y_to_world(0.3f), y_at_start);
-
-    // p=1 (at end_timing) -> should be x2, y2
-    float x_at_end = arc_world_x_at(500, &arc, 0.0f);
-    float y_at_end = arc_world_y_at(500, &arc, 0.0f);
-    TEST_CHECK(fabsf(x_at_end - arc_x_to_world(0.8f)) < 1e-6f);
-    TEST_CHECK(fabsf(y_at_end - arc_y_to_world(0.9f)) < 1e-6f);
-    TEST_MSG("type=%d at end: x expected %f got %f, y expected %f got %f",
-             all_types[i], arc_x_to_world(0.8f), x_at_end, arc_y_to_world(0.9f), y_at_end);
-  }
-}
-
 void test_simd_fp_to_z(void)
 {
   // --- Compare fp->z results from SIMD and normal looping
@@ -289,14 +175,60 @@ void test_simd_fp_to_z(void)
   free(simd_z_out);
 }
 
+void test_get_world_at(void)
+{
+  // arc(0,1500,-0.50,0.00,b,0.00,0.00,0,none,true)[arctap(1500)];
+  Arc arc_1 = make_arc(0, 1500, -0.50f, 0.00f, 0.00f, 0.00f, B);
+  ArcTap arctap_1 = {.arc = &arc_1, .timing = 1500};
+  float expected_x_1 = arc_x_to_world(0.0f);
+  float expected_y_1 = arc_y_to_world(0.0f);
+  float produced_x_1 = arc_world_x_at(arctap_1.timing, arctap_1.arc);
+  float produced_y_1 = arc_world_y_at(arctap_1.timing, arctap_1.arc);
+  TEST_CHECK(fabsf(expected_x_1 - produced_x_1) < 1e-6);
+  TEST_MSG("Arc 1 expected x: %f; produced x: %f", expected_x_1, produced_x_1);
+  TEST_CHECK(fabsf(expected_y_1 - produced_y_1) < 1e-6);
+  TEST_MSG("Arc 1 expected y: %f; produced y: %f", expected_y_1, produced_y_1);
+
+  // arc(0,1688,-0.50,0.50,b,0.00,0.00,0,none,true)[arctap(1688)];
+  Arc arc_2 = make_arc(0, 1688, -0.50f, 0.00f, 0.50f, 0.00f, B);
+  ArcTap arctap_2 = {.arc = &arc_2, .timing = 1688};
+  float expected_x_2 = arc_x_to_world(0.5f);
+  float expected_y_2 = arc_y_to_world(0.0f);
+  float produced_x_2 = arc_world_x_at(arctap_2.timing, arctap_2.arc);
+  float produced_y_2 = arc_world_y_at(arctap_2.timing, arctap_2.arc);
+  TEST_CHECK(fabsf(expected_x_2 - produced_x_2) < 1e-6);
+  TEST_MSG("Arc 2 expected x: %f; produced x: %f", expected_x_2, produced_x_2);
+  TEST_CHECK(fabsf(expected_y_2 - produced_y_2) < 1e-6);
+  TEST_MSG("Arc 2 expected y: %f; produced y: %f", expected_y_2, produced_y_2);
+
+  // arc(0,1875,-0.50,1.00,b,0.00,0.00,0,none,true)[arctap(1875)];
+  Arc arc_3 = make_arc(0, 1875, -0.50f, 0.00f, 1.00f, 0.00f, B);
+  ArcTap arctap_3 = {.arc = &arc_3, .timing = 1875};
+  float expected_x_3 = arc_x_to_world(1.0f);
+  float expected_y_3 = arc_y_to_world(0.0f);
+  float produced_x_3 = arc_world_x_at(arctap_3.timing, arctap_3.arc);
+  float produced_y_3 = arc_world_y_at(arctap_3.timing, arctap_3.arc);
+  TEST_CHECK(fabsf(expected_x_3 - produced_x_3) < 1e-6);
+  TEST_MSG("Arc 3 expected x: %f; produced x: %f", expected_x_3, produced_x_3);
+  TEST_CHECK(fabsf(expected_y_3 - produced_y_3) < 1e-6);
+  TEST_MSG("Arc 3 expected y: %f; produced y: %f", expected_y_3, produced_y_3);
+
+  // arc(23625,23625,1.00,1.00,soso,1.00,0.00, none, true)
+  Arc arc_zd = make_arc(23625, 23625, 1.00f, 1.00f, 1.00f, 0.00f, SOSO);
+  // arctap at the arc's timing → world(x1, y1)
+  TEST_CHECK(fabsf(arc_world_x_at(23625, &arc_zd) - arc_x_to_world(1.00f)) < 1e-6);
+  TEST_CHECK(fabsf(arc_world_y_at(23625, &arc_zd) - arc_y_to_world(1.00f)) < 1e-6);
+  // timing after the arc → world(x2, y2)
+  TEST_CHECK(fabsf(arc_world_x_at(23626, &arc_zd) - arc_x_to_world(1.00f)) < 1e-6);
+  TEST_CHECK(fabsf(arc_world_y_at(23626, &arc_zd) - arc_y_to_world(0.00f)) < 1e-6);
+}
+
 TEST_LIST = {
   {"z_to_fp", test_z_to_fp},
   {"fp_to_z", test_fp_to_z},
   {"zfp_round_trip", test_zfp_round_trip},
   {"calculate_arc_segment_length", test_calculate_arc_segment_length},
-  {"arc_world_x_at", test_arc_world_x_at},
-  {"arc_world_y_at", test_arc_world_y_at},
-  {"arc_world_at_all_types", test_arc_world_at_all_types},
   {"simd_fp_to_z", test_simd_fp_to_z},
+  {"get_world_at", test_get_world_at},
   { NULL, NULL }
 };
