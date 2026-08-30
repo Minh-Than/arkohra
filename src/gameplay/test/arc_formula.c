@@ -4,7 +4,6 @@
 #include "../../data/custom_types/custom_types.c"
 #include "../../data/gameplay_events/timing_event.c"
 #include "../../data/gameplay_events/gameplay_events.c"
-#include "gameplay/arc_formula.h"
 #include "../arc_formula.c"
 
 static const float TEST_ARC_LENGTH  = 1000.0f / 14.0f;
