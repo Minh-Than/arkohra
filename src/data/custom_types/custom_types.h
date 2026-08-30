@@ -19,6 +19,7 @@ void *list_get(List *list, size_t index);
 bool list_update(List *list, size_t index, const void *item);
 bool list_remove_last_swap(List *list, size_t index);
 void list_sort_by(List *list, int (*compare)(const void *a, const void *b));
+int cmp3(const void *a, const void *b);
 int  bisect_right(List *list, const void *target, int (*compare)(const void *a, const void *b));
 int bisect_left(List *list, const void *target, int (*compare)(const void *a, const void *b));
 void list_free(List *list);

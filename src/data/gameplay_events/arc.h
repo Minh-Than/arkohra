@@ -30,10 +30,11 @@ typedef struct {
   float start_fp, end_fp;
   int color;
   ArcType type;
-  bool is_selected, is_void, is_head;
+  bool is_selected, is_void, is_head, has_height_indicator;
   char sfx[128];
 } Arc;
 
+int arc_compare_start_timing_asc(const void *a, const void *b);
 void arc_print(const void *elem);
 
 // ARC SEGMENT
@@ -44,7 +45,18 @@ typedef struct {
 } ArcSegment;
 
 void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx);
+void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx);
 void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timing_events, RenderContext *render_ctx);
 int arc_segment_compare_start_fp_asc(const void *a, const void *b);
+
+// ARC COORD POS
+// for validating if an arc is the start
+typedef struct {
+  Arc *arc;
+  float start_fp, end_fp;
+  float x1, y1, x2, y2;
+} ArcCoordPos;
+
+void arc_validate_head(List *arc_coordpos);
 
 #endif // ARC_H

@@ -6,10 +6,10 @@
 
 typedef struct
 {
-  List taps     ; List tap_fps;
-  List holds    ;
-  List arcs     ; List arc_segments;
-  List arctaps  ; List arctap_fps;
+  List taps; List tap_fps;
+  List holds;
+  List arcs; List arc_segments;
+  List arctaps; List arctap_fps;
   List timing_events;
 
 } ChartTimingGroup;

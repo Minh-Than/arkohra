@@ -2,7 +2,10 @@
 #define CONSTANTS_H
 
 static const unsigned int BASE_APP_WINDOW_WIDTH = 1920;
-static const unsigned int SUPERSAMPLE_SCALE     = 2;
+static const unsigned int SUPERSAMPLE_SCALE     = 4;
+
+static const float MINIMUM_SCROLL_SPEED  = 0.01f;
+static const float MAXIMUM_SCROLL_SPEED  = 10.0f;
 
 static const float JACKET_HUD_SIZE  = 200.0f;
 static const float INFO_PANEL_SCALE = 0.5f;
@@ -28,6 +31,8 @@ static const float SKY_LABEL_SIZE_Y       = 1.0f;
 static const float SINGLE_LINE_SIZE_X     = 1.28f;
 static const float SINGLE_LINE_SIZE_Y     = 100.0f;
 
+static const float MINIMUM_ARC_RES       = 1.0f;
+static const float MAXIMUM_ARC_RES       = 10.0f;
 static const float ARC_SEGMENT_LENGTH  = 1000.0f / 14.0f;
 static const float TRACE_MESH_SCALE    = 2.0f;
 static const float ARC_MESH_SCALE      = 11.5f;
@@ -42,6 +47,9 @@ static const unsigned char ETR_DIFF_COLOR[4] = { 67 , 52 , 85 , 255 };
 
 static const unsigned char LIGHT_CONNECTOR_CL[4]   = { 104, 189, 211, 255 };
 static const unsigned char CONFICT_CONNECTOR_CL[4] = { 150, 85 , 142, 255 };
+
+static const unsigned char ARC_BLUE_LOW_CL[4] = { 12 , 212, 212, 217 };
+static const unsigned char ARC_PINK_LOW_CL[4] = { 255, 150, 220, 217 };
 
 static const unsigned short int CMD_PLT_Y          = 150;
 static const unsigned short int CMD_PLT_SIZE_X     = 450;

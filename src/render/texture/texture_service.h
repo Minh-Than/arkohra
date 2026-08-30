@@ -19,7 +19,7 @@ typedef struct
   Texture2D jacket_img;
   Texture2D jacket_diff;
 
-  Texture2D tap, hold, arc, arctap, arctap_shadow;
+  Texture2D tap, hold, arc, arc_height_indicator, arctap, arctap_shadow;
 } TextureGroup;
 
 TextureGroup textures_init();

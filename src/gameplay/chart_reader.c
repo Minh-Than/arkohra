@@ -6,9 +6,9 @@
 #include "chart_reader.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
 #include "data/custom_types/custom_types.h"
-#include "data/gameplay_events/arc.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
+#include "raylib.h"
 #include "render/render_service.h"
 #include "render/texture/texture_service.h"
 #include "rlgl.h"
@@ -45,13 +45,12 @@ static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
         idx++;
       }
     }
-
   }
 }
 
 static bool parse_aff_header(char *line, ChartSettings *chart_settings)
 {
-  bool end_of_header = strstr(line, (const char*)"-") != NULL;
+  bool end_of_header = strcmp(line, "-") == 0;
 
   if (strstr(line, (const char*)"AudioOffset") != NULL)
   {
@@ -260,6 +259,7 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
     }
     list_sort_by(&tg->tap_fps, tapfp_compare_fp_asc);
 
+    List arc_coordpos_list; list_init(&arc_coordpos_list, sizeof(ArcCoordPos));
     for (int j = 0; j < tg->arcs.size; j++)
     {
       Arc *arc = (Arc *)list_get(&tg->arcs, j);
@@ -278,7 +278,21 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
       }
       arc_segment_generate_mesh(&tg->arc_segments, arc, arc_texture, &tg->timing_events, render_ctx);
       shadow_segment_generate_mesh(&tg->arc_segments, arc, &tg->timing_events, render_ctx);
+
+      if (!arc->is_void)
+      {
+        ArcCoordPos arc_coordpos = {
+          .arc = arc,
+          .start_fp = arc->start_fp,
+          .end_fp   = arc->end_fp,
+          .x1 = arc->x1, .y1 = arc->y1,
+          .x2 = arc->x2, .y2 = arc->y2,
+        };
+        list_push(&arc_coordpos_list, &arc_coordpos);
+      }
     };
+    arc_validate_head(&arc_coordpos_list);
+    list_free(&arc_coordpos_list);
     list_sort_by(&tg->arc_segments, arc_segment_compare_start_fp_asc);
 
     for (int j = 0; j < tg->arctaps.size; j++)
@@ -357,7 +371,9 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
     Rectangle arctap_src    = { 0, 0, (float)arctap_renderer->layer.texture.width  , -(float)arctap_renderer->layer.texture.height };
     DrawTexturePro(hold_tap_renderer->layer.texture, tap_hold_src, dest, (Vector2){0,0}, 0.0f, WHITE);
     DrawTexturePro(shadow_renderer->layer.texture  , shadow_src  , dest, (Vector2){0,0}, 0.0f, WHITE);
+ BeginBlendMode(BLEND_ALPHA_PREMULTIPLY);
     DrawTexturePro(arc_renderer->layer.texture     , arc_src     , dest, (Vector2){0,0}, 0.0f, WHITE);
+    EndBlendMode();
     DrawTexturePro(arctap_renderer->layer.texture  , arctap_src  , dest, (Vector2){0,0}, 0.0f, WHITE);
   }
 }

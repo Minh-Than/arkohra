@@ -163,6 +163,8 @@ void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *ar
           {
             ArcSegment *arc_segment = (ArcSegment *)list_get(&tg->arc_segments, j);
             Arc *arc = arc_segment->arc;
+            float arc_world_x1 = arc_x_to_world(arc->x1);
+            float arc_world_y1 = arc_y_to_world(arc->y1);
 
             int is_void_shader = arc->is_void ? 1 : 0;
             int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
@@ -172,9 +174,22 @@ void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *ar
             SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
 
             float z_pos = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+
+            if (!arc->is_void && fabsf(arc_segment->start_fp - arc->start_fp) < 1e-6 && (arc->is_head || fabsf(arc->y1 - arc->y2) > 1e-6) )
+            {
+              rlDisableDepthMask();
+              arc_renderer->height_indicator.material.maps->color = arc->color == 0 ? color_from_rgba(ARC_BLUE_LOW_CL)
+                                                                                    : color_from_rgba(ARC_PINK_LOW_CL);
+              DrawMesh(arc_renderer->height_indicator.mesh, arc_renderer->height_indicator.material,
+                       MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), MatrixMultiply(MatrixScale(1.0f, arc_world_y1, 1.0f),
+                                                                                      MatrixTranslate(arc_world_x1, arc_world_y1 / 2, z_pos))));
+              rlEnableDepthMask();
+            }
+            BeginBlendMode(BLEND_ALPHA);
             DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
           }
         }
+        EndBlendMode();
         rlEnableBackfaceCulling();
       rlPopMatrix();
     EndMode3D();

@@ -34,6 +34,16 @@ void list_sort_by(List *list, int (*compare)(const void *a, const void *b))
   qsort(list->data, list->size, list->elem_size, compare);
 }
 
+int cmp3(const void *a, const void *b) {
+    const double *pa = (const double *)a;
+    const double *pb = (const double *)b;
+    for (int i = 0; i < 3; i++) {
+        if (pa[i] < pb[i]) return -1;
+        if (pa[i] > pb[i]) return  1;
+    }
+    return 0;
+}
+
 int bisect_right(List *list, const void *target, int (*compare)(const void *a, const void *b))
 {
   int low = 0;

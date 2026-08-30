@@ -20,7 +20,6 @@ SkinSide skin_side_get_by_string(char *str)
 
 void skin_side_load_track(SkinSide side, TextureGroup *texture_group)
 {
-  skin_side_print(side);
   switch (side)
   {
     case SK_LIGHT:         texture_group->track = LoadTexture("resources/gameplay/Track/TrackWhite.png"); break;
