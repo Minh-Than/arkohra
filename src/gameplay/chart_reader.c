@@ -364,6 +364,9 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
     render_arcs         (&chart_reader->timing_groups, render_ctx, arc_renderer     , current_ms, base_bpm, scroll_speed);
     render_arctaps      (&chart_reader->timing_groups, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed);
 
+    // fuck you
+    render_arc_height_indicators(&chart_reader->timing_groups, render_ctx, arc_renderer, current_ms, base_bpm, scroll_speed);
+
     Rectangle dest = { 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() };
     Rectangle tap_hold_src  = { 0, 0, (float)hold_tap_renderer->layer.texture.width, -(float)hold_tap_renderer->layer.texture.height };
     Rectangle shadow_src    = { 0, 0, (float)shadow_renderer->layer.texture.width  , -(float)shadow_renderer->layer.texture.height };
@@ -371,9 +374,7 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
     Rectangle arctap_src    = { 0, 0, (float)arctap_renderer->layer.texture.width  , -(float)arctap_renderer->layer.texture.height };
     DrawTexturePro(hold_tap_renderer->layer.texture, tap_hold_src, dest, (Vector2){0,0}, 0.0f, WHITE);
     DrawTexturePro(shadow_renderer->layer.texture  , shadow_src  , dest, (Vector2){0,0}, 0.0f, WHITE);
- BeginBlendMode(BLEND_ALPHA_PREMULTIPLY);
     DrawTexturePro(arc_renderer->layer.texture     , arc_src     , dest, (Vector2){0,0}, 0.0f, WHITE);
-    EndBlendMode();
     DrawTexturePro(arctap_renderer->layer.texture  , arctap_src  , dest, (Vector2){0,0}, 0.0f, WHITE);
   }
 }

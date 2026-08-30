@@ -84,7 +84,6 @@ void render_note_shadows(List *timing_groups, RenderContext *render_ctx, ShadowR
         rlScalef(1.7896f, 1.0f, 1.0f);
         rlDisableBackfaceCulling();
         rlDisableDepthTest();
-        BeginBlendMode(BLEND_ALPHA);
           for (int i = 0; i < timing_groups->size; i++)
           {
             ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
@@ -128,7 +127,6 @@ void render_note_shadows(List *timing_groups, RenderContext *render_ctx, ShadowR
               DrawMesh(shadow_renderer->arctap_shadow.mesh, shadow_renderer->arctap_shadow.material, arctap_mt);
             }
           }
-        EndBlendMode();
         rlEnableDepthTest();
         rlEnableBackfaceCulling();
       rlPopMatrix();
@@ -147,6 +145,7 @@ void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *ar
       rlPushMatrix();
         rlScalef(1.7896f, 1.0f, 1.0f);
         rlDisableBackfaceCulling();
+        BeginBlendMode(BLEND_ALPHA);
         for (int i = 0; i < timing_groups->size; i++)
         {
           ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
@@ -174,18 +173,6 @@ void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *ar
             SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
 
             float z_pos = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-
-            if (!arc->is_void && fabsf(arc_segment->start_fp - arc->start_fp) < 1e-6 && (arc->is_head || fabsf(arc->y1 - arc->y2) > 1e-6) )
-            {
-              rlDisableDepthMask();
-              arc_renderer->height_indicator.material.maps->color = arc->color == 0 ? color_from_rgba(ARC_BLUE_LOW_CL)
-                                                                                    : color_from_rgba(ARC_PINK_LOW_CL);
-              DrawMesh(arc_renderer->height_indicator.mesh, arc_renderer->height_indicator.material,
-                       MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), MatrixMultiply(MatrixScale(1.0f, arc_world_y1, 1.0f),
-                                                                                      MatrixTranslate(arc_world_x1, arc_world_y1 / 2, z_pos))));
-              rlEnableDepthMask();
-            }
-            BeginBlendMode(BLEND_ALPHA);
             DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
           }
         }
@@ -194,6 +181,55 @@ void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *ar
       rlPopMatrix();
     EndMode3D();
   EndTextureMode();
+}
+
+// Apparently separate texture fucks a lot of color blending in the process
+void render_arc_height_indicators(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
+                                  float current_ms, float base_bpm, float scroll_speed)
+{
+  float low_z_clip  = z_to_floor_position(50.0f, base_bpm, scroll_speed);
+  float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
+  BeginMode3D(render_ctx->camera);
+    rlDisableDepthTest();
+    rlPushMatrix();
+      rlScalef(1.7896f, 1.0f, 1.0f);
+      rlDisableBackfaceCulling();
+      BeginBlendMode(BLEND_ALPHA);
+      for (int i = 0; i < timing_groups->size; i++)
+      {
+        ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
+        float curr_fp = get_floor_position(&tg->timing_events, current_ms);
+
+        ArcSegment low_segment  = { .start_fp = curr_fp + low_z_clip };
+        ArcSegment high_segment = { .start_fp = curr_fp + high_z_clip };
+        int start_index = bisect_left(&tg->arc_segments, &low_segment , arc_segment_compare_start_fp_asc);
+        int end_index   = bisect_left(&tg->arc_segments, &high_segment, arc_segment_compare_start_fp_asc);
+
+        for (int j = start_index; j < end_index; j++)
+        {
+          ArcSegment *arc_segment = (ArcSegment *)list_get(&tg->arc_segments, j);
+          Arc *arc = arc_segment->arc;
+          float arc_world_x1 = arc_x_to_world(arc->x1);
+          float arc_world_y1 = arc_y_to_world(arc->y1);
+          float z_pos = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+
+          if (!arc->is_void && fabsf(arc_segment->start_fp - arc->start_fp) < 1e-6 && (arc->is_head || fabsf(arc->y1 - arc->y2) > 1e-6) )
+          {
+            rlDisableDepthMask();
+            arc_renderer->height_indicator.material.maps->color = arc->color == 0 ? color_from_rgba(ARC_BLUE_LOW_CL)
+                                                                                  : color_from_rgba(ARC_PINK_LOW_CL);
+            DrawMesh(arc_renderer->height_indicator.mesh, arc_renderer->height_indicator.material,
+                     MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), MatrixMultiply(MatrixScale(1.0f, arc_world_y1, 1.0f),
+                                                                                    MatrixTranslate(arc_world_x1, arc_world_y1 / 2, z_pos))));
+            rlEnableDepthMask();
+          }
+        }
+      }
+      EndBlendMode();
+      rlEnableBackfaceCulling();
+    rlPopMatrix();
+    rlEnableDepthTest();
+  EndMode3D();
 }
 
 void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRenderer *arctap_renderer,

@@ -24,6 +24,8 @@ void render_note_shadows(List *timing_groups, RenderContext *render_ctx, ShadowR
                          float current_ms, float base_bpm, float scroll_speed);
 void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
                  float current_ms, float base_bpm, float scroll_speed);
+void render_arc_height_indicators(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
+                                  float current_ms, float base_bpm, float scroll_speed);
 void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRenderer *arctap_renderer,
                     float current_ms, float base_bpm, float scroll_speed);
 
