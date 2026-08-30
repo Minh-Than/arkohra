@@ -268,15 +268,18 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
       arc->start_fp = get_floor_position(&tg->timing_events, arc->start_timing);
       arc->end_fp   = get_floor_position(&tg->timing_events, arc->end_timing);
 
-      Arc low_target  = { .start_timing = arc->end_timing - 1 };
-      Arc high_target = { .start_timing = arc->end_timing + 1 };
-      int start_idx = bisect_left(&tg->arcs, &low_target, arc_compare_start_timing_asc);
-      int end_idx = bisect_right(&tg->arcs, &high_target, arc_compare_start_timing_asc);
-      for (int k = start_idx; k < end_idx; k++)
+      if (!arc->is_void)
       {
-        Arc *connected_arc = (Arc *)list_get(&tg->arcs, k);
-        if (fabsf(connected_arc->x1 - arc->x2) < 1e-6 && fabsf(connected_arc->y1 - arc->y2) < 1e-6)
-          connected_arc->is_head = false;
+        Arc low_target  = { .start_timing = arc->end_timing - 1 };
+        Arc high_target = { .start_timing = arc->end_timing + 1 };
+        int start_idx = bisect_left(&tg->arcs, &low_target, arc_compare_start_timing_asc);
+        int end_idx = bisect_right(&tg->arcs, &high_target, arc_compare_start_timing_asc);
+        for (int k = start_idx; k < end_idx; k++)
+        {
+          Arc *connected_arc = (Arc *)list_get(&tg->arcs, k);
+          if (fabsf(connected_arc->x1 - arc->x2) < 1e-6 && fabsf(connected_arc->y1 - arc->y2) < 1e-6)
+            connected_arc->is_head = false;
+        }
       }
 
       int arc_duration      = arc->end_timing - arc->start_timing;
@@ -368,11 +371,9 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
 
     Rectangle dest = { 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() };
     Rectangle tap_hold_src  = { 0, 0, (float)hold_tap_renderer->layer.texture.width, -(float)hold_tap_renderer->layer.texture.height };
-    Rectangle shadow_src    = { 0, 0, (float)shadow_renderer->layer.texture.width  , -(float)shadow_renderer->layer.texture.height };
     Rectangle arc_src       = { 0, 0, (float)arc_renderer->layer.texture.width     , -(float)arc_renderer->layer.texture.height };
     Rectangle arctap_src    = { 0, 0, (float)arctap_renderer->layer.texture.width  , -(float)arctap_renderer->layer.texture.height };
     DrawTexturePro(hold_tap_renderer->layer.texture, tap_hold_src, dest, (Vector2){0,0}, 0.0f, WHITE);
-    DrawTexturePro(shadow_renderer->layer.texture  , shadow_src  , dest, (Vector2){0,0}, 0.0f, WHITE);
     DrawTexturePro(arc_renderer->layer.texture     , arc_src     , dest, (Vector2){0,0}, 0.0f, WHITE);
     DrawTexturePro(arctap_renderer->layer.texture  , arctap_src  , dest, (Vector2){0,0}, 0.0f, WHITE);
   }

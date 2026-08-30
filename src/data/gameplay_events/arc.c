@@ -428,7 +428,7 @@ void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timin
     UploadMesh(&r.mesh, false);
 
     r.material = LoadMaterialDefault();
-    r.material.maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 255, 255, 255, 97 };
+    r.material.maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 90, 90, 90, 55 };
     r.material.shader = render_ctx->arc_clip_shader.shader;
 
     set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
