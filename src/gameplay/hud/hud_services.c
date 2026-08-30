@@ -58,33 +58,33 @@ void hud_services_render(TextureGroup *texture_group, ChartSettings *chart_setti
     rlPopMatrix();
 
     // Score + Title + Composer
-      rlPushMatrix();
-        rlTranslatef(info_panel_posX + 180.0f, 0.0f, 0.0f);
+    rlPushMatrix();
+      rlTranslatef(info_panel_posX + 180.0f, 0.0f, 0.0f);
 
-        BeginShaderMode(font_services->hud_sdf_shader);
-          rlPushMatrix();
-            rlTranslatef(0.0f, 25.0f, 0.0f);
-            DrawTextEx(font_services->saira_medium , "SCORE:", Vector2Zero(), 40.0f, 0, WHITE);
-            DrawTextEx(font_services->saira_regular, "00000000", (Vector2){ -7.0f, 16.0f }, 140.0f, 0, WHITE);
-          rlPopMatrix();
+      BeginShaderMode(font_services->hud_sdf_shader);
+        rlPushMatrix();
+          rlTranslatef(0.0f, 25.0f, 0.0f);
+          DrawTextEx(font_services->saira_medium , "SCORE:", Vector2Zero(), 40.0f, 0, WHITE);
+          DrawTextEx(font_services->saira_regular, "00000000", (Vector2){ -7.0f, 16.0f }, 140.0f, 0, WHITE);
+        rlPopMatrix();
 
+        rlPushMatrix();
+          rlTranslatef(0.0f, 190.0f, 0.0f);
+            float tit_cum_max_width = (info_panel_width - jacket_bg_width + 20) / hud_dynamic_scaling;
           rlPushMatrix();
-            rlTranslatef(0.0f, 190.0f, 0.0f);
-              float tit_cum_max_width = (info_panel_width - jacket_bg_width + 20) / hud_dynamic_scaling;
-            rlPushMatrix();
-              Vector2 title_v = MeasureTextEx(font_services->hud_notosans_tc_reg, chart_settings->title, 66.0f, 0);
-              float title_scale = title_v.x <= tit_cum_max_width ? 1.0f : tit_cum_max_width/title_v.x;
-              rlScalef(title_scale, 1.0f, 1.0f);
-              DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->title, Vector2Zero(), 66.0f, 0, WHITE);
-            rlPopMatrix();
-            rlPushMatrix();
-              Vector2 composer_v = MeasureTextEx(font_services->hud_notosans_tc_reg, chart_settings->composer, 42.0f, 0);
-              float composer_scale = composer_v.x <= tit_cum_max_width ? 1.0f : tit_cum_max_width/composer_v.x;
-              rlScalef(composer_scale, 1.0f, 1.0f);
-              DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->composer, (Vector2){ 0.0f, 75.0f }, 42.0f, 0, WHITE);
-            rlPopMatrix();
+            Vector2 title_v = MeasureTextEx(font_services->hud_notosans_tc_reg, chart_settings->title, 66.0f, 1.0f);
+            float title_scale = title_v.x <= tit_cum_max_width ? 1.0f : tit_cum_max_width/title_v.x;
+            rlScalef(title_scale, 1.0f, 1.0f);
+            DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->title, Vector2Zero(), 66.0f, 1.0f, WHITE);
           rlPopMatrix();
-        EndShaderMode();
-      rlPopMatrix();
+          rlPushMatrix();
+            Vector2 composer_v = MeasureTextEx(font_services->hud_notosans_tc_reg, chart_settings->composer, 42.0f, 1.0f);
+            float composer_scale = composer_v.x <= tit_cum_max_width ? 1.0f : tit_cum_max_width/composer_v.x;
+            rlScalef(composer_scale, 1.0f, 1.0f);
+            DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->composer, (Vector2){ 0.0f, 75.0f }, 42.0f, 1.0f, WHITE);
+          rlPopMatrix();
+        rlPopMatrix();
+      EndShaderMode();
+    rlPopMatrix();
   rlPopMatrix();
 }
