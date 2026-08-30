@@ -49,14 +49,4 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
 void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timing_events, RenderContext *render_ctx);
 int arc_segment_compare_start_fp_asc(const void *a, const void *b);
 
-// ARC COORD POS
-// for validating if an arc is the start
-typedef struct {
-  Arc *arc;
-  float start_fp, end_fp;
-  float x1, y1, x2, y2;
-} ArcCoordPos;
-
-void arc_validate_head(List *arc_coordpos);
-
 #endif // ARC_H

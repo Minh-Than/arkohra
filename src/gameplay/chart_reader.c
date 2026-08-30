@@ -6,6 +6,7 @@
 #include "chart_reader.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
 #include "data/custom_types/custom_types.h"
+#include "data/gameplay_events/arc.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
 #include "raylib.h"
@@ -195,6 +196,7 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
             .color        = color,
             .type         = arctype_get_by_string(arc_type),
             .is_void      = strncmp(is_void, "true", 4) == 0 ? true : false,
+            .is_head      = true
           };
           strncpy(arc.sfx, sfx, sizeof(arc.sfx) - 1);
 
@@ -227,6 +229,7 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
     recalculate_floor_position(tg);
 
     chart_reader_rebuild_arctaps(tg);
+    list_sort_by(&tg->arcs, arc_compare_start_timing_asc);
 
     // Pre-calculate the notes's floor position
     // Arctaps' floor position is already calculated in `chart_reader_rebuild_arctaps`
@@ -259,12 +262,22 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
     }
     list_sort_by(&tg->tap_fps, tapfp_compare_fp_asc);
 
-    List arc_coordpos_list; list_init(&arc_coordpos_list, sizeof(ArcCoordPos));
     for (int j = 0; j < tg->arcs.size; j++)
     {
       Arc *arc = (Arc *)list_get(&tg->arcs, j);
       arc->start_fp = get_floor_position(&tg->timing_events, arc->start_timing);
       arc->end_fp   = get_floor_position(&tg->timing_events, arc->end_timing);
+
+      Arc low_target  = { .start_timing = arc->end_timing - 1 };
+      Arc high_target = { .start_timing = arc->end_timing + 1 };
+      int start_idx = bisect_left(&tg->arcs, &low_target, arc_compare_start_timing_asc);
+      int end_idx = bisect_right(&tg->arcs, &high_target, arc_compare_start_timing_asc);
+      for (int k = start_idx; k < end_idx; k++)
+      {
+        Arc *connected_arc = (Arc *)list_get(&tg->arcs, k);
+        if (fabsf(connected_arc->x1 - arc->x2) < 1e-6 && fabsf(connected_arc->y1 - arc->y2) < 1e-6)
+          connected_arc->is_head = false;
+      }
 
       int arc_duration      = arc->end_timing - arc->start_timing;
       float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res);
@@ -278,21 +291,7 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
       }
       arc_segment_generate_mesh(&tg->arc_segments, arc, arc_texture, &tg->timing_events, render_ctx);
       shadow_segment_generate_mesh(&tg->arc_segments, arc, &tg->timing_events, render_ctx);
-
-      if (!arc->is_void)
-      {
-        ArcCoordPos arc_coordpos = {
-          .arc = arc,
-          .start_fp = arc->start_fp,
-          .end_fp   = arc->end_fp,
-          .x1 = arc->x1, .y1 = arc->y1,
-          .x2 = arc->x2, .y2 = arc->y2,
-        };
-        list_push(&arc_coordpos_list, &arc_coordpos);
-      }
     };
-    arc_validate_head(&arc_coordpos_list);
-    list_free(&arc_coordpos_list);
     list_sort_by(&tg->arc_segments, arc_segment_compare_start_fp_asc);
 
     for (int j = 0; j < tg->arctaps.size; j++)
