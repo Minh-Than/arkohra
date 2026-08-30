@@ -18,12 +18,14 @@ float lane_to_world_x(float lane)
 
 float z_to_floor_position(float z, float base_bpm, float scroll_speed)
 {
-  return z * base_bpm * -32 / scroll_speed;
+  float final_scroll_speed = fminf(fmaxf(MINIMUM_SCROLL_SPEED, scroll_speed), MAXIMUM_SCROLL_SPEED);
+  return z * base_bpm * -32 / final_scroll_speed;
 }
 
 float floor_position_to_z(float fp, float base_bpm, float scroll_speed)
 {
-  return fp / base_bpm / -32 * scroll_speed;
+  float final_scroll_speed = fminf(fmaxf(MINIMUM_SCROLL_SPEED, scroll_speed), MAXIMUM_SCROLL_SPEED);
+  return fp / base_bpm / -32 * final_scroll_speed;
 }
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -198,7 +200,8 @@ float arc_world_y_at(int timing, Arc *arc, float fallback_y)
 
 float calculate_arc_segment_length(int duration, float arc_resolution)
 {
-  if(arc_resolution - 0.0f < 1e-6) return duration;
-  float length = ARC_SEGMENT_LENGTH / arc_resolution;
+  if(arc_resolution < MINIMUM_ARC_RES) return duration;
+  float final_resolution = fminf(MAXIMUM_ARC_RES, arc_resolution);
+  float length = ARC_SEGMENT_LENGTH / final_resolution;
   return duration < 1000 ? length : length * 2;
 }

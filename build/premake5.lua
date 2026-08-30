@@ -197,7 +197,8 @@ filter({ "action:gmake*" }) -- Uncoment if you need to force StaticLib
         }
         
         files {"../src/**.c", "../src/**.cpp", "../src/**.h", "../src/**.hpp"}
-        
+        removefiles { "../src/**/test/**"}
+
         filter {"system:windows", "action:vs*"}
             files {"../src/*.rc", "../src/*.ico"}
             files {"../resources/**"}
@@ -250,6 +251,28 @@ links({
 })
 
 filter({})
+
+-- Auto-generate one standalone console project per test file found under src/**/test/**.c.
+-- Each test #includes its own .c files, so each is a self-contained TU producing its own executable.
+-- No raylib linking: RAYMATH_STATIC_INLINE makes raymath.h self-contained; tests are headless.
+local test_files = os.matchfiles("../src/**/test/**.c")
+for _, testfile in ipairs(test_files) do
+    local testname = path.getbasename(testfile)
+    project("test_" .. testname)
+    kind("ConsoleApp")
+    location("../")
+    targetdir("../bin/tests")
+    language("C")
+    cdialect("C23")
+    files { testfile }
+    includedirs { "../src", raylib_dir .. "/src" }
+    defines { "RAYMATH_STATIC_INLINE" }
+    filter("system:linux")
+    links { "m" }
+    filter("system:macosx")
+    links { "m" }
+    filter({})
+end
 
 project("raylib")
 kind("StaticLib")
