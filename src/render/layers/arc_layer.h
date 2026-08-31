@@ -6,7 +6,7 @@
 
 typedef struct
 {
-  MeshRenderable height_indicator;
+  MeshRenderable height_indicator, arctap_shadow;
   RenderTexture2D layer;
 } ArcRenderer;
 

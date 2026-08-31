@@ -2,15 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "arc.h"
+#include "color_services.h"
+#include "raylib.h"
+#include "rlgl.h"
+#include "raymath.h"
 #include "constants.h"
 #include "data/custom_types/custom_types.h"
 #include "data/gameplay_events/arctap.h"
-#include "raylib.h"
-#include "raymath.h"
 #include "render/mesh_renderable.h"
 #include "render/playfield/playfield_services.h"
-#include "rlgl.h"
-#include "arc.h"
 #include "gameplay/arc_formula.h"
 
 // ARC
@@ -192,7 +193,7 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
 
     r.material = LoadMaterialDefault();
     r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
-    r.material.shader = render_ctx->arc_clip_shader.shader;
+    r.material.shader = render_ctx->arc_shader.shader;
     set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 
     ArcSegment *sgm = (ArcSegment *)list_get(arc_segments_list, arc_segments_list->size - segment_count + i);
@@ -342,7 +343,7 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
 
     r.material = LoadMaterialDefault();
     r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
-    r.material.shader = render_ctx->arc_clip_shader.shader;
+    r.material.shader = render_ctx->arc_shader.shader;
     set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 
     ArcSegment *sgm = (ArcSegment *)list_get(arc_segments_list, arc_segments_list->size - segment_count + i);
@@ -438,8 +439,7 @@ void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timin
     UploadMesh(&r.mesh, false);
 
     r.material = LoadMaterialDefault();
-    r.material.maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 90, 90, 90, 55 };
-    r.material.shader = render_ctx->arc_clip_shader.shader;
+    r.material.shader = render_ctx->arc_shader.shader;
 
     set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 
@@ -455,6 +455,7 @@ int arc_segment_compare_start_fp_asc(const void *a, const void *b)
   const ArcSegment *segment_a = (const ArcSegment *) a;
   const ArcSegment *segment_b = (const ArcSegment *) b;
   if (segment_a->start_fp < segment_b->start_fp) return -1;
-  else return 1;
+  if (segment_a->start_fp > segment_b->start_fp) return 1;
+  return 0;
 }
 

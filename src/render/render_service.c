@@ -72,151 +72,86 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
   EndTextureMode();
 }
 
-void render_note_shadows(List *timing_groups, RenderContext *render_ctx, ShadowRenderer *shadow_renderer,
-                        float current_ms, float base_bpm, float scroll_speed)
-{
-  float low_z_clip  = z_to_floor_position(50.0f, base_bpm, scroll_speed);
-  float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
-  BeginMode3D(render_ctx->camera);
-    rlPushMatrix();
-      rlScalef(1.7896f, 1.0f, 1.0f);
-      rlDisableBackfaceCulling();
-      rlDisableDepthTest();
-      BeginBlendMode(BLEND_ALPHA);
-        for (int i = 0; i < timing_groups->size; i++)
-        {
-          ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
-          float curr_fp = get_floor_position(&tg->timing_events, current_ms);
-          float curr_event_bpm = get_event_at(&tg->timing_events, current_ms)->bpm;
-
-          ArcSegment segment_low_fp  = { .start_fp = curr_fp + low_z_clip };
-          ArcSegment segment_high_fp = { .start_fp = curr_fp + high_z_clip };
-          int segment_start_index = bisect_left(&tg->arc_segments, &segment_low_fp , arc_segment_compare_start_fp_asc);
-          int segment_end_index   = bisect_left(&tg->arc_segments, &segment_high_fp, arc_segment_compare_start_fp_asc);
-
-          for (int j = segment_start_index; j < segment_end_index; j++)
-          {
-            ArcSegment *arc_segment = (ArcSegment *)list_get(&tg->arc_segments, j);
-            Arc *arc = arc_segment->arc;
-
-            int is_void_shader = arc->is_void ? 1 : 0;
-            int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
-            int negative_bpm_shader = curr_event_bpm < 0.0f;
-            SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
-            SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
-            SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
-
-            float z_pos = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-            DrawMesh(arc_segment->shadow_r.mesh, arc_segment->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
-          }
-
-          ArcTapFP arctap_low_fp  = { .fp = curr_fp + low_z_clip };
-          ArcTapFP arctap_high_fp = { .fp = curr_fp + high_z_clip };
-          int arctap_start_index = bisect_left(&tg->arctap_fps, &arctap_low_fp , arctapfp_compare_fp_asc);
-          int arctap_end_index   = bisect_left(&tg->arctap_fps, &arctap_high_fp, arctapfp_compare_fp_asc);
-
-          for (int j = arctap_start_index; j < arctap_end_index; j++)
-          {
-            ArcTapFP *arctap_fp = (ArcTapFP *)list_get(&tg->arctap_fps, j);
-            ArcTap *arctap = arctap_fp->arctap;
-            float arctap_z_pos = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
-            Matrix arctap_mt   = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
-                                                MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc),
-                                                                0.0f, arctap_z_pos));
-            DrawMesh(shadow_renderer->arctap_shadow.mesh, shadow_renderer->arctap_shadow.material, arctap_mt);
-          }
-        }
-      EndBlendMode();
-      rlEnableDepthTest();
-      rlEnableBackfaceCulling();
-    rlPopMatrix();
-  EndMode3D();
-}
-
-void render_arcs(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
-                 float current_ms, float base_bpm, float scroll_speed)
-{
-  float low_z_clip  = z_to_floor_position(50.0f, base_bpm, scroll_speed);
-  float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
-  BeginTextureMode(arc_renderer->layer);
-    ClearBackground(BLANK);
-    BeginMode3D(render_ctx->camera);
-      rlPushMatrix();
-        rlScalef(1.7896f, 1.0f, 1.0f);
-        rlDisableBackfaceCulling();
-        BeginBlendMode(BLEND_ALPHA);
-        for (int i = 0; i < timing_groups->size; i++)
-        {
-          ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
-          float curr_fp = get_floor_position(&tg->timing_events, current_ms);
-          float curr_event_bpm = get_event_at(&tg->timing_events, current_ms)->bpm;
-
-          // grab starting index withing certain +-ms padding
-          ArcSegment low_segment  = { .start_fp = curr_fp + low_z_clip };
-          ArcSegment high_segment = { .start_fp = curr_fp + high_z_clip };
-          int start_index = bisect_left(&tg->arc_segments, &low_segment , arc_segment_compare_start_fp_asc);
-          int end_index   = bisect_left(&tg->arc_segments, &high_segment, arc_segment_compare_start_fp_asc);
-
-          for (int j = start_index; j < end_index; j++)
-          {
-            ArcSegment *arc_segment = (ArcSegment *)list_get(&tg->arc_segments, j);
-            Arc *arc = arc_segment->arc;
-            float arc_world_x1 = arc_x_to_world(arc->x1);
-            float arc_world_y1 = arc_y_to_world(arc->y1);
-
-            int is_void_shader = arc->is_void ? 1 : 0;
-            int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
-            int negative_bpm_shader = curr_event_bpm < 0.0f;
-            SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
-            SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
-            SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_clip_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
-
-            float z_pos = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-            DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
-          }
-        }
-        EndBlendMode();
-        rlEnableBackfaceCulling();
-      rlPopMatrix();
-    EndMode3D();
-  EndTextureMode();
-}
-
 // Apparently separate texture fucks a lot of color blending in the process
-void render_arc_height_indicators(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
-                                  float current_ms, float base_bpm, float scroll_speed)
+void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
+                             float current_ms, float base_bpm, float scroll_speed)
 {
   float low_z_clip  = z_to_floor_position(50.0f, base_bpm, scroll_speed);
   float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginMode3D(render_ctx->camera);
-    rlDisableDepthTest();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
-      rlDisableBackfaceCulling();
       BeginBlendMode(BLEND_ALPHA);
+      rlDisableDepthTest();
+      rlDisableBackfaceCulling();
       for (int i = 0; i < timing_groups->size; i++)
       {
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
         float curr_fp = get_floor_position(&tg->timing_events, current_ms);
+        float curr_event_bpm = get_event_at(&tg->timing_events, current_ms)->bpm;
 
+        // Arctap shadows
+        ArcTapFP arctap_low_fp  = { .fp = curr_fp + low_z_clip };
+        ArcTapFP arctap_high_fp = { .fp = curr_fp + high_z_clip };
+        int arctap_start_index = bisect_left(&tg->arctap_fps, &arctap_low_fp , arctapfp_compare_fp_asc);
+        int arctap_end_index   = bisect_left(&tg->arctap_fps, &arctap_high_fp, arctapfp_compare_fp_asc);
+
+        for (int j = arctap_start_index; j < arctap_end_index; j++)
+        {
+          ArcTapFP *arctap_fp = (ArcTapFP *)list_get(&tg->arctap_fps, j);
+          ArcTap *arctap = arctap_fp->arctap;
+          float arctap_z_pos = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
+          Matrix arctap_mt   = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
+                                              MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc),
+                                                              0.0f, arctap_z_pos));
+          DrawMesh(arc_renderer->arctap_shadow.mesh, arc_renderer->arctap_shadow.material, arctap_mt);
+        }
+
+        // Arc shadows -> Arcs/traces -> 
         ArcSegment low_segment  = { .start_fp = curr_fp + low_z_clip };
         ArcSegment high_segment = { .start_fp = curr_fp + high_z_clip };
         int start_index = bisect_left(&tg->arc_segments, &low_segment , arc_segment_compare_start_fp_asc);
         int end_index   = bisect_left(&tg->arc_segments, &high_segment, arc_segment_compare_start_fp_asc);
 
-        for (int j = start_index; j < end_index; j++)
+        for (int j = end_index - 1; j >= start_index; j--)
         {
           ArcSegment *arc_segment = (ArcSegment *)list_get(&tg->arc_segments, j);
           Arc *arc = arc_segment->arc;
-          float arc_world_x1 = arc_x_to_world(arc->x1);
-          float arc_world_y1 = arc_y_to_world(arc->y1);
+
           float z_pos = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
 
+          int is_void_shader = arc->is_void ? 1 : 0;
+          int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+          int negative_bpm_shader = curr_event_bpm < 0.0f;
+          Vector4 shadow_tint = ColorNormalize((Color){ 90, 90, 90, 60 });
+          SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
+          SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+          SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+          SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_shader.tintLow_loc    , &shadow_tint        , SHADER_UNIFORM_VEC4);
+          SetShaderValue(arc_segment->shadow_r.material.shader, render_ctx->arc_shader.tintHigh_loc   , &shadow_tint        , SHADER_UNIFORM_VEC4);
+          DrawMesh(arc_segment->shadow_r.mesh, arc_segment->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+
+          Vector4 tint_low, tint_high; tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
+          if (!arc->is_void)
+          {
+            tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
+            tint_high = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL));
+          }
+          SetShaderValue(arc_segment->mesh_r.material.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
+          SetShaderValue(arc_segment->mesh_r.material.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+          SetShaderValue(arc_segment->mesh_r.material.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+          SetShaderValue(arc_segment->mesh_r.material.shader, render_ctx->arc_shader.tintLow_loc    , &tint_low           , SHADER_UNIFORM_VEC4);
+          SetShaderValue(arc_segment->mesh_r.material.shader, render_ctx->arc_shader.tintHigh_loc   , &tint_high          , SHADER_UNIFORM_VEC4);
+          DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+
+          // Height indicators
+          float arc_world_x1 = arc_x_to_world(arc->x1);
+          float arc_world_y1 = arc_y_to_world(arc->y1);
           if (!arc->is_void && fabsf(arc_segment->start_fp - arc->start_fp) < 1e-6 && (arc->is_head || fabsf(arc->y1 - arc->y2) > 1e-6) )
           {
             rlDisableDepthMask();
-            arc_renderer->height_indicator.material.maps->color = arc->color == 0 ? color_from_rgba(ARC_BLUE_LOW_CL)
-                                                                                  : color_from_rgba(ARC_PINK_LOW_CL);
+            arc_renderer->height_indicator.material.maps->color = arc->color == 0 ? color_from_rgba(ARC_BLUE_HIGH_CL)
+                                                                                  : color_from_rgba(ARC_PINK_HIGH_CL);
             DrawMesh(arc_renderer->height_indicator.mesh, arc_renderer->height_indicator.material,
                      MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), MatrixMultiply(MatrixScale(1.0f, arc_world_y1, 1.0f),
                                                                                     MatrixTranslate(arc_world_x1, arc_world_y1 / 2, z_pos))));
@@ -224,10 +159,10 @@ void render_arc_height_indicators(List *timing_groups, RenderContext *render_ctx
           }
         }
       }
-      EndBlendMode();
       rlEnableBackfaceCulling();
+      rlEnableDepthTest();
+      EndBlendMode();
     rlPopMatrix();
-    rlEnableDepthTest();
   EndMode3D();
 }
 
@@ -252,7 +187,7 @@ void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRender
           int arctap_start_index = bisect_left(&tg->arctap_fps, &arctap_low_z_fp , arctapfp_compare_fp_asc);
           int arctap_end_index   = bisect_left(&tg->arctap_fps, &arctap_high_z_fp, arctapfp_compare_fp_asc);
 
-          for (int j = arctap_start_index; j < arctap_end_index; j++)
+          for (int j = arctap_end_index - 1; j >= arctap_start_index; j--)
           {
             ArcTapFP *arctap_fp = (ArcTapFP *)list_get(&tg->arctap_fps, j);
             ArcTap *arctap = arctap_fp->arctap;

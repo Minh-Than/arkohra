@@ -4,7 +4,6 @@
 #include "gameplay/chart_reader.h"
 #include "raylib.h"
 #include "render/layers/hold_tap_layer.h"
-#include "render/layers/shadow_layer.h"
 #include "render/layers/arc_layer.h"
 #include "render/layers/arctap_layer.h"
 #include "render/render_service.h"
@@ -19,7 +18,6 @@ typedef struct
   HoldTapRenderer tap_hold_renderer;
   ArcRenderer     arc_renderer;
   ArctapRenderer  arctap_renderer;
-  ShadowRenderer  shadow_renderer;
 } PlayfieldObjs;
 
 PlayfieldObjs playfield_objs_init(TextureGroup *texture_group);

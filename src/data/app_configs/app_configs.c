@@ -27,11 +27,6 @@ AppConfigs app_configs_init(rini_data *d)
   TextCopy(configs.recent_project, rini_get_value_text_fallback(*d, "recent_project", ""));
 
   app_configs_write_to_file(&configs, d);
-  configs.arc_clip_shader = LoadShader(
-    TextFormat("resources/shaders/glsl%i/arc_clip.vs", 330),
-    TextFormat("resources/shaders/glsl%i/arc_clip.fs", 330)
-  );
-  configs.clip_z_loc = GetShaderLocation(configs.arc_clip_shader, "clipZ");
   return configs;
 }
 

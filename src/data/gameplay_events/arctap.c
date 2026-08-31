@@ -117,7 +117,7 @@ MeshRenderable arctap_shadow_load_mesh(Texture2D *texture)
   UploadMesh(&r.mesh, false);
 
   r.material = LoadMaterialDefault();
-  r.material.maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 90, 90, 90, 55 };
+  r.material.maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 90, 90, 90, 60 };
   // r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
   // r.material.maps->color = Fade(r.material.maps->color, 0.23);
 

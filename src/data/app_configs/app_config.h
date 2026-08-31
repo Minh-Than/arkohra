@@ -22,10 +22,6 @@ typedef struct
   float         scroll_speed, music_volume, hit_volume;
   float         app_window_scale;
   AspectRatio   playfield_ratio;
-
-  // Temp things that idk where to put neatly
-  Shader arc_clip_shader;
-  int clip_z_loc;
 } AppConfigs;
 
 AppConfigs app_configs_init(rini_data *d);

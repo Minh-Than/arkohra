@@ -170,6 +170,7 @@ PlayfieldObjs playfield_objs_init(TextureGroup *texture_group) {
   height_indicator_material.maps[MATERIAL_MAP_DIFFUSE].texture = texture_group->arc_height_indicator;
   objs.arc_renderer = (ArcRenderer){
     .height_indicator = (MeshRenderable){.mesh = height_indicator_mesh, .material = height_indicator_material},
+    .arctap_shadow = arctap_shadow_load_mesh(&texture_group->arctap_shadow),
     .layer = LoadRenderTexture(GetScreenWidth() * SUPERSAMPLE_SCALE, GetScreenHeight() * SUPERSAMPLE_SCALE),
   };
   set_mesh_transforms(&objs.arc_renderer.height_indicator, (Matrix[]){MatrixIdentity()}, 1);
@@ -179,13 +180,7 @@ PlayfieldObjs playfield_objs_init(TextureGroup *texture_group) {
     .arctap = arctap_load_mesh(&texture_group->arctap),
     .layer = LoadRenderTexture(GetScreenWidth() * SUPERSAMPLE_SCALE, GetScreenHeight() * SUPERSAMPLE_SCALE),
   };
-  set_mesh_transforms(&objs.arc_renderer.height_indicator, (Matrix[]){MatrixTranslate(0.0f, 0.0f, -0.0001f)}, 1);
   SetTextureFilter(objs.arctap_renderer.layer.texture, TEXTURE_FILTER_BILINEAR);
-
-  objs.shadow_renderer = (ShadowRenderer){
-    .arctap_shadow = arctap_shadow_load_mesh(&texture_group->arctap_shadow),
-    .layer = LoadRenderTexture(GetScreenWidth() * SUPERSAMPLE_SCALE, GetScreenHeight() * SUPERSAMPLE_SCALE),
-  };
   return objs;
 }
 
@@ -216,7 +211,9 @@ void playfield_render(
     {
       BeginBlendMode(BLEND_ALPHA);
         rlDisableBackfaceCulling();
+          rlDisableDepthMask();
           renderable_draw(&playfield_objs->single_line);
+          rlEnableDepthMask();
         rlEnableBackfaceCulling();
       EndBlendMode();
     }
@@ -224,7 +221,7 @@ void playfield_render(
 
   // Gameplay notes
   chart_reader_render_notes(render_ctx, chart_reader,
-                            &playfield_objs->tap_hold_renderer, &playfield_objs->shadow_renderer, &playfield_objs->arc_renderer, &playfield_objs->arctap_renderer,
+                            &playfield_objs->tap_hold_renderer, &playfield_objs->arc_renderer, &playfield_objs->arctap_renderer,
                             current_ms);
 
   // Sky input line - label
@@ -258,10 +255,8 @@ void playfield_objs_unload(PlayfieldObjs *scene) {
   renderable_unload(&scene->tap_hold_renderer.connector);
   UnloadRenderTexture(scene->tap_hold_renderer.layer);
 
-  renderable_unload(&scene->shadow_renderer.arctap_shadow);
-  UnloadRenderTexture(scene->shadow_renderer.layer);
-
   renderable_unload(&scene->arc_renderer.height_indicator);
+  renderable_unload(&scene->arc_renderer.arctap_shadow);
   UnloadRenderTexture(scene->arc_renderer.layer);
 
   renderable_unload(&scene->arctap_renderer.arctap);

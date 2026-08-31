@@ -51,26 +51,30 @@ int main()
   PlayfieldObjs playfield_objs  = playfield_objs_init(&texture_group);
 
   FontServices font_services    = font_services_init(GLSL_VERSION);
-  Shader arc_clip_shader        = LoadShader(
-      TextFormat("resources/shaders/glsl%i/arc_clip.vs", GLSL_VERSION),
+  Shader arc_shader             = LoadShader(
+      TextFormat("resources/shaders/glsl%i/arc_shader.vs", GLSL_VERSION),
       // 0,
-      TextFormat("resources/shaders/glsl%i/arc_clip.fs", GLSL_VERSION)
+      TextFormat("resources/shaders/glsl%i/arc_shader.fs", GLSL_VERSION)
   );
-  int isVoid_loc = GetShaderLocation(arc_clip_shader, "isVoid");
-  int shouldClip_loc = GetShaderLocation(arc_clip_shader, "shouldClip");
-  int negativeBPM_loc = GetShaderLocation(arc_clip_shader, "negativeBPM");
+  int isVoid_loc = GetShaderLocation(arc_shader, "isVoid");
+  int shouldClip_loc = GetShaderLocation(arc_shader, "shouldClip");
+  int negativeBPM_loc = GetShaderLocation(arc_shader, "negativeBPM");
+  int tintLow_loc = GetShaderLocation(arc_shader, "tintLow");
+  int tintHigh_loc = GetShaderLocation(arc_shader, "tintHigh");
   printf("negativeBPM: %d\n", negativeBPM_loc);
-  printf("mvp loc: %d\n", arc_clip_shader.locs[SHADER_LOC_MATRIX_MVP]);
-  printf("matModel loc: %d\n", arc_clip_shader.locs[SHADER_LOC_MATRIX_MODEL]);
+  printf("mvp loc: %d\n", arc_shader.locs[SHADER_LOC_MATRIX_MVP]);
+  printf("matModel loc: %d\n", arc_shader.locs[SHADER_LOC_MATRIX_MODEL]);
 
   RenderContext render_ctx = {
     .camera          = camera,
     .chart_settings  = chart_settings,
-    .arc_clip_shader = {
-      .shader = arc_clip_shader,
+    .arc_shader = {
+      .shader = arc_shader,
       .isVoid_loc = isVoid_loc,
       .shouldClip_loc = shouldClip_loc,
-      .negativeBPM_loc = negativeBPM_loc
+      .negativeBPM_loc = negativeBPM_loc,
+      .tintLow_loc = tintLow_loc,
+      .tintHigh_loc = tintHigh_loc
     },
     .audio_clock     = { 0 },
   };
