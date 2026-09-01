@@ -242,12 +242,16 @@ int main()
           {
             UnloadTexture(texture_group.jacket_img);
             texture_group.jacket_img = LoadTexture(render_ctx.chart_settings.jacket_path);
+            if (!IsTextureValid(texture_group.jacket_img))
+              texture_group.jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
             SetTextureFilter(texture_group.jacket_img, TEXTURE_FILTER_BILINEAR);
           }
           if (!TextIsEqual(render_ctx.chart_settings.background_path, ""))
           {
             UnloadTexture(texture_group.background);
             texture_group.background = LoadTexture(render_ctx.chart_settings.background_path);
+            if (!IsTextureValid(texture_group.background))
+              texture_group.background = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
             SetTextureFilter(texture_group.background, TEXTURE_FILTER_BILINEAR);
           }
 
