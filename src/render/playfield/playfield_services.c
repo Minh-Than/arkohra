@@ -159,10 +159,8 @@ PlayfieldObjs playfield_objs_init(TextureGroup *texture_group) {
     .hold  = hold_load_mesh(&texture_group->hold),
     .tap   = tap_load_mesh(&texture_group->tap),
     .connector = (MeshRenderable){ .mesh = connector_mesh, .material = connector_material },
-    .layer = LoadRenderTexture(GetScreenWidth() * SUPERSAMPLE_SCALE, GetScreenHeight() * SUPERSAMPLE_SCALE),
   };
   set_mesh_transforms(&objs.tap_hold_renderer.connector, (Matrix[]){MatrixIdentity()}, 1);
-  SetTextureFilter(objs.tap_hold_renderer.layer.texture, TEXTURE_FILTER_BILINEAR);
 
   Mesh height_indicator_mesh = GenMeshPlane(0.5f, 1, 1, 1);
   UploadMesh(&height_indicator_mesh, false);
@@ -171,16 +169,12 @@ PlayfieldObjs playfield_objs_init(TextureGroup *texture_group) {
   objs.arc_renderer = (ArcRenderer){
     .height_indicator = (MeshRenderable){.mesh = height_indicator_mesh, .material = height_indicator_material},
     .arctap_shadow = arctap_shadow_load_mesh(&texture_group->arctap_shadow),
-    .layer = LoadRenderTexture(GetScreenWidth() * SUPERSAMPLE_SCALE, GetScreenHeight() * SUPERSAMPLE_SCALE),
   };
   set_mesh_transforms(&objs.arc_renderer.height_indicator, (Matrix[]){MatrixIdentity()}, 1);
-  SetTextureFilter(objs.arc_renderer.layer.texture, TEXTURE_FILTER_BILINEAR);
 
   objs.arctap_renderer = (ArctapRenderer){
     .arctap = arctap_load_mesh(&texture_group->arctap),
-    .layer = LoadRenderTexture(GetScreenWidth() * SUPERSAMPLE_SCALE, GetScreenHeight() * SUPERSAMPLE_SCALE),
   };
-  SetTextureFilter(objs.arctap_renderer.layer.texture, TEXTURE_FILTER_BILINEAR);
   return objs;
 }
 
@@ -253,12 +247,9 @@ void playfield_objs_unload(PlayfieldObjs *scene) {
   renderable_unload(&scene->tap_hold_renderer.tap);
   renderable_unload(&scene->tap_hold_renderer.hold);
   renderable_unload(&scene->tap_hold_renderer.connector);
-  UnloadRenderTexture(scene->tap_hold_renderer.layer);
 
   renderable_unload(&scene->arc_renderer.height_indicator);
   renderable_unload(&scene->arc_renderer.arctap_shadow);
-  UnloadRenderTexture(scene->arc_renderer.layer);
 
   renderable_unload(&scene->arctap_renderer.arctap);
-  UnloadRenderTexture(scene->arctap_renderer.layer);
 }

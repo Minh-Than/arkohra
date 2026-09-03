@@ -41,7 +41,7 @@ void arc_print(const void *elem);
 typedef struct {
   Arc *arc;
   MeshRenderable mesh_r, shadow_r;
-  float start_fp, end_fp;
+  float start_fp;
 } ArcSegment;
 
 void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx);

@@ -2,7 +2,6 @@
 #define CONSTANTS_H
 
 static const unsigned int BASE_APP_WINDOW_WIDTH = 1920;
-static const unsigned int SUPERSAMPLE_SCALE     = 2;
 
 static const float MINIMUM_SCROLL_SPEED  = 0.01f;
 static const float MAXIMUM_SCROLL_SPEED  = 10.0f;
@@ -48,13 +47,14 @@ static const unsigned char ETR_DIFF_COLOR[4] = { 67 , 52 , 85 , 255 };
 static const unsigned char LIGHT_CONNECTOR_CL[4]   = { 104, 189, 211, 255 };
 static const unsigned char CONFICT_CONNECTOR_CL[4] = { 150, 85 , 142, 255 };
 
-static const unsigned char ARC_BLUE_LOW_CL[4]   = { 25 , 160, 235, 217 };
-static const unsigned char ARC_BLUE_HIGH_CL[4]  = { 12 , 212, 212, 217 };
-static const unsigned char ARC_PINK_LOW_CL[4]   = { 240, 105, 155, 217 };
-static const unsigned char ARC_PINK_HIGH_CL[4]  = { 255, 150, 220, 217 };
-static const unsigned char ARC_GREEN_LOW_CL[4]  = { 40 , 200, 30 , 217 };
-static const unsigned char ARC_GREEN_HIGH_CL[4] = { 35 , 255, 108, 217 };
+static const unsigned char ARC_BLUE_LOW_CL[4]   = { 25 , 160, 235, 160 };
+static const unsigned char ARC_BLUE_HIGH_CL[4]  = { 12 , 212, 212, 160 };
+static const unsigned char ARC_PINK_LOW_CL[4]   = { 240, 105, 155, 160 };
+static const unsigned char ARC_PINK_HIGH_CL[4]  = { 255, 150, 220, 160 };
+static const unsigned char ARC_GREEN_LOW_CL[4]  = { 40 , 200, 30 , 160 };
+static const unsigned char ARC_GREEN_HIGH_CL[4] = { 35 , 255, 108, 160 };
 static const unsigned char TRACE_CL[4]          = { 145, 120, 170, 122 };
+static const unsigned char NOTE_SHADOW_CL[4]    = { 90 , 90 , 90 , 40  };
 
 static const unsigned short int CMD_PLT_Y          = 150;
 static const unsigned short int CMD_PLT_SIZE_X     = 450;

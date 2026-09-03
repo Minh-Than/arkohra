@@ -23,7 +23,6 @@ typedef struct
 } TextureGroup;
 
 TextureGroup textures_init();
-void textures_reload_note_render_layer(RenderTexture2D *render_texture);
 void textures_unload(TextureGroup* texture_group);
 
 #endif // TEXTURE_SERVICE_H

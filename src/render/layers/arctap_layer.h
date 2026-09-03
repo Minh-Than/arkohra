@@ -7,7 +7,6 @@
 typedef struct
 {
   MeshRenderable arctap;
-  RenderTexture2D layer;
 } ArctapRenderer;
 
 #endif // ARCTAP_LAYER_H

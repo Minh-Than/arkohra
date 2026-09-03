@@ -3,16 +3,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "raylib.h"
+#include "rlgl.h"
 #include "chart_reader.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
 #include "data/custom_types/custom_types.h"
 #include "data/gameplay_events/arc.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
-#include "raylib.h"
 #include "render/render_service.h"
-#include "render/texture/texture_service.h"
-#include "rlgl.h"
 
 static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
 {
@@ -67,29 +66,7 @@ static bool parse_aff_header(char *line, ChartSettings *chart_settings)
   return end_of_header;
 }
 
-static int count_arctaps(const char *line)
-{
-  const char *lb = strchr(line, '['); if (!lb) return 0; 
-  const char *rb = strchr(lb  , ']'); if (!rb) return 0;
-
-  int count = 0;
-  const char *p = lb + 1;
-
-  while (p < rb)
-  {
-    const char *tap = strstr(p, "arctap(");
-    if (!tap || tap >= rb) break;
-
-    count++;
-    p = tap + 7;
-    // skip past the number
-    while (p < rb && *p != ',' && *p != ')') p++;
-    p++; // skip the comma or paren
-  }
-  return count;
-}
-
-static int parse_arctaps(const char *line, List *out, int max)
+static int parse_arctaps(const char *line, List *out)
 {
   const char *lb = strchr(line, '['); if (!lb) return 0;
   const char *rb = strchr(lb  , ']'); if (!rb) return 0;
@@ -97,7 +74,7 @@ static int parse_arctaps(const char *line, List *out, int max)
   int count = 0;
   const char *p = lb + 1;
 
-  while (p < rb && count < max)
+  while (p < rb)
   {
     const char *tap = strstr(p, "arctap(");
     if (!tap || tap >= rb) break;
@@ -200,19 +177,16 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
           };
           strncpy(arc.sfx, sfx, sizeof(arc.sfx) - 1);
 
-          int n = count_arctaps(line);
-          if(n != 0)
+          List arctap_timings; list_init(&arctap_timings, sizeof(int));
+          parse_arctaps(line, &arctap_timings);
+          for (int i = 0; i < arctap_timings.size; i++)
           {
-            List arctap_timings; list_init(&arctap_timings, sizeof(int));
-            parse_arctaps(line, &arctap_timings, n);
-            for (int i = 0; i < arctap_timings.size; i++)
-            {
-              int *timing = (int *)list_get(&arctap_timings, i);
-              ArcTap arctap = { .arc = NULL, .width = 1.0f, .timing = *timing, .timing_group = *current_tg };
-              list_push(&arc.arctaps, &arctap);
-            }
-            list_free(&arctap_timings);
+            int *timing = (int *)list_get(&arctap_timings, i);
+            ArcTap arctap = { .arc = NULL, .width = 1.0f, .timing = *timing, .timing_group = *current_tg };
+            list_push(&arc.arctaps, &arctap);
           }
+          list_free(&arctap_timings);
+
           list_push(&tg->arcs, &arc);
         }
       }
@@ -353,27 +327,12 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
                                HoldTapRenderer *hold_tap_renderer, ArcRenderer *arc_renderer, ArctapRenderer *arctap_renderer,
                                float current_ms)
 {
-  textures_reload_note_render_layer(&hold_tap_renderer->layer);
-  textures_reload_note_render_layer(&arc_renderer->layer);
-  textures_reload_note_render_layer(&arctap_renderer->layer);
-
-  if (chart_reader->initialized)
-  {
-    float base_bpm     = render_ctx->chart_settings.base_bpm;
-    float scroll_speed = render_ctx->chart_settings.scroll_speed;
-    render_holds_taps   (&chart_reader->timing_groups, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed);
-    render_arctaps      (&chart_reader->timing_groups, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed);
-
-
-    Rectangle dest = { 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() };
-    Rectangle tap_hold_src  = { 0, 0, (float)hold_tap_renderer->layer.texture.width, -(float)hold_tap_renderer->layer.texture.height };
-    DrawTexturePro(hold_tap_renderer->layer.texture, tap_hold_src, dest, (Vector2){0,0}, 0.0f, WHITE);
-
-    render_arcs_and_shadows(&chart_reader->timing_groups, render_ctx, arc_renderer, current_ms, base_bpm, scroll_speed);
-
-    Rectangle arctap_src    = { 0, 0, (float)arctap_renderer->layer.texture.width, -(float)arctap_renderer->layer.texture.height };
-    DrawTexturePro(arctap_renderer->layer.texture, arctap_src, dest, (Vector2){0,0}, 0.0f, WHITE);
-  }
+  if (!chart_reader->initialized) return;
+  float base_bpm     = render_ctx->chart_settings.base_bpm;
+  float scroll_speed = render_ctx->chart_settings.scroll_speed;
+  render_holds_taps      (&chart_reader->timing_groups, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed);
+  render_arcs_and_shadows(&chart_reader->timing_groups, render_ctx, arc_renderer     , current_ms, base_bpm, scroll_speed);
+  render_arctaps         (&chart_reader->timing_groups, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed);
 }
 
 void chart_reader_print(ChartReader *chart_reader)

@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include "arc.h"
-#include "color_services.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
@@ -89,8 +88,8 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
 
   // UV setup
   float uv[TEXCOORDS_COUNT * 2] = {
-    0,1,  0.5f,1,  0.5f,0,  0,0,
-    0,1,  0.5f,1,  0.5f,0,  0,0,
+    0,1,  1.0f,1,  1.0f,0,  0,0,
+    0,1,  1.0f,1,  1.0f,0,  0,0,
   };
 
   // NOTE: Create mesh at z=0 (in timing) to prevent texture/rendering from going apeshit
@@ -117,7 +116,6 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
     // Starting index for each segment (index * vertices * xyz coords)
     float increment = fminf(arc->end_timing - arc->start_timing - curr_timing, segment_length);
     float start_fp = 0;
-    float end_fp = 0;
 
     // Vertices for each face
     for (int j = 0; j < VERTICES_COUNT; j++)
@@ -133,7 +131,6 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
         ? arc_y_to_world(is_front_of_arc ? arc->y1 : arc->y2)
         : arc_world_y_at(target_timing, &temp_arc);
       if (is_front_of_arc) start_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
-      if (!is_front_of_arc)  end_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
 
       // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
       float segment_start_timing = curr_timing + arc->start_timing;
@@ -199,7 +196,6 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
     ArcSegment *sgm = (ArcSegment *)list_get(arc_segments_list, arc_segments_list->size - segment_count + i);
     sgm->mesh_r = r;
     sgm->start_fp = start_fp;
-    sgm->end_fp = end_fp;
 
     curr_timing += increment;
   }
@@ -267,7 +263,6 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
     // Starting index for each segment (index * vertices * xyz coords)
     float increment = fminf(arc->end_timing - arc->start_timing - curr_timing, segment_length);
     float start_fp = 0;
-    float end_fp = 0;
 
     // Vertices for each face
     for (int j = 0; j < VERTICES_COUNT; j++)
@@ -283,7 +278,6 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
         ? arc_y_to_world(is_front_of_arc ? arc->y1 : arc->y2)
         : arc_world_y_at(target_timing, &temp_arc);
       if (is_front_of_arc) start_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
-      if (!is_front_of_arc)  end_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
 
       // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
       float segment_start_timing = curr_timing + arc->start_timing;
@@ -349,7 +343,6 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
     ArcSegment *sgm = (ArcSegment *)list_get(arc_segments_list, arc_segments_list->size - segment_count + i);
     sgm->mesh_r = r;
     sgm->start_fp = start_fp;
-    sgm->end_fp = end_fp;
 
     curr_timing += increment;
   }
@@ -458,4 +451,3 @@ int arc_segment_compare_start_fp_asc(const void *a, const void *b)
   if (segment_a->start_fp > segment_b->start_fp) return 1;
   return 0;
 }
-

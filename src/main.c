@@ -373,7 +373,7 @@ int main()
       windows_services_render(&window_group);
 
       // Debug FPS
-      DrawFPS(5, 5); 
+      DrawFPS(5, 5);
 
       if (has_kohra)
       {

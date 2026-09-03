@@ -63,17 +63,6 @@ TextureGroup textures_init()
   };
 }
 
-void textures_reload_note_render_layer(RenderTexture2D *render_texture)
-{
-  if (render_texture->texture.width  != GetScreenWidth()  * SUPERSAMPLE_SCALE ||
-      render_texture->texture.height != GetScreenHeight() * SUPERSAMPLE_SCALE)
-  {
-    UnloadRenderTexture(*render_texture);
-    *render_texture = LoadRenderTexture(GetScreenWidth() * SUPERSAMPLE_SCALE, GetScreenHeight() * SUPERSAMPLE_SCALE);
-    SetTextureFilter(render_texture->texture, TEXTURE_FILTER_BILINEAR);
-  }
-}
-
 void textures_unload(TextureGroup* texture_group)
 {
   UnloadTexture(texture_group->background);

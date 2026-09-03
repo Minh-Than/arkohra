@@ -27,9 +27,7 @@ void hold_render_test(MeshRenderable *hold_r, Hold *hold, float z_pos, float z_s
     MatrixRotateX(-180.0f * DEG2RAD),
     MatrixMultiply(MatrixScale(1.0f, 1.0f, -z_scale),
                    MatrixTranslate(lane_to_world_x(hold->lane), 0.0f, z_pos)));
-  BeginBlendMode(BLEND_ALPHA_PREMULTIPLY);
     DrawMesh(hold_r->mesh, hold_r->material, tr);
-  EndBlendMode();
 }
 
 MeshRenderable hold_load_mesh(Texture2D *texture)
