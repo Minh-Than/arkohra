@@ -10,7 +10,7 @@ typedef struct
   Arc   *arc;
   float width;
   int   timing, timing_group;
-  float fp;
+  double fp;
   bool  is_selected;
 } ArcTap;
 
@@ -20,7 +20,7 @@ MeshRenderable arctap_shadow_load_mesh(Texture2D *texture);
 
 typedef struct {
   ArcTap *arctap;
-  float  fp;
+  double fp;
 } ArcTapFP;
 
 void arctap_fp_print(const void *elem);

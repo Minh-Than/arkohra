@@ -27,7 +27,7 @@ typedef struct {
   float x1, y1, x2, y2;
   float arc_res;
   int start_timing, end_timing, timing_group;
-  float start_fp, end_fp;
+  double start_fp, end_fp;
   int color;
   ArcType type;
   bool is_selected, is_void, is_head, has_height_indicator;
@@ -41,7 +41,7 @@ void arc_print(const void *elem);
 typedef struct {
   Arc *arc;
   MeshRenderable mesh_r, shadow_r;
-  float start_fp;
+  double start_fp, end_fp;
 } ArcSegment;
 
 void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx);

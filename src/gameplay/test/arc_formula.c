@@ -25,29 +25,29 @@ void test_z_to_fp(void){
   float target_z = -100.0f;
 
   // --- Normal case ---
-  float result = z_to_floor_position(target_z, base_bpm, scroll_speed);
-  TEST_CHECK(fabsf(result - 96000) < 1e-6);
+  double result = z_to_floor_position(target_z, base_bpm, scroll_speed);
+  TEST_CHECK(fabs(result - 96000) < 1e-6);
   TEST_MSG("normal: expected 96000, got %f", result);
 
   // --- Below minimum scroll speed -> clamped to MINIMUM_SCROLL_SPEED ---
   float scroll_speed_below_min = MINIMUM_SCROLL_SPEED - 1.0f;
-  float expected_below_min = z_to_floor_position(target_z, base_bpm, MINIMUM_SCROLL_SPEED);
-  float produced_below_min = z_to_floor_position(target_z, base_bpm, scroll_speed_below_min);
-  TEST_CHECK(fabsf(expected_below_min - produced_below_min) < 1e-6);
+  double expected_below_min = z_to_floor_position(target_z, base_bpm, MINIMUM_SCROLL_SPEED);
+  double produced_below_min = z_to_floor_position(target_z, base_bpm, scroll_speed_below_min);
+  TEST_CHECK(fabs(expected_below_min - produced_below_min) < 1e-6);
   TEST_MSG("below min: expected %f (clamped), got %f", expected_below_min, produced_below_min);
 
   // --- Above maximum scroll speed -> clamped to MAXIMUM_SCROLL_SPEED ---
   float scroll_speed_above_max = MAXIMUM_SCROLL_SPEED + 1.0f;
-  float expected_above_max = z_to_floor_position(target_z, base_bpm, MAXIMUM_SCROLL_SPEED);
-  float produced_above_max = z_to_floor_position(target_z, base_bpm, scroll_speed_above_max);
-  TEST_CHECK(fabsf(expected_above_max - produced_above_max) < 1e-6);
+  double expected_above_max = z_to_floor_position(target_z, base_bpm, MAXIMUM_SCROLL_SPEED);
+  double produced_above_max = z_to_floor_position(target_z, base_bpm, scroll_speed_above_max);
+  TEST_CHECK(fabs(expected_above_max - produced_above_max) < 1e-6);
   TEST_MSG("above max: expected %f (clamped), got %f", expected_above_max, produced_above_max);
 }
 
 void test_fp_to_z(void){
   float base_bpm = 150.0f;
   float scroll_speed = 5.0f;
-  float target_fp = 96000.0f;
+  double target_fp = 96000.0;
 
   // --- Normal case ---
   float result = floor_position_to_z(target_fp, base_bpm, scroll_speed);
@@ -75,8 +75,8 @@ void test_zfp_round_trip(void){
 
   // z = -100 -> fp->z should return -100
   float test_z = -100.0f;
-  float test_fp = z_to_floor_position(test_z, base_bpm, scroll_speed);
-  TEST_CHECK(fabsf(test_fp - 96000) < 1e-6);
+  double test_fp = z_to_floor_position(test_z, base_bpm, scroll_speed);
+  TEST_CHECK(fabs(test_fp - 96000) < 1e-6);
   TEST_MSG("z=-100: expected fp 96000, got %f", test_fp);
   float z_back = floor_position_to_z(test_fp, base_bpm, scroll_speed);
   TEST_CHECK(fabsf(z_back - test_z) < 1e-6);
@@ -84,8 +84,8 @@ void test_zfp_round_trip(void){
 
   // z = -250 -> fp->z should return -250
   float test_z_1 = -250.0f;
-  float test_fp_1 = z_to_floor_position(test_z_1, base_bpm, scroll_speed);
-  TEST_CHECK(fabsf(test_fp_1 - 240000) < 1e-6);
+  double test_fp_1 = z_to_floor_position(test_z_1, base_bpm, scroll_speed);
+  TEST_CHECK(fabs(test_fp_1 - 240000) < 1e-6);
   TEST_MSG("z=-250: expected fp 240000, got %f", test_fp_1);
   float z_back_1 = floor_position_to_z(test_fp_1, base_bpm, scroll_speed);
   TEST_CHECK(fabsf(z_back_1 - test_z_1) < 1e-6);
@@ -93,8 +93,8 @@ void test_zfp_round_trip(void){
 
   // z = 150 (positive) -> fp->z should return 150
   float test_z_2 = 150.0f;
-  float test_fp_2 = z_to_floor_position(test_z_2, base_bpm, scroll_speed);
-  TEST_CHECK(fabsf(test_fp_2 - (-144000)) < 1e-6);
+  double test_fp_2 = z_to_floor_position(test_z_2, base_bpm, scroll_speed);
+  TEST_CHECK(fabs(test_fp_2 - (-144000)) < 1e-6);
   TEST_MSG("z=150: expected fp -144000, got %f", test_fp_2);
   float z_back_2 = floor_position_to_z(test_fp_2, base_bpm, scroll_speed);
   TEST_CHECK(fabsf(z_back_2 - test_z_2) < 1e-6);
@@ -151,16 +151,16 @@ void test_simd_fp_to_z(void)
   // --- Compare fp->z results from SIMD and normal looping
   float base_bpm = 150.0f;
   float scroll_speed = 5.0f;
-  float fp_list[6] = {0.0f, 48000.0f, 96000.0f, 144000.0f, 192000.0f, 240000.0f};
+  double fp_list[6] = {0.0, 48000.0, 96000.0, 144000.0, 192000.0, 240000.0};
   float *simd_z_out = (float *)malloc(6 * sizeof(float));
-  batch_fp_to_z((float *)&fp_list, simd_z_out, 6, base_bpm, scroll_speed);
+  batch_fp_to_z(fp_list, simd_z_out, 6, base_bpm, scroll_speed);
 
-  float fp_tracker = 0.0f;
+  double fp_tracker = 0.0;
   float normal_z_out[6];
   for (int i = 0; i < 6; i++)
   {
     normal_z_out[i] = floor_position_to_z(fp_tracker, base_bpm, scroll_speed);
-    fp_tracker += 48000.0f;
+    fp_tracker += 48000.0;
   }
 
   // TODO: check simd results for correctness

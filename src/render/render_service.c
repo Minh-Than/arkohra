@@ -17,8 +17,8 @@
 void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRenderer *hold_tap_renderer,
                        float current_ms, float base_bpm, float scroll_speed)
 {
-  float low_z_clip  = z_to_floor_position(-9.0f, base_bpm, scroll_speed);
-  float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
+  double low_z_clip  = z_to_floor_position(-9.0f, base_bpm, scroll_speed);
+  double high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
     rlPushMatrix();
@@ -27,7 +27,7 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
       BeginBlendMode(BLEND_ALPHA);
         for (int i = 0; i < timing_groups->size; i++) {
           ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
-          float curr_fp  = get_floor_position(&tg->timing_events, current_ms);
+          double curr_fp  = get_floor_position(&tg->timing_events, current_ms);
 
           // Holds
           for (int j = 0; j < tg->holds.size; j++)
@@ -35,7 +35,7 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
             Hold *hold    = (Hold *)list_get(&tg->holds, j);
             float z_pos   = floor_position_to_z(hold->start_fp - curr_fp, base_bpm, scroll_speed);
             float z_scale = floor_position_to_z(hold->end_fp - hold->start_fp, base_bpm, scroll_speed);
-            if (z_pos < -100.0f || (z_pos > 9.0f && z_scale > 9.0f)) continue;
+            if ((z_pos < -100.0f && z_scale < -100.0f) || (z_pos > 9.0f && z_scale > 9.0f)) continue;
             float alpha   = hold->start_timing < current_ms && !hold->is_active ? 0.4f : 1.0f;
             hold_render_test(&hold_tap_renderer->hold, hold, z_pos, z_scale, alpha);
           }
@@ -49,7 +49,7 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
           {
             TapFP *tap_fp = (TapFP *)list_get(&tg->tap_fps, j);
             Tap *tap      = tap_fp->tap;
-            float diff_fp = tap->fp - curr_fp;
+            double diff_fp = tap->fp - curr_fp;
             float z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
             float z_scale = Clamp(Lerp(1.8f, 5.8f,
                                        floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
@@ -82,8 +82,8 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
                              float current_ms, float base_bpm, float scroll_speed)
 {
   List arc_render_list; list_init(&arc_render_list, sizeof(ArcSegment));
-  float low_z_clip  = z_to_floor_position(50.0f, base_bpm, scroll_speed);
-  float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
+  double low_z_clip  = z_to_floor_position(50.0f, base_bpm, scroll_speed);
+  double high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
     rlPushMatrix();
@@ -93,7 +93,7 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
       for (int i = 0; i < timing_groups->size; i++)
       {
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
-        float curr_fp = get_floor_position(&tg->timing_events, current_ms);
+        double curr_fp = get_floor_position(&tg->timing_events, current_ms);
         float curr_event_bpm = get_event_at(&tg->timing_events, current_ms)->bpm;
 
         // Arctap shadows
@@ -114,21 +114,25 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
         }
 
         // Populate visible arcs segments
-        ArcSegment low_segment  = { .start_fp = curr_fp + low_z_clip };
-        ArcSegment high_segment = { .start_fp = curr_fp + high_z_clip };
-        int start_index = bisect_left(&tg->arc_segments, &low_segment , arc_segment_compare_start_fp_asc);
-        int end_index   = bisect_left(&tg->arc_segments, &high_segment, arc_segment_compare_start_fp_asc);
+        // ArcSegment low_segment  = { .start_fp = curr_fp + low_z_clip };
+        // ArcSegment high_segment = { .start_fp = curr_fp + high_z_clip };
+        // int start_index = bisect_left(&tg->arc_segments, &low_segment , arc_segment_compare_start_fp_asc);
+        // int end_index   = bisect_left(&tg->arc_segments, &high_segment, arc_segment_compare_start_fp_asc);
 
-        for (int j = start_index; j < end_index; j++)
+        // for (int j = start_index; j < end_index; j++)
+        for (int j = 0; j < tg->arc_segments.size; j++)
         {
           ArcSegment *arc_segment = (ArcSegment *)list_get(&tg->arc_segments, j);
+          float z_pos = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+          float z_scale = floor_position_to_z(arc_segment->end_fp - arc_segment->start_fp, base_bpm, scroll_speed);
+          if((z_pos < -100.0f && z_scale < -100.0f) || (z_pos > 9.0f && z_scale > 9.0f)) continue;
           list_push(&arc_render_list, arc_segment);
         }
       }
 
       // Precalculate current floor positions and BPMs for reusing
       int tg_size = timing_groups->size;
-      float curr_fps[tg_size], curr_bpms[tg_size]; // won't recommend this
+      double curr_fps[tg_size]; float curr_bpms[tg_size]; // won't recommend this
       for (int i = 0; i < tg_size; i++)
       {
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
@@ -142,7 +146,7 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
       {
         ArcSegment *arc_segment = (ArcSegment *)list_get(&arc_render_list, i);
         Arc *arc = arc_segment->arc;
-        float curr_fp  = curr_fps[arc->timing_group]; 
+        double curr_fp = curr_fps[arc->timing_group];
         float curr_bpm = curr_bpms[arc->timing_group];
         float z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
 
@@ -175,7 +179,7 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
         // Height indicators
         float arc_world_x1 = arc_x_to_world(arc->x1);
         float arc_world_y1 = arc_y_to_world(arc->y1);
-        if (!arc->is_void && fabsf(arc_segment->start_fp - arc->start_fp) < 1e-6 && (arc->is_head || fabsf(arc->y1 - arc->y2) > 1e-6) )
+        if (!arc->is_void && fabs(arc_segment->start_fp - arc->start_fp) < 1e-6 && (arc->is_head || fabsf(arc->y1 - arc->y2) > 1e-6) )
         {
           rlDisableDepthMask();
           arc_renderer->height_indicator.material.maps->color = arc->color == 0 ? color_from_rgba(ARC_BLUE_HIGH_CL)
@@ -198,24 +202,23 @@ void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRender
                     float current_ms, float base_bpm, float scroll_speed)
 {
   List arctap_render_list; list_init(&arctap_render_list, sizeof(ArcTapFP));
-  float low_z_clip  = z_to_floor_position(-9.0f, base_bpm, scroll_speed);
-  float high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
+  double low_z_clip  = z_to_floor_position(-9.0f, base_bpm, scroll_speed);
+  double high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginMode3D(render_ctx->camera);
-    rlDisableDepthTest();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
       rlDisableBackfaceCulling();
       for (int i = 0; i < timing_groups->size; i++)
       {
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
-        float curr_fp = get_floor_position(&tg->timing_events, current_ms);
+        double curr_fp = get_floor_position(&tg->timing_events, current_ms);
 
         ArcTapFP arctap_low_z_fp  = { .fp = curr_fp - low_z_clip };
         ArcTapFP arctap_high_z_fp = { .fp = curr_fp + high_z_clip };
         int arctap_start_index = bisect_left(&tg->arctap_fps, &arctap_low_z_fp , arctapfp_compare_fp_asc);
         int arctap_end_index   = bisect_left(&tg->arctap_fps, &arctap_high_z_fp, arctapfp_compare_fp_asc);
 
-        for (int j = arctap_end_index - 1; j >= arctap_start_index; j--)
+        for (int j = arctap_start_index; j < arctap_end_index; j++)
         {
           ArcTapFP *arctap_fp = (ArcTapFP *)list_get(&tg->arctap_fps, j);
           list_push(&arctap_render_list, arctap_fp);
@@ -223,7 +226,7 @@ void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRender
       }
 
       int tg_size = timing_groups->size;
-      float curr_fps[tg_size];
+      double curr_fps[tg_size];
       for (int i = 0; i < tg_size; i++)
       {
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
@@ -231,18 +234,17 @@ void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRender
       }
 
       list_sort_by(&arctap_render_list, arctapfp_compare_fp_asc);
-      for (int i = arctap_render_list.size - 1; i >= 0; i--)
+      for (int i = 0; i < arctap_render_list.size; i++)
       {
           ArcTapFP *arctap_fp = (ArcTapFP *)list_get(&arctap_render_list, i);
           ArcTap *arctap = arctap_fp->arctap;
-          float curr_fp = curr_fps[arctap->timing_group];
+          double curr_fp = curr_fps[arctap->timing_group];
 
           float z_pos = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
           arctap_render_test(&arctap_renderer->arctap, arctap, z_pos);
       }
       rlEnableBackfaceCulling();
     rlPopMatrix();
-    rlEnableDepthTest();
   EndMode3D();
   list_free(&arctap_render_list);
 }
