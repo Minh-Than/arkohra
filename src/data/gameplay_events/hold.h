@@ -8,7 +8,7 @@ typedef struct
 {
   double lane;
   int    start_timing, end_timing, timing_group;
-  float  start_fp, end_fp;
+  double start_fp, end_fp;
   bool   is_selected, is_active;
 } Hold;
 void hold_print(const void *elem);

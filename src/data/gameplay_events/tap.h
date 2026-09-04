@@ -9,7 +9,7 @@ typedef struct
   List  connector_x, connector_y;
   float lane;
   int   timing, timing_group;
-  float fp;
+  double fp;
   bool  is_selected;
 } Tap;
 
@@ -19,7 +19,7 @@ MeshRenderable tap_load_mesh(Texture2D *texture);
 
 typedef struct {
   Tap   *tap;
-  float fp;
+  double fp;
 } TapFP;
 
 int tapfp_compare_fp_asc(const void *a, const void *b);

@@ -16,58 +16,58 @@ float lane_to_world_x(float lane)
   return (LANE_WIDTH * lane) + (-LANE_WIDTH * 2.5f);
 }
 
-float z_to_floor_position(float z, float base_bpm, float scroll_speed)
+double z_to_floor_position(float z, float base_bpm, float scroll_speed)
 {
   float final_scroll_speed = fminf(fmaxf(MINIMUM_SCROLL_SPEED, scroll_speed), MAXIMUM_SCROLL_SPEED);
-  return z * base_bpm * -32 / final_scroll_speed;
+  return (double)z * base_bpm * -32 / final_scroll_speed;
 }
 
-float floor_position_to_z(float fp, float base_bpm, float scroll_speed)
+float floor_position_to_z(double fp, float base_bpm, float scroll_speed)
 {
   float final_scroll_speed = fminf(fmaxf(MINIMUM_SCROLL_SPEED, scroll_speed), MAXIMUM_SCROLL_SPEED);
-  return fp / base_bpm / -32 * final_scroll_speed;
+  return (float)(fp / base_bpm / -32 * final_scroll_speed);
 }
 
 #if defined(__x86_64__) || defined(__i386__)
-void batch_fp_to_z(float *fp_list, float *out, int count, float base_bpm, float scroll_speed)
+void batch_fp_to_z(double *fp_list, float *out, int count, float base_bpm, float scroll_speed)
 {
-  __m128 base_bpm_v     = _mm_set1_ps(base_bpm);
-  __m128 constant_v     = _mm_set1_ps(-32.0f);
-  __m128 scroll_speed_v = _mm_set1_ps(scroll_speed);
+  __m128d base_bpm_v     = _mm_set1_pd(base_bpm);
+  __m128d constant_v     = _mm_set1_pd(-32.0);
+  __m128d scroll_speed_v = _mm_set1_pd(scroll_speed);
 
   int i = 0;
-  for (; i + 4 <= count; i += 4)
+  for (; i + 2 <= count; i += 2)
   {
-    __m128 fp = _mm_loadu_ps(&fp_list[i]);
-    __m128 z  = _mm_div_ps(fp, base_bpm_v);
-    z         = _mm_div_ps(z, constant_v);
-    z         = _mm_mul_ps(z, scroll_speed_v);
-    _mm_storeu_ps(&out[i], z);
+    __m128d fp = _mm_loadu_pd(&fp_list[i]);
+    __m128d z  = _mm_div_pd(fp, base_bpm_v);
+    z          = _mm_div_pd(z, constant_v);
+    z          = _mm_mul_pd(z, scroll_speed_v);
+    _mm_storel_epi64((__m128i *)&out[i], _mm_castps_si128(_mm_cvtpd_ps(z)));
   }
   for (; i < count; i++)
     out[i] = floor_position_to_z(fp_list[i], base_bpm, scroll_speed);
 }
-#elif defined(__aarch64__) || defined(__arm__)
-void batch_fp_to_z(float *fp_list, float *out, int count, float base_bpm, float scroll_speed)
+#elif defined(__aarch64__)
+void batch_fp_to_z(double *fp_list, float *out, int count, float base_bpm, float scroll_speed)
 {
-  float32x4_t base_bpm_v     = vdupq_n_f32(base_bpm);
-  float32x4_t constant_v     = vdupq_n_f32(-32.0f);
-  float32x4_t scroll_speed_v = vdupq_n_f32(scroll_speed);
+  float64x2_t base_bpm_v     = vdupq_n_f64(base_bpm);
+  float64x2_t constant_v     = vdupq_n_f64(-32.0);
+  float64x2_t scroll_speed_v = vdupq_n_f64(scroll_speed);
 
   int i = 0;
-  for (; i + 4 <= count; i += 4)
+  for (; i + 2 <= count; i += 2)
   {
-    float32x4_t fp = vld1q_f32(&fp_list[i]);
-    float32x4_t z  = vdivq_f32(fp, base_bpm_v);
-    z              = vdivq_f32(z, constant_v);
-    z              = vmulq_f32(z, scroll_speed_v);
-    vst1q_f32(&out[i], z);
+    float64x2_t fp = vld1q_f64(&fp_list[i]);
+    float64x2_t z  = vdivq_f64(fp, base_bpm_v);
+    z              = vdivq_f64(z, constant_v);
+    z              = vmulq_f64(z, scroll_speed_v);
+    vst1_f32(&out[i], vcvt_f32_f64(z));
   }
   for (; i < count; i++)
     out[i] = floor_position_to_z(fp_list[i], base_bpm, scroll_speed);
 }
 #else
-void batch_fp_to_z(float *fp_list, float *out, int count, float base_bpm, float scroll_speed)
+void batch_fp_to_z(double *fp_list, float *out, int count, float base_bpm, float scroll_speed)
 {
   for (int i = 0; i < count; i++)
     out[i] = floor_position_to_z(fp_list[i], base_bpm, scroll_speed);
@@ -79,13 +79,13 @@ void recalculate_floor_position(ChartTimingGroup *timing_group)
   List *timing_events = &timing_group->timing_events;
   if (timing_events->size == 0) return;
 
-  float fp = 0;
+  double fp = 0;
   for (int i = 0; i < timing_events->size - 1; i++)
   {
     TimingEvent *curr = (TimingEvent *)list_get(timing_events, i);
     TimingEvent *next = (TimingEvent *)list_get(timing_events, i + 1);
     curr->fp = fp;
-    fp += (next->timing - curr->timing) * curr->bpm;
+    fp += (double)(next->timing - curr->timing) * curr->bpm;
   }
 
   TimingEvent *event = (TimingEvent *)list_get(timing_events, timing_events->size - 1);
@@ -100,14 +100,14 @@ TimingEvent *get_event_at(List *timing_events, int timing)
   return (TimingEvent *)list_get(timing_events, index);
 }
 
-float get_floor_position(List *timing_events, int timing)
+double get_floor_position(List *timing_events, int timing)
 {
   TimingEvent *note = get_event_at(timing_events, timing);
-  float baseFloorPosition = note->fp;
-  return baseFloorPosition + (note->bpm * (timing - note->timing));
+  double baseFloorPosition = note->fp;
+  return baseFloorPosition + ((double)note->bpm * (timing - note->timing));
 }
 
-float get_fp_from_current(List *timing_events, int timing, int current_timing)
+double get_fp_from_current(List *timing_events, int timing, int current_timing)
 {
   double note_fp = get_floor_position(timing_events, timing);
   double curr_fp = get_floor_position(timing_events, current_timing);

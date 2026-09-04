@@ -3,8 +3,8 @@
 
 typedef struct
 {
-  float fp;
-  float bpm, divisor;
+  double fp;
+  float  bpm, divisor;
   int   timing, timing_group;
   bool  is_selected;
 } TimingEvent;
