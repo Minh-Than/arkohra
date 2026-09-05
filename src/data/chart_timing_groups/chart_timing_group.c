@@ -18,7 +18,10 @@ ChartTimingGroup timing_group_init()
   List tap_fps   ; list_init(&tap_fps, sizeof(TapFP))      ; tg.tap_fps = tap_fps;
   List arctap_fps; list_init(&arctap_fps, sizeof(ArcTapFP)); tg.arctap_fps = arctap_fps;
 
+  itv_tree_init(&tg.holds_tree, double_compare_asc);
+
   List arc_segments; list_init(&arc_segments, sizeof(ArcSegment)); tg.arc_segments = arc_segments;
+  itv_tree_init(&tg.arc_segments_tree, double_compare_asc);
   return tg;
 }
 
@@ -61,5 +64,8 @@ void timing_group_unload(ChartTimingGroup (*chart_data))
     renderable_unload(&arc_segment->mesh_r);
     renderable_unload(&arc_segment->shadow_r);
   }
+  itv_tree_free(&chart_data->holds_tree);
+
   list_free(&chart_data->arc_segments);
+  itv_tree_free(&chart_data->arc_segments_tree);
 }

@@ -48,5 +48,6 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
 void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx);
 void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timing_events, RenderContext *render_ctx);
 int arc_segment_compare_start_fp_asc(const void *a, const void *b);
+int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b);
 
 #endif // ARC_H

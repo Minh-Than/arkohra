@@ -9,6 +9,7 @@
 #include "data/gameplay_events/arc.h"
 #include "data/gameplay_events/arctap.h"
 #include "data/gameplay_events/gameplay_events.h"
+#include "data/gameplay_events/tap.h"
 #include "gameplay/arc_formula.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -17,7 +18,9 @@
 void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRenderer *hold_tap_renderer,
                        float current_ms, float base_bpm, float scroll_speed)
 {
-  double low_z_clip  = z_to_floor_position(-9.0f, base_bpm, scroll_speed);
+  List hold_render_list; list_init(&hold_render_list, sizeof(const void *));
+  List tap_render_list; list_init(&tap_render_list, sizeof(TapFP));
+  double low_z_clip  = z_to_floor_position(9.0f, base_bpm, scroll_speed);
   double high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
@@ -29,26 +32,52 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
           ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
           double curr_fp  = get_floor_position(&tg->timing_events, current_ms);
 
-          // Holds
-          for (int j = 0; j < tg->holds.size; j++)
-          {
-            Hold *hold    = (Hold *)list_get(&tg->holds, j);
-            float z_pos   = floor_position_to_z(hold->start_fp - curr_fp, base_bpm, scroll_speed);
-            float z_scale = floor_position_to_z(hold->end_fp - hold->start_fp, base_bpm, scroll_speed);
-            if ((z_pos < -100.0f && z_scale < -100.0f) || (z_pos > 9.0f && z_scale > 9.0f)) continue;
-            float alpha   = hold->start_timing < current_ms && !hold->is_active ? 0.4f : 1.0f;
-            hold_render_test(&hold_tap_renderer->hold, hold, z_pos, z_scale, alpha);
-          }
+          double curr_itv_arr[] = { curr_fp + low_z_clip, curr_fp + high_z_clip };
+          Interval curr_interval = { .low = &curr_itv_arr[0], .high = &curr_itv_arr[1] };
+          itv_tree_get_overlaps(&tg->holds_tree, &hold_render_list, curr_interval);
 
           // Taps
-          TapFP tap_low_z_fp  = { .fp = curr_fp - low_z_clip };
+          TapFP tap_low_z_fp  = { .fp = curr_fp + low_z_clip };
           TapFP tap_high_z_fp = { .fp = curr_fp + high_z_clip };
           int tap_start_index = bisect_left(&tg->tap_fps, &tap_low_z_fp , tapfp_compare_fp_asc);
           int tap_end_index   = bisect_left(&tg->tap_fps, &tap_high_z_fp, tapfp_compare_fp_asc);
           for (int j = tap_start_index; j < tap_end_index; j++)
           {
             TapFP *tap_fp = (TapFP *)list_get(&tg->tap_fps, j);
+            list_push(&tap_render_list, tap_fp);
+          }
+        }
+
+        // Precalculate current floor positions and BPMs for reusing
+        int tg_size = timing_groups->size;
+        double curr_fps[tg_size];
+        for (int i = 0; i < tg_size; i++)
+        {
+          ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
+          curr_fps[i]  = get_floor_position(&tg->timing_events, current_ms);
+        }
+
+        // Iterate & draw
+        // Holds
+        list_sort_by(&hold_render_list, arc_segment_const_void_compare_start_fp_asc);
+        list_sort_by(&tap_render_list, tapfp_compare_fp_asc);
+        for(int i = hold_render_list.size - 1; i >= 0; i--)
+        {
+            Hold *hold = *(Hold **)list_get(&hold_render_list, i);
+            double curr_fp = curr_fps[hold->timing_group];
+            float z_pos   = floor_position_to_z(hold->start_fp - curr_fp, base_bpm, scroll_speed);
+            float z_scale = floor_position_to_z(hold->end_fp - hold->start_fp, base_bpm, scroll_speed);
+            if ((z_pos < -100.0f && z_scale < -100.0f) || (z_pos > 9.0f && z_scale > 9.0f)) continue;
+            float alpha   = hold->start_timing < current_ms && !hold->is_active ? 0.4f : 1.0f;
+            hold_render_test(&hold_tap_renderer->hold, hold, z_pos, z_scale, alpha);
+        }
+
+        // Taps
+        for(int i = tap_render_list.size - 1; i >= 0; i--)
+        {
+            TapFP *tap_fp = (TapFP *)list_get(&tap_render_list, i);
             Tap *tap      = tap_fp->tap;
+            double curr_fp = curr_fps[tap->timing_group];
             double diff_fp = tap->fp - curr_fp;
             float z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
             float z_scale = Clamp(Lerp(1.8f, 5.8f,
@@ -68,7 +97,6 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
                                 : color_from_rgba(LIGHT_CONNECTOR_CL)
                               );
             }
-          }
         }
       EndBlendMode();
       rlEnableBackfaceCulling();
@@ -81,8 +109,8 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
 void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
                              float current_ms, float base_bpm, float scroll_speed)
 {
-  List arc_render_list; list_init(&arc_render_list, sizeof(ArcSegment));
-  double low_z_clip  = z_to_floor_position(50.0f, base_bpm, scroll_speed);
+  List arc_render_list; list_init(&arc_render_list, sizeof(const void *));
+  double low_z_clip  = z_to_floor_position(9.0f, base_bpm, scroll_speed);
   double high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
@@ -95,6 +123,10 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
         double curr_fp = get_floor_position(&tg->timing_events, current_ms);
         float curr_event_bpm = get_event_at(&tg->timing_events, current_ms)->bpm;
+
+        double curr_itv_arr[] = { curr_fp + low_z_clip, curr_fp + high_z_clip };
+        Interval curr_interval = { .low = &curr_itv_arr[0], .high = &curr_itv_arr[1] };
+        itv_tree_get_overlaps(&tg->arc_segments_tree, &arc_render_list, curr_interval);
 
         // Arctap shadows
         ArcTapFP arctap_low_fp  = { .fp = curr_fp + low_z_clip };
@@ -112,22 +144,6 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
                                                               0.0f, arctap_z_pos));
           DrawMesh(arc_renderer->arctap_shadow.mesh, arc_renderer->arctap_shadow.material, arctap_mt);
         }
-
-        // Populate visible arcs segments
-        // ArcSegment low_segment  = { .start_fp = curr_fp + low_z_clip };
-        // ArcSegment high_segment = { .start_fp = curr_fp + high_z_clip };
-        // int start_index = bisect_left(&tg->arc_segments, &low_segment , arc_segment_compare_start_fp_asc);
-        // int end_index   = bisect_left(&tg->arc_segments, &high_segment, arc_segment_compare_start_fp_asc);
-
-        // for (int j = start_index; j < end_index; j++)
-        for (int j = 0; j < tg->arc_segments.size; j++)
-        {
-          ArcSegment *arc_segment = (ArcSegment *)list_get(&tg->arc_segments, j);
-          float z_pos = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-          float z_scale = floor_position_to_z(arc_segment->end_fp - arc_segment->start_fp, base_bpm, scroll_speed);
-          if((z_pos < -100.0f && z_scale < -100.0f) || (z_pos > 9.0f && z_scale > 9.0f)) continue;
-          list_push(&arc_render_list, arc_segment);
-        }
       }
 
       // Precalculate current floor positions and BPMs for reusing
@@ -141,10 +157,10 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
       }
 
       // Iterate & draw
-      list_sort_by(&arc_render_list, arc_segment_compare_start_fp_asc);
+      list_sort_by(&arc_render_list, arc_segment_const_void_compare_start_fp_asc);
       for(int i = arc_render_list.size - 1; i >= 0; i--)
       {
-        ArcSegment *arc_segment = (ArcSegment *)list_get(&arc_render_list, i);
+        ArcSegment *arc_segment = *(ArcSegment **)list_get(&arc_render_list, i);
         Arc *arc = arc_segment->arc;
         double curr_fp = curr_fps[arc->timing_group];
         float curr_bpm = curr_bpms[arc->timing_group];
@@ -234,7 +250,7 @@ void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRender
       }
 
       list_sort_by(&arctap_render_list, arctapfp_compare_fp_asc);
-      for (int i = 0; i < arctap_render_list.size; i++)
+      for (int i = arctap_render_list.size - 1; i >= 0; i--)
       {
           ArcTapFP *arctap_fp = (ArcTapFP *)list_get(&arctap_render_list, i);
           ArcTap *arctap = arctap_fp->arctap;
