@@ -69,7 +69,9 @@ int tapfp_compare_fp_asc(const void *a, const void *b)
 {
   const TapFP *tap_a = (const TapFP *) a;
   const TapFP *tap_b = (const TapFP *) b;
-  if (tap_a->fp < tap_b->fp) return -1;
-  if (tap_a->fp > tap_b->fp) return 1;
+  double fp_a = tap_a->fp;
+  double fp_b = tap_b->fp;
+  if (fabs(fp_a - fp_b) > 1e-6 && fp_a < fp_b) return -1;
+  if (fabs(fp_a - fp_b) > 1e-6 && fp_a > fp_b) return 1;
   return 0;
 }

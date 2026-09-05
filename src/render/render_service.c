@@ -36,7 +36,6 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
           Interval curr_interval = { .low = &curr_itv_arr[0], .high = &curr_itv_arr[1] };
           itv_tree_get_overlaps(&tg->holds_tree, &hold_render_list, curr_interval);
 
-          // Taps
           TapFP tap_low_z_fp  = { .fp = curr_fp + low_z_clip };
           TapFP tap_high_z_fp = { .fp = curr_fp + high_z_clip };
           int tap_start_index = bisect_left(&tg->tap_fps, &tap_low_z_fp , tapfp_compare_fp_asc);
@@ -68,7 +67,7 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
             float z_pos   = floor_position_to_z(hold->start_fp - curr_fp, base_bpm, scroll_speed);
             float z_scale = floor_position_to_z(hold->end_fp - hold->start_fp, base_bpm, scroll_speed);
             if ((z_pos < -100.0f && z_scale < -100.0f) || (z_pos > 9.0f && z_scale > 9.0f)) continue;
-            float alpha   = hold->start_timing < current_ms && !hold->is_active ? 0.4f : 1.0f;
+            float alpha   = hold->start_timing < current_ms && !hold->is_active ? 0.5f : 1.0f;
             hold_render_test(&hold_tap_renderer->hold, hold, z_pos, z_scale, alpha);
         }
 

@@ -134,7 +134,9 @@ int arctapfp_compare_fp_asc(const void *a, const void *b)
 {
   const ArcTapFP *arctap_a = (const ArcTapFP *) a;
   const ArcTapFP *arctap_b = (const ArcTapFP *) b;
-  if(arctap_a->fp < arctap_b->fp) return -1;
-  if (arctap_a->fp > arctap_b->fp) return 1;
+  double fp_a = arctap_a->fp;
+  double fp_b = arctap_b->fp;
+  if(fabs(fp_a - fp_b) > 1e-6 && fp_a < fp_b) return -1;
+  if(fabs(fp_a - fp_b) > 1e-6 && fp_a > fp_b) return 1;
   return 0;
 }
