@@ -14,5 +14,6 @@ typedef struct
 void hold_print(const void *elem);
 void hold_render_test(MeshRenderable *hold_r, Hold *hold, float z_pos, float z_scale, float alpha);
 MeshRenderable hold_load_mesh(Texture2D *texture);
+int hold_const_void_compare_start_fp_asc(const void *a, const void *b);
 
 #endif // HOLD_H

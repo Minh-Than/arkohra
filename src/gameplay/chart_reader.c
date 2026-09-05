@@ -213,6 +213,7 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
       Hold *hold = (Hold *)list_get(&tg->holds, j);
       hold->start_fp = get_floor_position(&tg->timing_events, hold->start_timing);
       hold->end_fp   = get_floor_position(&tg->timing_events, hold->end_timing);
+      itv_tree_insert(&tg->holds_tree, hold, (Interval){ .low = &hold->start_fp, .high = &hold->end_fp });
     }
 
     for (int j = 0; j < tg->taps.size; j++)
@@ -271,6 +272,12 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
       shadow_segment_generate_mesh(&tg->arc_segments, arc, &tg->timing_events, render_ctx);
     };
     list_sort_by(&tg->arc_segments, arc_segment_compare_start_fp_asc);
+
+    for (int j = 0; j < tg->arc_segments.size; j++)
+    {
+      ArcSegment *segment = (ArcSegment *)list_get(&tg->arc_segments, j);
+      itv_tree_insert(&tg->arc_segments_tree, segment, (Interval){ .low = &segment->start_fp, .high = &segment->end_fp });
+    }
 
     for (int j = 0; j < tg->arctaps.size; j++)
     {

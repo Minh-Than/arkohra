@@ -71,3 +71,14 @@ MeshRenderable hold_load_mesh(Texture2D *texture)
 
   return r;
 }
+
+int hold_const_void_compare_start_fp_asc(const void *a, const void *b)
+{
+  Hold *hold_a = (Hold *) a;
+  Hold *hold_b = (Hold *) b;
+  float sfp_a = hold_a->start_fp;
+  float sfp_b = hold_b->start_fp;
+  if (fabsf(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
+  if (fabsf(sfp_a - sfp_b) > 1e-6 && sfp_a > sfp_b) return 1;
+  return 0;
+}
