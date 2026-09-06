@@ -1,6 +1,7 @@
 #include "playfield_services.h"
 #include "color_services.h"
 #include "constants.h"
+#include "data/gameplay_events/arc.h"
 #include "data/gameplay_events/arctap.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/camera/camera_service.h"
@@ -43,7 +44,7 @@ void set_mesh_transforms(MeshRenderable *renderable, Matrix *transforms, int cou
   memcpy(renderable->transforms, transforms, count * sizeof(Matrix));
 }
 
-PlayfieldObjs playfield_objs_init(TextureGroup *texture_group) {
+PlayfieldObjs playfield_objs_init(RenderContext *render_ctx, TextureGroup *texture_group) {
   PlayfieldObjs objs = {0};
 
   // --- Track (1 instance, tiled, scrolling) ---
@@ -173,6 +174,7 @@ PlayfieldObjs playfield_objs_init(TextureGroup *texture_group) {
   set_mesh_transforms(&objs.arc_renderer.height_indicator, (Matrix[]){MatrixIdentity()}, 1);
 
   objs.arctap_renderer = (ArctapRenderer){
+    .arc_head = generate_arc_head_mesh(&texture_group->arc, render_ctx),
     .arctap = arctap_load_mesh(&texture_group->arctap),
   };
   return objs;
@@ -251,5 +253,6 @@ void playfield_objs_unload(PlayfieldObjs *scene) {
   renderable_unload(&scene->arc_renderer.height_indicator);
   renderable_unload(&scene->arc_renderer.arctap_shadow);
 
+  renderable_unload(&scene->arctap_renderer.arc_head);
   renderable_unload(&scene->arctap_renderer.arctap);
 }
