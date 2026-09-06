@@ -67,13 +67,13 @@ void generate_segments(List *arc_segments_list, Arc *arc, Texture2D *texture, Li
   for (int i = 0; i < segment_count; i++)
   //  generate_arc_body_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing, i);
   {
-    if (arc->is_head && i == 0) generate_arc_head_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing, i);
-    else                        generate_arc_body_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing, i);
+    if (arc->is_head && i == 0) generate_arc_head_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing);
+    else                        generate_arc_body_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing);
   }
 }
 
 // ARC SEGMENT
-void generate_arc_body_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx, float *curr_timing, int i)
+void generate_arc_body_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx, float *curr_timing)
 {
   // WARNING:
   //   2 6
@@ -213,7 +213,7 @@ void generate_arc_body_mesh(List *arc_segments_list, Arc *arc, Texture2D *textur
     *curr_timing = *curr_timing + increment;
 }
 
-void generate_arc_head_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx, float *curr_timing, int i)
+void generate_arc_head_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx, float *curr_timing)
 {
   int arc_duration     = arc->end_timing - arc->start_timing;
   float segment_length = calculate_arc_segment_length(arc_duration, arc->arc_res);
@@ -371,7 +371,7 @@ void generate_arc_head_mesh(List *arc_segments_list, Arc *arc, Texture2D *textur
        0.0f, 0.0f,
        1.0f, 1.0f,
        0.0f, 1.0f,
-       0.0f, 0.0f,
+       1.0f, 0.0f,
     };
     for (int t = 0; t < ((2 * 2) * 3); t++) r.mesh.texcoords[head_uv_base + t] = head_uv[t];
 
