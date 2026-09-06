@@ -244,31 +244,18 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
       arc->start_fp = get_floor_position(&tg->timing_events, arc->start_timing);
       arc->end_fp   = get_floor_position(&tg->timing_events, arc->end_timing);
 
-      if (!arc->is_void)
+      Arc low_target  = { .start_timing = arc->end_timing - 1 };
+      Arc high_target = { .start_timing = arc->end_timing + 1 };
+      int start_idx = bisect_left(&tg->arcs, &low_target, arc_compare_start_timing_asc);
+      int end_idx = bisect_right(&tg->arcs, &high_target, arc_compare_start_timing_asc);
+      for (int k = start_idx; k < end_idx; k++)
       {
-        Arc low_target  = { .start_timing = arc->end_timing - 1 };
-        Arc high_target = { .start_timing = arc->end_timing + 1 };
-        int start_idx = bisect_left(&tg->arcs, &low_target, arc_compare_start_timing_asc);
-        int end_idx = bisect_right(&tg->arcs, &high_target, arc_compare_start_timing_asc);
-        for (int k = start_idx; k < end_idx; k++)
-        {
-          Arc *connected_arc = (Arc *)list_get(&tg->arcs, k);
-          if (fabsf(connected_arc->x1 - arc->x2) < 1e-6 && fabsf(connected_arc->y1 - arc->y2) < 1e-6)
-            connected_arc->is_head = false;
-        }
+        Arc *connected_arc = (Arc *)list_get(&tg->arcs, k);
+        if (fabsf(connected_arc->x1 - arc->x2) > 1e-6 ||
+            fabsf(connected_arc->y1 - arc->y2) > 1e-6) continue;
+        if (!(connected_arc->is_void ^ arc->is_void)) connected_arc->is_head = false;
       }
-
-      int arc_duration      = arc->end_timing - arc->start_timing;
-      float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res);
-      int segment_count     = (int)ceilf(arc_duration / segment_length);
-      segment_count         = (int)fmax(segment_count, 1);
-
-      for (int k = 0; k < segment_count; k++)
-      {
-        ArcSegment arc_segment = { .arc = arc };
-        list_push(&tg->arc_segments, &arc_segment);
-      }
-      arc_segment_generate_mesh(&tg->arc_segments, arc, arc_texture, &tg->timing_events, render_ctx);
+      generate_segments(&tg->arc_segments, arc, arc_texture, &tg->timing_events, render_ctx);
       shadow_segment_generate_mesh(&tg->arc_segments, arc, &tg->timing_events, render_ctx);
     };
     list_sort_by(&tg->arc_segments, arc_segment_compare_start_fp_asc);
