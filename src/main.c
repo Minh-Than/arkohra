@@ -48,7 +48,6 @@ int main()
   ChartReader chart_reader      = { 0 };
 
   WindowGroup window_group      = window_services_init();
-  PlayfieldObjs playfield_objs  = playfield_objs_init(&texture_group);
 
   FontServices font_services    = font_services_init(GLSL_VERSION);
   Shader arc_shader             = LoadShader(
@@ -79,6 +78,7 @@ int main()
     .audio_clock     = { 0 },
   };
 
+  PlayfieldObjs playfield_objs  = playfield_objs_init(&render_ctx, &texture_group);
 
   InitAudioDevice();
   Wave wave = LoadWave(render_ctx.chart_settings.audio_path);

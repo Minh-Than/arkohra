@@ -20,7 +20,7 @@ typedef struct
   ArctapRenderer  arctap_renderer;
 } PlayfieldObjs;
 
-PlayfieldObjs playfield_objs_init(TextureGroup *texture_group);
+PlayfieldObjs playfield_objs_init(RenderContext *render_ctx, TextureGroup *texture_group);
 void set_mesh_transforms(MeshRenderable *renderable, Matrix *transforms, int count);
 void playfield_render(
   RenderContext *render_ctx,

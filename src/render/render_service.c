@@ -216,8 +216,9 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
 void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRenderer *arctap_renderer,
                     float current_ms, float base_bpm, float scroll_speed)
 {
+  List arc_head_render_list; list_init(&arc_head_render_list, sizeof(const void *));
   List arctap_render_list; list_init(&arctap_render_list, sizeof(ArcTapFP));
-  double low_z_clip  = z_to_floor_position(-9.0f, base_bpm, scroll_speed);
+  double low_z_clip  = z_to_floor_position(9.0f, base_bpm, scroll_speed);
   double high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   BeginMode3D(render_ctx->camera);
     rlPushMatrix();
@@ -228,7 +229,11 @@ void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRender
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
         double curr_fp = get_floor_position(&tg->timing_events, current_ms);
 
-        ArcTapFP arctap_low_z_fp  = { .fp = curr_fp - low_z_clip };
+        double curr_itv_arr[] = { curr_fp + low_z_clip, curr_fp + high_z_clip };
+        Interval curr_interval = { .low = &curr_itv_arr[0], .high = &curr_itv_arr[1] };
+        itv_tree_get_overlaps(&tg->arc_segments_tree, &arc_head_render_list, curr_interval);
+
+        ArcTapFP arctap_low_z_fp  = { .fp = curr_fp + low_z_clip };
         ArcTapFP arctap_high_z_fp = { .fp = curr_fp + high_z_clip };
         int arctap_start_index = bisect_left(&tg->arctap_fps, &arctap_low_z_fp , arctapfp_compare_fp_asc);
         int arctap_end_index   = bisect_left(&tg->arctap_fps, &arctap_high_z_fp, arctapfp_compare_fp_asc);
@@ -240,12 +245,49 @@ void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRender
         }
       }
 
+      // Arc heads
       int tg_size = timing_groups->size;
-      double curr_fps[tg_size];
+      double curr_fps[tg_size]; float curr_bpms[tg_size]; // won't recommend this
       for (int i = 0; i < tg_size; i++)
       {
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
         curr_fps[i]  = get_floor_position(&tg->timing_events, current_ms);
+        curr_bpms[i] = get_event_at(&tg->timing_events, current_ms)->bpm;
+      }
+
+      printf("arc_head_render_list size: %zu\n", arc_head_render_list.size);
+      for(int i = arc_head_render_list.size - 1; i >= 0; i--)
+      {
+        ArcSegment *arc_segment = *(ArcSegment **)list_get(&arc_head_render_list, i);
+        Arc *arc = arc_segment->arc;
+        if (!arc->is_head) continue;
+        if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) continue;
+        double curr_fp = curr_fps[arc->timing_group];
+        float curr_bpm = curr_bpms[arc->timing_group];
+
+        int is_void_shader = arc->is_void ? 1 : 0;
+        int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+        int negative_bpm_shader = curr_bpm < 0.0f;
+        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
+        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+
+        Vector4 tint_low, tint_high;
+        tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
+        if (!arc->is_void)
+        {
+          tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
+          tint_high = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL));
+        }
+        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
+        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
+
+        float x_pos = arc_x_to_world(arc->x1);
+        float y_pos = arc_y_to_world(arc->y1);
+        float z_pos = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
+        float head_scale = arc->is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
+        Matrix tr = MatrixMultiply(MatrixScale(head_scale, head_scale, head_scale), MatrixTranslate(x_pos, y_pos, z_pos));
+        DrawMesh(arctap_renderer->arc_head.mesh, arctap_renderer->arc_head.material, tr);
       }
 
       list_sort_by(&arctap_render_list, arctapfp_compare_fp_asc);
@@ -262,4 +304,5 @@ void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRender
     rlPopMatrix();
   EndMode3D();
   list_free(&arctap_render_list);
+  list_free(&arc_head_render_list);
 }
