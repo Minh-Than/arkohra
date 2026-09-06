@@ -88,8 +88,8 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
             {
               float x = *(float *)list_get(&tap->connector_x, k);
               float y = *(float *)list_get(&tap->connector_y, k);
-              DrawThickLine3D((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos },
-                              (Vector3){ x, y, z_pos },
+              DrawThickLine3D((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos - 0.1f },
+                              (Vector3){ x, y - 0.21f, z_pos - 0.1f },
                               Lerp(0.04f, 0.11f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
                               render_ctx->chart_settings.skin_side == SK_CONFLICT
                                 ? color_from_rgba(CONFICT_CONNECTOR_CL)
@@ -255,7 +255,6 @@ void render_arctaps(List *timing_groups, RenderContext *render_ctx, ArctapRender
         curr_bpms[i] = get_event_at(&tg->timing_events, current_ms)->bpm;
       }
 
-      printf("arc_head_render_list size: %zu\n", arc_head_render_list.size);
       for(int i = arc_head_render_list.size - 1; i >= 0; i--)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(&arc_head_render_list, i);
