@@ -180,17 +180,6 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
         SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &shadow_tint, SHADER_UNIFORM_VEC4);
         DrawMesh(arc_segment->shadow_r.mesh, arc_segment->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
 
-        // Arcs/Traces
-        tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
-        if (!arc->is_void)
-        {
-          tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
-          tint_high = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL));
-        }
-        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
-        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
-        DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
-
         // Height indicators
         float arc_world_x1 = arc_x_to_world(arc->x1);
         float arc_world_y1 = arc_y_to_world(arc->y1);
@@ -204,6 +193,17 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
                                                                                   MatrixTranslate(arc_world_x1, arc_world_y1 * 0.5f, z_pos))));
           rlEnableDepthMask();
         }
+
+        // Arcs/Traces
+        tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
+        if (!arc->is_void)
+        {
+          tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
+          tint_high = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL));
+        }
+        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
+        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
+        DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
       }
       rlEnableBackfaceCulling();
       EndBlendMode();

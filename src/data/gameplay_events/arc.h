@@ -44,8 +44,9 @@ typedef struct {
   double start_fp, end_fp;
 } ArcSegment;
 
-void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx);
-void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx);
+void generate_segments(List *arc_segments_list, Arc *arc,  Texture2D *texture, List *timing_events, RenderContext *render_ctx);
+void generate_arc_body_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx, float *curr_timing, int i);
+void generate_arc_head_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx, float *curr_timing, int i);
 void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timing_events, RenderContext *render_ctx);
 int arc_segment_compare_start_fp_asc(const void *a, const void *b);
 int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b);

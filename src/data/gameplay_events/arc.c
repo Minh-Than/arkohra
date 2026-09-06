@@ -56,14 +56,25 @@ void arc_print(const void *elem)
   printf(";");
 }
 
-// ARC SEGMENT
-void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx)
+void generate_segments(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx)
 {
   int arc_duration      = arc->end_timing - arc->start_timing;
   float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res);
   int segment_count     = (int)ceilf(arc_duration / segment_length);
   segment_count         = (int)fmax(segment_count, 1);
 
+  float curr_timing = 0.0f;
+  for (int i = 0; i < segment_count; i++)
+  //  generate_arc_body_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing, i);
+  {
+    if (arc->is_head && i == 0) generate_arc_head_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing, i);
+    else                        generate_arc_body_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing, i);
+  }
+}
+
+// ARC SEGMENT
+void generate_arc_body_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx, float *curr_timing, int i)
+{
   // WARNING:
   //   2 6
   //  /| |\
@@ -71,6 +82,9 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
   // | 1 5 |
   // |/   \|
   // 0     4
+
+  int arc_duration     = arc->end_timing - arc->start_timing;
+  float segment_length = calculate_arc_segment_length(arc_duration, arc->arc_res);
 
   // Per mesh
   const int VERTICES_COUNT  = 8;
@@ -84,7 +98,7 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
      0.0433f, -0.025f, -1.0f,   0.0f, 0.05f, -1.0f,   0.0f, 0.05f, -1.0f,   0.0433f, -0.025f, -1.0f,  // 4, 5, 6, 7
   };
   float arc_scale = arc->is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
-  for (int i = 0; i < VERTICES_COUNT * 3; i++) if (i % 3 != 2) { initial_v[i] *= arc_scale; }
+  for (int j = 0; j < VERTICES_COUNT * 3; j++) if (j % 3 != 2) { initial_v[j] *= arc_scale; }
 
   // UV setup
   float uv[TEXCOORDS_COUNT * 2] = {
@@ -93,7 +107,6 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
   };
 
   // NOTE: Create mesh at z=0 (in timing) to prevent texture/rendering from going apeshit
-  float curr_timing = 0.0f;
   Arc temp_arc = {
     .x1 = arc->x1, .y1 = arc->y1,
     .x2 = arc->x2, .y2 = arc->y2,
@@ -101,8 +114,7 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
     .end_timing    = arc->end_timing - arc->start_timing,
     .type          = arc->type
   };
-  for (int i = 0; i < segment_count; i++)
-  {
+
     MeshRenderable r = { 0 };
 
     r.mesh.vertexCount   = VERTICES_COUNT;
@@ -114,7 +126,7 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
     r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * sizeof(unsigned short));
 
     // Starting index for each segment (index * vertices * xyz coords)
-    float increment = fminf(arc->end_timing - arc->start_timing - curr_timing, segment_length);
+    float increment = fminf(arc->end_timing - arc->start_timing - *curr_timing, segment_length);
     double start_fp = 0;
     double end_fp = 0;
 
@@ -123,7 +135,7 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
     {
       // condition match => front of arc
       bool is_front_of_arc = j == 0 || j == 1 || j == 4 || j == 5;
-      float target_timing = is_front_of_arc ? curr_timing : curr_timing + increment;
+      float target_timing = is_front_of_arc ? *curr_timing : *curr_timing + increment;
       bool zero_duration = (arc->end_timing == arc->start_timing);
       float world_x = zero_duration
         ? arc_x_to_world(is_front_of_arc ? arc->x1 : arc->x2)
@@ -135,7 +147,7 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
       if (!is_front_of_arc) end_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
 
       // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
-      float segment_start_timing = curr_timing + arc->start_timing;
+      float segment_start_timing = *curr_timing + arc->start_timing;
       float z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
                                   render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
       float z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
@@ -195,21 +207,16 @@ void arc_segment_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *tex
     r.material.shader = render_ctx->arc_shader.shader;
     set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 
-    ArcSegment *sgm = (ArcSegment *)list_get(arc_segments_list, arc_segments_list->size - segment_count + i);
-    sgm->mesh_r = r;
-    sgm->start_fp = start_fp;
-    sgm->end_fp = end_fp;
+    ArcSegment sgm = { .arc = arc, .mesh_r = r, .start_fp = start_fp, .end_fp = end_fp };
+    list_push(arc_segments_list, &sgm);
 
-    curr_timing += increment;
-  }
+    *curr_timing = *curr_timing + increment;
 }
 
-void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx)
+void generate_arc_head_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx, float *curr_timing, int i)
 {
-  int arc_duration      = arc->end_timing - arc->start_timing;
-  float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res);
-  int segment_count     = (int)ceilf(arc_duration / segment_length);
-  segment_count         = (int)fmax(segment_count, 1);
+  int arc_duration     = arc->end_timing - arc->start_timing;
+  float segment_length = calculate_arc_segment_length(arc_duration, arc->arc_res);
 
   // WARNING:
   //   2     6
@@ -223,18 +230,20 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
   //     9 12
 
   // Per mesh
-  const int VERTICES_COUNT  = 8;
-  const int TRIANGLE_COUNT  = 4;
-  const int TEXCOORDS_COUNT = 8;
+  const int BODY_VERTICES  = 8;        // quad strip part
+  const int HEAD_VERTICES  = 6;
+  const int VERTICES_COUNT  = BODY_VERTICES + HEAD_VERTICES;
+  const int TRIANGLE_COUNT  = 4 + 2;
+  const int TEXCOORDS_COUNT = 8 + 6;
   const int INDICES_COUNT   = TRIANGLE_COUNT * 3;
 
   // Initial vertices setup
-  float initial_v[VERTICES_COUNT * 3] = {
+  float initial_v[(VERTICES_COUNT - 6) * 3] = {
     -0.0433f, -0.025f, -1.0f,   0.0f, 0.05f, -1.0f,   0.0f, 0.05f, -1.0f,  -0.0433f, -0.025f, -1.0f,  // 0, 1, 2, 3
      0.0433f, -0.025f, -1.0f,   0.0f, 0.05f, -1.0f,   0.0f, 0.05f, -1.0f,   0.0433f, -0.025f, -1.0f,  // 4, 5, 6, 7
   };
   float arc_scale = arc->is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
-  for (int i = 0; i < VERTICES_COUNT * 3; i++) if (i % 3 != 2) { initial_v[i] *= arc_scale; }
+  for (int j = 0; j < (VERTICES_COUNT - 6) * 3; j++) if (j % 3 != 2) { initial_v[j] *= arc_scale; }
 
   // UV setup
   float uv[TEXCOORDS_COUNT * 2] = {
@@ -243,7 +252,6 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
   };
 
   // NOTE: Create mesh at z=0 (in timing) to prevent texture/rendering from going apeshit
-  float curr_timing = 0.0f;
   Arc temp_arc = {
     .x1 = arc->x1, .y1 = arc->y1,
     .x2 = arc->x2, .y2 = arc->y2,
@@ -251,8 +259,7 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
     .end_timing    = arc->end_timing - arc->start_timing,
     .type          = arc->type
   };
-  for (int i = 0; i < segment_count; i++)
-  {
+
     MeshRenderable r = { 0 };
 
     r.mesh.vertexCount   = VERTICES_COUNT;
@@ -264,16 +271,17 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
     r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * sizeof(unsigned short));
 
     // Starting index for each segment (index * vertices * xyz coords)
-    float increment = fminf(arc->end_timing - arc->start_timing - curr_timing, segment_length);
+    float increment = fminf(arc->end_timing - arc->start_timing - *curr_timing, segment_length);
     double start_fp = 0;
     double end_fp = 0;
+    float world_x_head, world_y_head, world_z_head;
 
     // Vertices for each face
-    for (int j = 0; j < VERTICES_COUNT; j++)
+    for (int j = 0; j < BODY_VERTICES; j++)
     {
       // condition match => front of arc
       bool is_front_of_arc = j == 0 || j == 1 || j == 4 || j == 5;
-      float target_timing = is_front_of_arc ? curr_timing : curr_timing + increment;
+      float target_timing = is_front_of_arc ? *curr_timing : *curr_timing + increment;
       bool zero_duration = (arc->end_timing == arc->start_timing);
       float world_x = zero_duration
         ? arc_x_to_world(is_front_of_arc ? arc->x1 : arc->x2)
@@ -281,16 +289,22 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
       float world_y = zero_duration
         ? arc_y_to_world(is_front_of_arc ? arc->y1 : arc->y2)
         : arc_world_y_at(target_timing, &temp_arc);
-      if (is_front_of_arc) start_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
-      if (!is_front_of_arc) end_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
 
       // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
-      float segment_start_timing = curr_timing + arc->start_timing;
+      float segment_start_timing = *curr_timing + arc->start_timing;
       float z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
                                   render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
       float z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
                                   render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
       float world_z  = z_target - z_segment;
+      if (is_front_of_arc)
+      {
+        world_x_head = world_x;
+        world_y_head = world_y;
+        world_z_head = world_z;
+        start_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
+      }
+      if (!is_front_of_arc) end_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
 
       // each x-y-z per vertex
       for (int k = 0; k < 3; k++)
@@ -323,7 +337,7 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
       };
     };
 
-    for (int t = 0; t < TEXCOORDS_COUNT * 2; t++) r.mesh.texcoords[t] = uv[t];
+    for (int t = 0; t < (TEXCOORDS_COUNT - 6) * 2; t++) r.mesh.texcoords[t] = uv[t];
 
     // Separate starting index for the indices (dont take xyz into account)
     for (int face = 0; face < 2; face++)
@@ -338,6 +352,36 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
       r.mesh.indices[idx_i + 5] = base + 3;
     }
 
+    int head_base = BODY_VERTICES * 3;
+    float y_haed_offset = arc->is_void ? 0.1f : 0.5f;
+    float head_v[(3 * 2) * 3] = {
+      (-0.0433f * arc_scale) + world_x_head, (-0.025f * arc_scale) + world_y_head, world_z_head,
+      ( 0.0f    * arc_scale) + world_x_head, (-0.05f  * arc_scale) + world_y_head, world_z_head + 0.02f * arc_scale,
+      ( 0.0f    * arc_scale) + world_x_head, ( 0.05f  * arc_scale) + world_y_head, world_z_head,
+      ( 0.0433f * arc_scale) + world_x_head, (-0.025f * arc_scale) + world_y_head, world_z_head,
+      ( 0.0f    * arc_scale) + world_x_head, (-0.05f  * arc_scale) + world_y_head, world_z_head + 0.02f * arc_scale,
+      ( 0.0f    * arc_scale) + world_x_head, ( 0.05f  * arc_scale) + world_y_head, world_z_head,
+    };
+    for (int h = 0; h < ((3 * 2) * 3); h++) r.mesh.vertices[head_base + h] = head_v[h];
+
+    int head_uv_base = (TEXCOORDS_COUNT - 6) * 2;
+    float head_uv[(3 * 2) * 2] = {
+       0.0f, 1.0f,
+       1.0f, 1.0f,
+       0.0f, 0.0f,
+       1.0f, 1.0f,
+       0.0f, 1.0f,
+       0.0f, 0.0f,
+    };
+    for (int t = 0; t < ((2 * 2) * 3); t++) r.mesh.texcoords[head_uv_base + t] = head_uv[t];
+
+    r.mesh.indices[12] = 8;
+    r.mesh.indices[13] = 9;
+    r.mesh.indices[14] = 10;
+    r.mesh.indices[15] = 11;
+    r.mesh.indices[16] = 12;
+    r.mesh.indices[17] = 13;
+
     UploadMesh(&r.mesh, false);
 
     r.material = LoadMaterialDefault();
@@ -345,13 +389,10 @@ void arc_segment_with_head_generate_mesh(List *arc_segments_list, Arc *arc, Text
     r.material.shader = render_ctx->arc_shader.shader;
     set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 
-    ArcSegment *sgm = (ArcSegment *)list_get(arc_segments_list, arc_segments_list->size - segment_count + i);
-    sgm->mesh_r = r;
-    sgm->start_fp = start_fp;
-    sgm->end_fp = end_fp;
+    ArcSegment sgm = { .arc = arc, .mesh_r = r, .start_fp = start_fp, .end_fp = end_fp };
+    list_push(arc_segments_list, &sgm);
 
-    curr_timing += increment;
-  }
+    *curr_timing = *curr_timing + increment;
 }
 
 void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timing_events, RenderContext *render_ctx)
@@ -464,9 +505,9 @@ int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b)
 {
   ArcSegment *segment_a = (ArcSegment *) a;
   ArcSegment *segment_b = (ArcSegment *) b;
-  float sfp_a = segment_a->start_fp;
-  float sfp_b = segment_b->start_fp;
-  if (fabsf(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
-  if (fabsf(sfp_a - sfp_b) > 1e-6 && sfp_a > sfp_b) return 1;
+  double sfp_a = segment_a->start_fp;
+  double sfp_b = segment_b->start_fp;
+  if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
+  if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a > sfp_b) return 1;
   return 0;
 }
