@@ -112,7 +112,6 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
   List arccap_render_list; list_init(&arccap_render_list, sizeof(const void *));
   double low_z_clip    = z_to_floor_position(9.0f, base_bpm, scroll_speed);
   double high_z_clip   = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
-  double arccap_z_clip = z_to_floor_position(0.0f, base_bpm, scroll_speed);
   BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
     rlPushMatrix();
@@ -128,8 +127,7 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
         Interval curr_interval = { .low = &curr_itv_arr[0], .high = &curr_itv_arr[1] };
         itv_tree_get_overlaps(&tg->arc_segments_tree, &arc_render_list, curr_interval);
 
-        double arccap_itv_arr[] = { curr_fp + arccap_z_clip, curr_fp + arccap_z_clip };
-        Interval arccap_interval = { .low = &arccap_itv_arr[0], .high = &arccap_itv_arr[1] };
+        Interval arccap_interval = { .low = &curr_fp, .high = &curr_fp };
         itv_tree_get_overlaps(&tg->arc_segments_tree, &arccap_render_list, arccap_interval);
 
         // Arctap shadows
