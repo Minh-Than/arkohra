@@ -137,7 +137,6 @@ struct ItvNode *itv_node_insert(struct ItvNode *node, void* data, Interval i, in
 {
   if (!data) return node;
   if (!i.low || !i.high) return node;
-  if (!node) return itv_node_init(data, i);
 
   if (compare(i.low, i.high) > 0)
   {
@@ -145,6 +144,7 @@ struct ItvNode *itv_node_insert(struct ItvNode *node, void* data, Interval i, in
     i.low = i.high;
     i.high = tmp;
   }
+  if (!node) return itv_node_init(data, i);
 
   if (compare(i.high, node->max) > 0) node->max = i.high;
   if (compare(i.low, node->i.low) < 0)

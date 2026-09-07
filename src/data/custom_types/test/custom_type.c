@@ -596,20 +596,53 @@ void test_bisect_struct(void)
   list_free(&empty);
 }
 
+void test_itv_tree_inverted_intervals(void)
+{
+  // Negative-BPM groups yield start_fp > end_fp; the tree must canonicalize
+  ItvTree tree; itv_tree_init(&tree, int_compare);
+  int a[] = {20, 10};   // inserted "inverted": low=20, high=10
+  int b[] = {50, 40};
+  itv_tree_insert(&tree, &a, (Interval){&a[0], &a[1]});
+  itv_tree_insert(&tree, &b, (Interval){&b[0], &b[1]});
+  List result; list_init(&result, sizeof(void *));
+
+  int q = 15;   // point inside [10,20]
+  itv_tree_get_overlaps(&tree, &result, (Interval){&q, &q});
+  TEST_CHECK(result.size == 1);
+  TEST_MSG("Expected 1; got %zu", result.size);
+  TEST_CHECK(itv_result_contains(&result, &a));
+  list_free(&result); list_init(&result, sizeof(void *));
+
+  int ql = 12, qh = 18;   // partial overlap — the case containment-semantics miss
+  itv_tree_get_overlaps(&tree, &result, (Interval){&ql, &qh});
+  TEST_CHECK(result.size == 1);
+  TEST_MSG("Expected 1; got %zu", result.size);
+  TEST_CHECK(itv_result_contains(&result, &a));
+  list_free(&result); list_init(&result, sizeof(void *));
+
+  int wl = 5, wh = 100;
+  itv_tree_get_overlaps(&tree, &result, (Interval){&wl, &wh});
+  TEST_CHECK(result.size == 2);
+  TEST_MSG("Expected 2; got %zu", result.size);
+  list_free(&result);
+  itv_tree_free(&tree);
+}
+
 TEST_LIST = {
-   { "int_bisects", test_bisect_int },
-   { "float_bisect", test_bisect_float },
-   { "int_duplicates", test_bisect_int_duplicates },
-   { "int_edge_cases", test_bisect_int_edge_cases },
-   { "struct_bisect", test_bisect_struct },
-   { "itv_insert_and_query", test_itv_tree_insert_and_query },
-   { "itv_max_invariant", test_itv_tree_max_invariant },
-   { "itv_max_regression", test_itv_tree_max_regression },
-   { "itv_payload_identity", test_itv_tree_data_identity },
-   { "itv_duplicates", test_itv_tree_duplicates },
-   { "itv_point_query", test_itv_tree_point_query },
-   { "itv_float_negative", test_itv_tree_float_negative },
-   { "itv_insert_failures", test_itv_tree_insert_failures },
-   { "itv_free", test_itv_tree_free },
-   { NULL, NULL }
+  { "int_bisects", test_bisect_int },
+  { "float_bisect", test_bisect_float },
+  { "int_duplicates", test_bisect_int_duplicates },
+  { "int_edge_cases", test_bisect_int_edge_cases },
+  { "struct_bisect", test_bisect_struct },
+  { "itv_insert_and_query", test_itv_tree_insert_and_query },
+  { "itv_max_invariant", test_itv_tree_max_invariant },
+  { "itv_max_regression", test_itv_tree_max_regression },
+  { "itv_payload_identity", test_itv_tree_data_identity },
+  { "itv_duplicates", test_itv_tree_duplicates },
+  { "itv_point_query", test_itv_tree_point_query },
+  { "itv_float_negative", test_itv_tree_float_negative },
+  { "itv_insert_failures", test_itv_tree_insert_failures },
+  { "itv_free", test_itv_tree_free },
+  { "itv_inverted_intervals", test_itv_tree_inverted_intervals },
+  { NULL, NULL }
 };
