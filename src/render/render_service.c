@@ -123,7 +123,6 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
       {
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
         double curr_fp = get_floor_position(&tg->timing_events, current_ms);
-        float curr_event_bpm = get_event_at(&tg->timing_events, current_ms)->bpm;
 
         double curr_itv_arr[]   = { curr_fp + low_z_clip, curr_fp + high_z_clip };
         Interval curr_interval = { .low = &curr_itv_arr[0], .high = &curr_itv_arr[1] };
@@ -230,8 +229,8 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
         }
 
         // Arcs/Traces
-        Vector4 tint_low = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
-        Vector4 tint_high = tint_low;
+        Vector4 tint_low, tint_high;
+        tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
         if (!arc->is_void)
         {
           tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
