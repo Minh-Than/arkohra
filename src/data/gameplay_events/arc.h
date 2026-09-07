@@ -35,6 +35,7 @@ typedef struct {
 } Arc;
 
 int arc_compare_start_timing_asc(const void *a, const void *b);
+MeshRenderable generate_arccap_mesh(Texture2D *texture, RenderContext *render_ctx);
 void arc_print(const void *elem);
 
 // ARC SEGMENT

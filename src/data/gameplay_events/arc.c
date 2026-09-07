@@ -34,6 +34,51 @@ int arc_compare_start_timing_asc(const void *a, const void *b)
   return arc_a->start_timing - arc_b->start_timing;
 }
 
+MeshRenderable generate_arccap_mesh(Texture2D *texture, RenderContext *render_ctx)
+{
+  float half_size_x = 0.02f;
+  float half_size_y = 0.035f;
+
+  MeshRenderable r = { 0 };
+
+  const int VERTICES_COUNT  = 4;
+  const int TRIANGLE_COUNT  = 2;
+  const int TEXCOORDS_COUNT = 4;
+  const int INDICES_COUNT   = 3;
+
+  r.mesh.vertexCount    = VERTICES_COUNT;
+  r.mesh.triangleCount  = TRIANGLE_COUNT;
+
+  r.mesh.vertices  =          (float *)malloc(VERTICES_COUNT * 3 * sizeof(float));
+  r.mesh.texcoords =          (float *)malloc(TEXCOORDS_COUNT * 2 * sizeof(float));
+  r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * 2 * sizeof(unsigned short));
+
+  float v[VERTICES_COUNT * 3] = {
+    -half_size_x, -half_size_y, 0.0f,
+     half_size_x, -half_size_y, 0.0f,
+     half_size_x,  half_size_y, 0.0f,
+    -half_size_x,  half_size_y, 0.0f,
+  };
+  float uv[TEXCOORDS_COUNT * 2] = {
+    0.0f, 1.0f,
+    1.0f, 1.0f,
+    1.0f, 0.0f,
+    0.0f, 0.0f,
+  };
+  unsigned short idx[INDICES_COUNT * 2] = {0, 1, 2, 0, 2, 3};
+
+  for (int i = 0; i < VERTICES_COUNT * 3 ; i++) r.mesh.vertices[i]  = v[i];
+  for (int i = 0; i < TEXCOORDS_COUNT * 2; i++) r.mesh.texcoords[i] = uv[i];
+  for (int i = 0; i < INDICES_COUNT * 2  ; i++) r.mesh.indices[i]   = idx[i];
+
+  UploadMesh(&r.mesh, false);
+
+  r.material = LoadMaterialDefault();
+  r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
+
+  return r;
+}
+
 void arc_print(const void *elem)
 {
   const Arc *arc = (const Arc *)elem;
@@ -64,12 +109,7 @@ void generate_segments(List *arc_segments_list, Arc *arc, Texture2D *texture, Li
   segment_count         = (int)fmax(segment_count, 1);
 
   float curr_timing = 0.0f;
-  for (int i = 0; i < segment_count; i++)
-    generate_arc_body_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing);
-  // {
-  //   if (arc->is_head && i == 0) generate_arc_head_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing);
-  //   else                        generate_arc_body_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing);
-  // }
+  for (int i = 0; i < segment_count; i++) generate_arc_body_mesh(arc_segments_list, arc, texture, timing_events, render_ctx, &curr_timing);
 }
 
 // ARC SEGMENT

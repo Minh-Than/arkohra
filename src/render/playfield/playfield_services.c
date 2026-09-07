@@ -169,6 +169,7 @@ PlayfieldObjs playfield_objs_init(RenderContext *render_ctx, TextureGroup *textu
   height_indicator_material.maps[MATERIAL_MAP_DIFFUSE].texture = texture_group->arc_height_indicator;
   objs.arc_renderer = (ArcRenderer){
     .height_indicator = (MeshRenderable){.mesh = height_indicator_mesh, .material = height_indicator_material},
+    .arccap = generate_arccap_mesh(&texture_group->arccap, render_ctx),
     .arctap_shadow = arctap_shadow_load_mesh(&texture_group->arctap_shadow),
   };
   set_mesh_transforms(&objs.arc_renderer.height_indicator, (Matrix[]){MatrixIdentity()}, 1);
@@ -251,6 +252,7 @@ void playfield_objs_unload(PlayfieldObjs *scene) {
   renderable_unload(&scene->tap_hold_renderer.connector);
 
   renderable_unload(&scene->arc_renderer.height_indicator);
+  renderable_unload(&scene->arc_renderer.arccap);
   renderable_unload(&scene->arc_renderer.arctap_shadow);
 
   renderable_unload(&scene->arctap_renderer.arc_head);

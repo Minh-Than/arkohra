@@ -1,5 +1,4 @@
 #include "texture_service.h"
-#include "constants.h"
 #include "raylib.h"
 
 TextureGroup textures_init()
@@ -22,6 +21,7 @@ TextureGroup textures_init()
   Texture2D hold_texture            = LoadTexture("resources/gameplay/Note/Light/HoldNoteLight.png");
   Texture2D arc_texture             = LoadTexture("resources/gameplay/Note/ArcBody.png");
   Texture2D arc_height_ind_texture  = LoadTexture("resources/gameplay/Note/HeightIndicator.png");
+  Texture2D arccap_texture          = LoadTexture("resources/gameplay/Note/ArcCap.png");
   Texture2D arctap_texture          = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png");
   Texture2D arctap_shadow_texture   = LoadTexture("resources/gameplay/Note/ArcTapShadow.png");
 
@@ -58,6 +58,7 @@ TextureGroup textures_init()
     .hold           = hold_texture,
     .arc            = arc_texture,
     .arc_height_indicator = arc_height_ind_texture,
+    .arccap         = arccap_texture,
     .arctap         = arctap_texture,
     .arctap_shadow  = arctap_shadow_texture
   };
@@ -82,6 +83,7 @@ void textures_unload(TextureGroup* texture_group)
   UnloadTexture(texture_group->hold);
   UnloadTexture(texture_group->arc);
   UnloadTexture(texture_group->arc_height_indicator);
+  UnloadTexture(texture_group->arccap);
   UnloadTexture(texture_group->arctap);
   UnloadTexture(texture_group->arctap_shadow);
 }

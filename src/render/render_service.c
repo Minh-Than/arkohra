@@ -108,9 +108,11 @@ void render_holds_taps(List *timing_groups, RenderContext *render_ctx, HoldTapRe
 void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, ArcRenderer *arc_renderer,
                              float current_ms, float base_bpm, float scroll_speed)
 {
-  List arc_render_list; list_init(&arc_render_list, sizeof(const void *));
-  double low_z_clip  = z_to_floor_position(9.0f, base_bpm, scroll_speed);
-  double high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
+  List arc_render_list;    list_init(&arc_render_list, sizeof(const void *));
+  List arccap_render_list; list_init(&arccap_render_list, sizeof(const void *));
+  double low_z_clip    = z_to_floor_position(9.0f, base_bpm, scroll_speed);
+  double high_z_clip   = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
+  double arccap_z_clip = z_to_floor_position(0.0f, base_bpm, scroll_speed);
   BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
     rlPushMatrix();
@@ -123,9 +125,13 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
         double curr_fp = get_floor_position(&tg->timing_events, current_ms);
         float curr_event_bpm = get_event_at(&tg->timing_events, current_ms)->bpm;
 
-        double curr_itv_arr[] = { curr_fp + low_z_clip, curr_fp + high_z_clip };
+        double curr_itv_arr[]   = { curr_fp + low_z_clip, curr_fp + high_z_clip };
         Interval curr_interval = { .low = &curr_itv_arr[0], .high = &curr_itv_arr[1] };
         itv_tree_get_overlaps(&tg->arc_segments_tree, &arc_render_list, curr_interval);
+
+        double arccap_itv_arr[] = { curr_fp + arccap_z_clip, curr_fp + arccap_z_clip };
+        Interval arccap_interval = { .low = &arccap_itv_arr[0], .high = &arccap_itv_arr[1] };
+        itv_tree_get_overlaps(&tg->arc_segments_tree, &arccap_render_list, arccap_interval);
 
         // Arctap shadows
         ArcTapFP arctap_low_fp  = { .fp = curr_fp + low_z_clip };
@@ -144,6 +150,7 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
           DrawMesh(arc_renderer->arctap_shadow.mesh, arc_renderer->arctap_shadow.material, arctap_mt);
         }
       }
+      list_sort_by(&arc_render_list, arc_segment_const_void_compare_start_fp_asc);
 
       // Precalculate current floor positions and BPMs for reusing
       int tg_size = timing_groups->size;
@@ -156,7 +163,7 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
       }
 
       // Iterate & draw
-      list_sort_by(&arc_render_list, arc_segment_const_void_compare_start_fp_asc);
+      // Arc/Trace shadows
       for(int i = arc_render_list.size - 1; i >= 0; i--)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(&arc_render_list, i);
@@ -166,19 +173,49 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
         float z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
 
         // Settings up shader
-        Vector4 shadow_tint, tint_low, tint_high;
+        Vector4 shadow_tint = ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
         int is_void_shader = arc->is_void ? 1 : 0;
         int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
         int negative_bpm_shader = curr_bpm < 0.0f;
         SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
         SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
         SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
-
-        // Arc/Trace shadows
-        shadow_tint = ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
         SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &shadow_tint, SHADER_UNIFORM_VEC4);
         SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &shadow_tint, SHADER_UNIFORM_VEC4);
         DrawMesh(arc_segment->shadow_r.mesh, arc_segment->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+      }
+
+      // Following Arccaps
+      rlDisableDepthMask();
+      for (int i = 0; i < arccap_render_list.size; i++)
+      {
+        ArcSegment *arc_segment = *(ArcSegment **)list_get(&arccap_render_list, i);
+        Arc *arc = arc_segment->arc;
+
+        float arccap_x = arc_world_x_at(current_ms, arc);
+        float arccap_y = arc_world_y_at(current_ms, arc);
+        float arccap_scale = arc->is_void ? 7.0f : 12.5f;
+        Matrix tr = MatrixMultiply(MatrixScale(arccap_scale, arccap_scale, 1.0f), MatrixTranslate(arccap_x, arccap_y, 0.0f));
+        DrawMesh(arc_renderer->arccap.mesh, arc_renderer->arccap.material, tr);
+      }
+      rlEnableDepthMask();
+
+      // Height indicators + Arcs/Traces
+      for(int i = arc_render_list.size - 1; i >= 0; i--)
+      {
+        ArcSegment *arc_segment = *(ArcSegment **)list_get(&arc_render_list, i);
+        Arc *arc = arc_segment->arc;
+        double curr_fp = curr_fps[arc->timing_group];
+        float curr_bpm = curr_bpms[arc->timing_group];
+        float z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+
+        // Settings up shader
+        int is_void_shader = arc->is_void ? 1 : 0;
+        int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+        int negative_bpm_shader = curr_bpm < 0.0f;
+        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
+        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+        SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
 
         // Height indicators
         float arc_world_x1 = arc_x_to_world(arc->x1);
@@ -195,7 +232,8 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
         }
 
         // Arcs/Traces
-        tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
+        Vector4 tint_low = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
+        Vector4 tint_high = tint_low;
         if (!arc->is_void)
         {
           tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
@@ -210,6 +248,7 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
     rlPopMatrix();
     rlEnableDepthTest();
   EndMode3D();
+  list_free(&arccap_render_list);
   list_free(&arc_render_list);
 }
 
