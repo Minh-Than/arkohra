@@ -35,6 +35,8 @@ static const float MAXIMUM_ARC_RES    = 10.0f;
 static const float ARC_SEGMENT_LENGTH = 1000.0f / 14.0f;
 static const float TRACE_MESH_SCALE   = 2.0f;
 static const float ARC_MESH_SCALE     = 11.5f;
+static const float ARCCAP_TRACE_SCALE = 7.0f;
+static const float ARCCAP_ARC_SCALE   = 12.5f;
 static const float ARC_Y0             = 1.0f;
 static const float ARC_Y1             = 5.5f;
 

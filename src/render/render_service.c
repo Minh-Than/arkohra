@@ -186,7 +186,6 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
       }
 
       // Following Arccaps
-      rlDisableDepthMask();
       for (int i = 0; i < arccap_render_list.size; i++)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(&arccap_render_list, i);
@@ -194,11 +193,10 @@ void render_arcs_and_shadows(List *timing_groups, RenderContext *render_ctx, Arc
 
         float arccap_x = arc_world_x_at(current_ms, arc);
         float arccap_y = arc_world_y_at(current_ms, arc);
-        float arccap_scale = arc->is_void ? 7.0f : 12.5f;
+        float arccap_scale = arc->is_void ? ARCCAP_TRACE_SCALE : ARCCAP_ARC_SCALE;
         Matrix tr = MatrixMultiply(MatrixScale(arccap_scale, arccap_scale, 1.0f), MatrixTranslate(arccap_x, arccap_y, 0.0f));
         DrawMesh(arc_renderer->arccap.mesh, arc_renderer->arccap.material, tr);
       }
-      rlEnableDepthMask();
 
       // Height indicators + Arcs/Traces
       for(int i = arc_render_list.size - 1; i >= 0; i--)
