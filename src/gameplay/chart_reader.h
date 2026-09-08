@@ -13,6 +13,7 @@
 typedef struct {
   List timing_groups;
   NoteRenderLists render_lists;
+  float low_z_clip, high_z_clip;
   bool initialized;
 } ChartReader;
 

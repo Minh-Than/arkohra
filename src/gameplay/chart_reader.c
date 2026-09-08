@@ -291,6 +291,9 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
   chart_reader.render_lists = (NoteRenderLists){ 0 };
   render_lists_initialize(&chart_reader.render_lists);
 
+  chart_reader.low_z_clip  = z_to_floor_position(   9.0f, render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
+  chart_reader.high_z_clip = z_to_floor_position(-100.0f, render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
+
   int line_count = 0;
   char **lines = LoadTextLines(aff_data, &line_count);
 
@@ -320,10 +323,7 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
   return chart_reader;
 }
 
-static void process_note_render_lists(
-  ChartReader *chart_reader, RenderContext *render_ctx, float current_ms,
-  float low_z_clip, float high_z_clip, double *curr_fps, float *curr_bpms
-)
+static void process_note_render_lists(ChartReader *chart_reader, RenderContext *render_ctx, float current_ms, double *curr_fps, float *curr_bpms)
 {
   List *timing_groups = &chart_reader->timing_groups;
 
@@ -337,13 +337,13 @@ static void process_note_render_lists(
     curr_bpms[i] = curr_bpm;
 
     // Holds
-    double curr_itv_arr[] = { curr_fp + low_z_clip, curr_fp + high_z_clip };
+    double curr_itv_arr[] = { curr_fp + chart_reader->low_z_clip, curr_fp + chart_reader->high_z_clip };
     Interval curr_interval = { .low = &curr_itv_arr[0], .high = &curr_itv_arr[1] };
     itv_tree_get_overlaps(&tg->holds_tree, &chart_reader->render_lists.hold_render_list, curr_interval);
 
     // Taps
-    TapFP tap_low_z_fp  = { .fp = curr_fp + low_z_clip };
-    TapFP tap_high_z_fp = { .fp = curr_fp + high_z_clip };
+    TapFP tap_low_z_fp  = { .fp = curr_fp + chart_reader->low_z_clip };
+    TapFP tap_high_z_fp = { .fp = curr_fp + chart_reader->high_z_clip };
     int tap_start_index = bisect_left(&tg->tap_fps, &tap_low_z_fp , tapfp_compare_fp_asc);
     int tap_end_index   = bisect_left(&tg->tap_fps, &tap_high_z_fp, tapfp_compare_fp_asc);
     for (int j = tap_start_index; j < tap_end_index; j++)
@@ -353,7 +353,7 @@ static void process_note_render_lists(
     }
 
     // Arcs
-    double curr_arc_itv_arr[]   = { curr_fp + low_z_clip, curr_fp + high_z_clip };
+    double curr_arc_itv_arr[]   = { curr_fp + chart_reader->low_z_clip, curr_fp + chart_reader->high_z_clip };
     Interval curr_arc_interval = { .low = &curr_arc_itv_arr[0], .high = &curr_arc_itv_arr[1] };
     itv_tree_get_overlaps(&tg->arc_segments_tree, &chart_reader->render_lists.arc_render_list, curr_arc_interval);
     itv_tree_get_overlaps(&tg->arc_segments_tree, &chart_reader->render_lists.arc_head_render_list, curr_arc_interval);
@@ -363,8 +363,8 @@ static void process_note_render_lists(
     itv_tree_get_overlaps(&tg->arc_segments_tree, &chart_reader->render_lists.arccap_render_list, arccap_interval);
 
     // Arctaps
-    ArcTapFP arctap_low_fp  = { .fp = curr_fp + low_z_clip };
-    ArcTapFP arctap_high_fp = { .fp = curr_fp + high_z_clip };
+    ArcTapFP arctap_low_fp  = { .fp = curr_fp + chart_reader->low_z_clip };
+    ArcTapFP arctap_high_fp = { .fp = curr_fp + chart_reader->high_z_clip };
     int arctap_start_index = bisect_left(&tg->arctap_fps, &arctap_low_fp , arctapfp_compare_fp_asc);
     int arctap_end_index   = bisect_left(&tg->arctap_fps, &arctap_high_fp, arctapfp_compare_fp_asc);
     for (int j = arctap_start_index; j < arctap_end_index; j++)
@@ -389,12 +389,10 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
 
   float base_bpm     = render_ctx->chart_settings.base_bpm;
   float scroll_speed = render_ctx->chart_settings.scroll_speed;
-  double low_z_clip  = z_to_floor_position(   9.0f, base_bpm, scroll_speed);
-  double high_z_clip = z_to_floor_position(-100.0f, base_bpm, scroll_speed);
   double curr_fps[chart_reader->timing_groups.size];
   float curr_bpms[chart_reader->timing_groups.size];
 
-  process_note_render_lists(chart_reader, render_ctx, current_ms, low_z_clip, high_z_clip, curr_fps, curr_bpms);
+  process_note_render_lists(chart_reader, render_ctx, current_ms, curr_fps, curr_bpms);
   NoteRenderLists *ls = &chart_reader->render_lists;
 
   render_holds_taps      (ls, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed, curr_fps);
