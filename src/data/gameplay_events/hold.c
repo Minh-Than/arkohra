@@ -75,6 +75,17 @@ MeshRenderable hold_load_mesh(Texture2D *texture)
   return r;
 }
 
+int hold_compare_start_fp_asc(const void *a, const void *b)
+{
+  Hold *hold_a = (Hold *) a;
+  Hold *hold_b = (Hold *) b;
+  double sfp_a = hold_a->start_fp;
+  double sfp_b = hold_b->start_fp;
+  if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
+  if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a > sfp_b) return 1;
+  return 0;
+}
+
 int hold_const_void_compare_start_fp_asc(const void *a, const void *b)
 {
   const Hold *hold_a = *(const Hold *const *) a;
@@ -84,4 +95,15 @@ int hold_const_void_compare_start_fp_asc(const void *a, const void *b)
   if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
   if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a > sfp_b) return 1;
   return 0;
+}
+
+void hold_build_tree(ItvTree *tree, List *list, int low, int high)
+{
+  if (low > high) return;
+  int mid = (low + high) / 2;
+  Hold *hold = (Hold *)list_get(list, mid);
+  Interval i = { .low = &hold->start_fp, .high = &hold->end_fp };
+  itv_tree_insert(tree, hold, i);
+  hold_build_tree(tree, list, low, mid - 1);
+  hold_build_tree(tree, list, mid + 1, high);
 }

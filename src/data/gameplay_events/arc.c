@@ -437,6 +437,17 @@ int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b)
   return 0;
 }
 
+void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high)
+{
+  if (low > high) return;
+  int mid = (low + high) / 2;
+  ArcSegment *arc_segment = (ArcSegment *)list_get(list, mid);
+  Interval i = { .low = &arc_segment->start_fp, .high = &arc_segment->end_fp };
+  itv_tree_insert(tree, arc_segment, i);
+  arc_segment_build_tree(tree, list, low, mid - 1);
+  arc_segment_build_tree(tree, list, mid + 1, high);
+}
+
 void draw_arc_shadow(Arc *arc, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos)
 {
   Vector4 shadow_tint = ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));

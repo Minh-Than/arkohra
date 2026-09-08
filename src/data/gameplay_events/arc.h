@@ -51,6 +51,7 @@ MeshRenderable generate_arc_head_mesh(Texture2D *texture, RenderContext *render_
 void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timing_events, RenderContext *render_ctx);
 int arc_segment_compare_start_fp_asc(const void *a, const void *b);
 int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b);
+void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high);
 
 void draw_arc_shadow(Arc *arc, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos);
 void draw_arc_head(Arc *arc, ArcSegment *arc_segment, RenderContext *render_ctx, MeshRenderable *mesh_r,
