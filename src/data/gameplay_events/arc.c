@@ -428,8 +428,8 @@ int arc_segment_compare_start_fp_asc(const void *a, const void *b)
 
 int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b)
 {
-  ArcSegment *segment_a = (ArcSegment *) a;
-  ArcSegment *segment_b = (ArcSegment *) b;
+  const ArcSegment *segment_a = *(const ArcSegment *const *) a;
+  const ArcSegment *segment_b = *(const ArcSegment *const *) b;
   double sfp_a = segment_a->start_fp;
   double sfp_b = segment_b->start_fp;
   if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
@@ -506,12 +506,13 @@ void draw_arc_segment(Arc *arc, ArcSegment *arc_segment, RenderContext *render_c
 
 void draw_height_indicator(Arc *arc, ArcSegment *arc_segment, Mesh *mesh, Material mat, float z_pos)
 {
-    float arc_world_x1 = arc_x_to_world(arc->x1);
-    float arc_world_y1 = arc_y_to_world(arc->y1);
-    Matrix tr = MatrixMultiply(MatrixScale(1.0f, arc_world_y1, 1.0f),
-                               MatrixTranslate(arc_world_x1, arc_world_y1 * 0.5f, z_pos));
     if (should_draw_height_indicator(arc, arc_segment))
     {
+      float arc_world_x1 = arc_x_to_world(arc->x1);
+      float arc_world_y1 = arc_y_to_world(arc->y1);
+      Matrix tr = MatrixMultiply(MatrixScale(1.0f, arc_world_y1, 1.0f),
+                                 MatrixTranslate(arc_world_x1, arc_world_y1 * 0.5f, z_pos));
+
       rlDisableDepthMask();
       mat.maps->color = arc->color == 0 ? color_from_rgba(ARC_BLUE_HIGH_CL) : color_from_rgba(ARC_PINK_HIGH_CL);
       DrawMesh(*mesh, mat, MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), tr));

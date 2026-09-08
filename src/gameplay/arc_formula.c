@@ -94,6 +94,7 @@ void recalculate_floor_position(ChartTimingGroup *timing_group)
 
 TimingEvent *get_event_at(List *timing_events, int timing)
 {
+  if (timing_events->size == 0) return NULL;
   TimingEvent te = { .timing = timing };
   int index = bisect_right(timing_events, &te, timing_event_compare_timing_asc) - 1;
   index = fmaxf(index, 0.0f);
@@ -103,6 +104,7 @@ TimingEvent *get_event_at(List *timing_events, int timing)
 double get_floor_position(List *timing_events, int timing)
 {
   TimingEvent *note = get_event_at(timing_events, timing);
+  if (note == NULL) return 0.0;
   double baseFloorPosition = note->fp;
   return baseFloorPosition + ((double)note->bpm * (timing - note->timing));
 }

@@ -313,7 +313,7 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
     parse_aff_lines(line, &chart_reader, &tg_count, &current_tg);
 
   }
-  UnloadFileText(aff_data);
+  if (lines != NULL) UnloadFileText(aff_data);
 
   parse_post_process(render_ctx, &chart_reader, arc_texture);
   chart_reader.initialized = true;
@@ -331,7 +331,8 @@ static void process_note_render_lists(
     ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
 
     double curr_fp = get_floor_position(&tg->timing_events, current_ms);
-    float curr_bpm = get_event_at(&tg->timing_events, current_ms)->bpm;
+    TimingEvent *curr_event = get_event_at(&tg->timing_events, current_ms);
+    float curr_bpm = curr_event != NULL ? curr_event->bpm : render_ctx->chart_settings.base_bpm;
     curr_fps[i]  = curr_fp;
     curr_bpms[i] = curr_bpm;
 
@@ -415,4 +416,5 @@ void chart_reader_unload(ChartReader *chart_reader)
   render_lists_unload(&chart_reader->render_lists);
   for (int i = 0; i < chart_reader->timing_groups.size; i++)
     timing_group_unload((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
+  list_free(&chart_reader->timing_groups);
 }

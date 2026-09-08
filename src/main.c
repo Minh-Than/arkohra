@@ -224,7 +224,6 @@ int main()
 
         parsing_project_end:
         cJSON_Delete(json);
-        UnloadDroppedFiles(dropped_file);
 
         if (status)
         {
@@ -278,6 +277,7 @@ int main()
           AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.title);
           AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.composer);
           AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.difficulty);
+          if (IsFontValid(font_services.hud_notosans_tc_reg)) UnloadFont(font_services.hud_notosans_tc_reg);
           font_services.hud_notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
           list_free(&hud_code_points);
 
@@ -295,6 +295,7 @@ int main()
           audio_clock_pause(&render_ctx.audio_clock);
         }
       }
+      UnloadDroppedFiles(dropped_file);
     }
 
     if (IsWindowResized()) recalibrate_camera(&render_ctx.camera);
