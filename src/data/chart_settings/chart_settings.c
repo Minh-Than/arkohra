@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <_string.h>
 #include <stdlib.h>
 #include "chart_settings.h"
 #include "color_services.h"

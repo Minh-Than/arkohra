@@ -20,8 +20,11 @@ void hold_print(const void *elem)
   printf("hold(%d,%d,%.2f)", hold->start_timing, hold->end_timing, hold->lane);
 }
 
-void hold_render_test(MeshRenderable *hold_r, Hold *hold, float z_pos, float z_scale, float alpha)
+void draw_hold(MeshRenderable *hold_r, Hold *hold, float current_ms, float base_bpm, float scroll_speed, double curr_fp)
 {
+  float z_pos   = floor_position_to_z(hold->start_fp - curr_fp, base_bpm, scroll_speed);
+  float z_scale = floor_position_to_z(hold->end_fp - hold->start_fp, base_bpm, scroll_speed);
+  float alpha   = hold->start_timing < current_ms && !hold->is_active ? 0.5f : 1.0f;
   hold_r->material.maps->color = ColorAlpha(hold_r->material.maps->color, alpha);
   Matrix tr = MatrixMultiply(
     MatrixRotateX(-180.0f * DEG2RAD),

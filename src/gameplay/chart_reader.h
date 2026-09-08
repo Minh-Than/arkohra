@@ -7,11 +7,12 @@
 #include "render/layers/hold_tap_layer.h"
 #include "render/layers/arc_layer.h"
 #include "render/layers/arctap_layer.h"
+#include "render/note_render_lists.h"
 #include "render/render_service.h"
 
-typedef struct
-{
+typedef struct {
   List timing_groups;
+  NoteRenderLists render_lists;
   bool initialized;
 } ChartReader;
 

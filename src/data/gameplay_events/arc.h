@@ -52,4 +52,12 @@ void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timin
 int arc_segment_compare_start_fp_asc(const void *a, const void *b);
 int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b);
 
+void draw_arc_shadow(Arc *arc, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos);
+void draw_arc_head(Arc *arc, ArcSegment *arc_segment, RenderContext *render_ctx, MeshRenderable *mesh_r,
+                   float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp);
+void draw_arc_segment(Arc *arc, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos);
+void draw_height_indicator(Arc *arc, ArcSegment *arc_segment, Mesh *mesh, Material mat, float z_pos);
+void draw_arccap(Arc *arc, Mesh *mesh, Material mat, float current_ms);
+bool should_draw_height_indicator(Arc *arc, ArcSegment *arc_segment);
+
 #endif // ARC_H

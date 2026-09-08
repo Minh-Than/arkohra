@@ -136,6 +136,7 @@ GENERATED += $(OBJDIR)/hold.o
 GENERATED += $(OBJDIR)/hud_services.o
 GENERATED += $(OBJDIR)/main.o
 GENERATED += $(OBJDIR)/mesh_renderable.o
+GENERATED += $(OBJDIR)/note_render_lists.o
 GENERATED += $(OBJDIR)/playfield_services.o
 GENERATED += $(OBJDIR)/render_service.o
 GENERATED += $(OBJDIR)/resource_util.o
@@ -164,6 +165,7 @@ OBJECTS += $(OBJDIR)/hold.o
 OBJECTS += $(OBJDIR)/hud_services.o
 OBJECTS += $(OBJDIR)/main.o
 OBJECTS += $(OBJDIR)/mesh_renderable.o
+OBJECTS += $(OBJDIR)/note_render_lists.o
 OBJECTS += $(OBJDIR)/playfield_services.o
 OBJECTS += $(OBJDIR)/render_service.o
 OBJECTS += $(OBJDIR)/resource_util.o
@@ -292,6 +294,9 @@ $(OBJDIR)/main.o: src/main.c
 	@echo "$(notdir $<)"
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/mesh_renderable.o: src/render/mesh_renderable.c
+	@echo "$(notdir $<)"
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/note_render_lists.o: src/render/note_render_lists.c
 	@echo "$(notdir $<)"
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/playfield_services.o: src/render/playfield/playfield_services.c

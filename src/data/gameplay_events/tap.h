@@ -4,6 +4,7 @@
 #include "data/custom_types/custom_types.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
+#include "render/render_service.h"
 typedef struct
 {
   List  connector_x, connector_y;
@@ -14,7 +15,7 @@ typedef struct
 } Tap;
 
 void tap_print(const void *elem);
-void tap_render_test(MeshRenderable *tap_r, Tap *tap, float fp, float z_scale);
+void draw_tap(MeshRenderable *tap_r, Tap *tap, RenderContext *render_ctx, float base_bpm, float scroll_speed, double curr_fp);
 MeshRenderable tap_load_mesh(Texture2D *texture);
 
 typedef struct {

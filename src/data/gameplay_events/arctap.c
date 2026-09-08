@@ -4,7 +4,7 @@
 #include "rlgl.h"
 #include "raymath.h"
 
-void arctap_render_test(MeshRenderable *arctap_r, ArcTap *arctap, float z_pos)
+void draw_arctap(MeshRenderable *arctap_r, ArcTap *arctap, float z_pos)
 {
   Matrix tr = MatrixTranslate(
     arc_world_x_at(arctap->timing, arctap->arc),

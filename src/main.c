@@ -42,9 +42,7 @@ int main()
 
   rini_data rini_d              = fetch_rini_config();
   AppConfigs app_configs        = app_configs_init(&rini_d);
-  Camera3D camera               = camera_init_playfield();
   TextureGroup texture_group    = textures_init();
-  ChartSettings chart_settings  = chart_settings_init(&app_configs);
   ChartReader chart_reader      = { 0 };
 
   WindowGroup window_group      = window_services_init();
@@ -65,8 +63,8 @@ int main()
   printf("matModel loc: %d\n", arc_shader.locs[SHADER_LOC_MATRIX_MODEL]);
 
   RenderContext render_ctx = {
-    .camera          = camera,
-    .chart_settings  = chart_settings,
+    .camera          = camera_init_playfield(),
+    .chart_settings  = chart_settings_init(&app_configs),
     .arc_shader = {
       .shader = arc_shader,
       .isVoid_loc = isVoid_loc,

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "arc.h"
+#include "color_services.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
@@ -434,4 +435,100 @@ int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b)
   if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
   if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a > sfp_b) return 1;
   return 0;
+}
+
+void draw_arc_shadow(Arc *arc, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos)
+{
+  Vector4 shadow_tint = ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
+  int is_void_shader = arc->is_void ? 1 : 0;
+  int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+  int negative_bpm_shader = curr_bpm < 0.0f;
+  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
+  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &shadow_tint, SHADER_UNIFORM_VEC4);
+  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &shadow_tint, SHADER_UNIFORM_VEC4);
+  DrawMesh(arc_segment->shadow_r.mesh, arc_segment->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+}
+
+void draw_arc_head(Arc *arc, ArcSegment *arc_segment, RenderContext *render_ctx, MeshRenderable *mesh_r,
+                   float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp)
+{
+    if (!arc->is_head) return;
+    if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) return ;
+
+    int is_void_shader = arc->is_void ? 1 : 0;
+    int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+    int negative_bpm_shader = curr_bpm < 0.0f;
+    SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
+    SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+    SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+
+    Vector4 tint_low, tint_high;
+    tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
+    if (!arc->is_void)
+    {
+      tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
+      tint_high = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL));
+    }
+    SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
+    SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
+
+    float x_pos = arc_x_to_world(arc->x1);
+    float y_pos = arc_y_to_world(arc->y1);
+    float z_pos = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
+    float head_scale = arc->is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
+    Matrix tr = MatrixMultiply(MatrixScale(head_scale, head_scale, head_scale), MatrixTranslate(x_pos, y_pos, z_pos));
+    DrawMesh(mesh_r->mesh, mesh_r->material, tr);
+}
+
+void draw_arc_segment(Arc *arc, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos)
+{
+  // Settings up shader
+  Vector4 tint_low, tint_high;
+  tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
+  if (!arc->is_void)
+  {
+    tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
+    tint_high = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL));
+  }
+  int is_void_shader = arc->is_void ? 1 : 0;
+  int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+  int negative_bpm_shader = curr_bpm < 0.0f;
+  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
+  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
+  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
+
+  DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+}
+
+void draw_height_indicator(Arc *arc, ArcSegment *arc_segment, Mesh *mesh, Material mat, float z_pos)
+{
+    float arc_world_x1 = arc_x_to_world(arc->x1);
+    float arc_world_y1 = arc_y_to_world(arc->y1);
+    Matrix tr = MatrixMultiply(MatrixScale(1.0f, arc_world_y1, 1.0f),
+                               MatrixTranslate(arc_world_x1, arc_world_y1 * 0.5f, z_pos));
+    if (should_draw_height_indicator(arc, arc_segment))
+    {
+      rlDisableDepthMask();
+      mat.maps->color = arc->color == 0 ? color_from_rgba(ARC_BLUE_HIGH_CL) : color_from_rgba(ARC_PINK_HIGH_CL);
+      DrawMesh(*mesh, mat, MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), tr));
+      rlEnableDepthMask();
+    }
+}
+
+void draw_arccap(Arc *arc, Mesh *mesh, Material mat, float current_ms)
+{
+  float arccap_x = arc_world_x_at(current_ms, arc);
+  float arccap_y = arc_world_y_at(current_ms, arc);
+  float arccap_scale = arc->is_void ? ARCCAP_TRACE_SCALE : ARCCAP_ARC_SCALE;
+  Matrix tr = MatrixMultiply(MatrixScale(arccap_scale, arccap_scale, 1.0f), MatrixTranslate(arccap_x, arccap_y, 0.0f));
+  DrawMesh(*mesh, mat, tr);
+}
+
+bool should_draw_height_indicator(Arc *arc, ArcSegment *arc_segment)
+{
+  return !arc->is_void && fabs(arc_segment->start_fp - arc->start_fp) < 1e-6 && (arc->is_head || fabsf(arc->y1 - arc->y2) > 1e-6);
 }

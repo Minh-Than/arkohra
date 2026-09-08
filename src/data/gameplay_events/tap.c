@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <math.h>
 #include "tap.h"
+#include "color_services.h"
+#include "constants.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "render/mesh_renderable.h"
@@ -14,13 +16,29 @@ void tap_print(const void *elem)
   printf("(%d,%.2f)", tap->timing, tap->lane);
 }
 
-void tap_render_test(MeshRenderable *tap_r, Tap *tap, float z_pos, float z_scale)
+void draw_tap(MeshRenderable *tap_r, Tap *tap, RenderContext *render_ctx, float base_bpm, float scroll_speed, double curr_fp)
 {
-  Matrix tr = MatrixMultiply(
-    MatrixRotateX(-180.0f * DEG2RAD),
-    MatrixMultiply(MatrixScale(1.0f, 1.0f, z_scale),
-                   MatrixTranslate(lane_to_world_x(tap->lane), 0.0f, z_pos)));
+  double diff_fp = tap->fp - curr_fp;
+  float z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
+  float z_scale = Clamp(Lerp(1.8f, 5.8f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
+                        1.8f, 5.8f);
+  Matrix tr = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
+                             MatrixMultiply(MatrixScale(1.0f, 1.0f, z_scale),
+                                            MatrixTranslate(lane_to_world_x(tap->lane), 0.0f, z_pos)));
   DrawMesh(tap_r->mesh, tap_r->material, tr);
+
+  for (int k = 0; k < tap->connector_x.size; k++)
+  {
+    float x = *(float *)list_get(&tap->connector_x, k);
+    float y = *(float *)list_get(&tap->connector_y, k);
+    DrawThickLine3D((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos - 0.1f },
+                    (Vector3){ x, y - 0.21f, z_pos - 0.1f },
+                    Lerp(0.04f, 0.11f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
+                    render_ctx->chart_settings.skin_side == SK_CONFLICT
+                      ? color_from_rgba(CONFICT_CONNECTOR_CL)
+                      : color_from_rgba(LIGHT_CONNECTOR_CL)
+                    );
+  }
 }
 
 MeshRenderable tap_load_mesh(Texture2D *texture)
