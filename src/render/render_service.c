@@ -73,30 +73,30 @@ void render_arcs_and_shadows(NoteRenderLists *note_render_lists, RenderContext *
       for(int i = arc_list->size - 1; i >= 0; i--)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
-        int tg = arc_segment->arc->timing_group;
-        double curr_fp =  curr_fps[tg];
-        float curr_bpm = curr_bpms[tg];
+        Arc *arc = arc_segment->arc;
+        double curr_fp = curr_fps[arc->timing_group];
+        float curr_bpm = curr_bpms[arc->timing_group];
         float z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-        draw_arc_shadow(arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
+        draw_arc_shadow(arc, arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
       }
 
       // Following Arccaps
       for (int i = 0; i < arccap_list->size; i++)
       {
-        ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
-        draw_arccap(arc_segment, &arc_renderer->arccap.mesh, arc_renderer->arccap.material, current_ms);
+        Arc *arc = (*(ArcSegment **)list_get(arccap_list, i))->arc;
+        draw_arccap(arc, &arc_renderer->arccap.mesh, arc_renderer->arccap.material, current_ms);
       }
 
       // Height indicators + Arcs/Traces
       for(int i = arc_list->size - 1; i >= 0; i--)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
-        int tg = arc_segment->arc->timing_group;
-        double curr_fp =  curr_fps[tg];
-        float curr_bpm = curr_bpms[tg];
+        Arc *arc = arc_segment->arc;
+        double curr_fp = curr_fps[arc->timing_group];
+        float curr_bpm = curr_bpms[arc->timing_group];
         float z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-        draw_height_indicator(arc_segment, &arc_renderer->height_indicator.mesh, arc_renderer->height_indicator.material, z_pos);
-        draw_arc_segment(arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
+        draw_height_indicator(arc, arc_segment, &arc_renderer->height_indicator.mesh, arc_renderer->height_indicator.material, z_pos);
+        draw_arc_segment(arc, arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
       }
       rlEnableBackfaceCulling();
       EndBlendMode();
@@ -115,18 +115,16 @@ void render_arctaps(NoteRenderLists *note_render_lists, RenderContext *render_ct
       rlScalef(1.7896f, 1.0f, 1.0f);
       rlDisableBackfaceCulling();
 
-      rlDisableDepthTest();
       // Arc heads
       for(int i = arc_head_list->size - 1; i >= 0; i--)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_head_list, i);
-        int tg = arc_segment->arc->timing_group;
-        double curr_fp =  curr_fps[tg];
-        float curr_bpm = curr_bpms[tg];
-        draw_arc_head(arc_segment, render_ctx, &arctap_renderer->arc_head,
+        Arc *arc = arc_segment->arc;
+        double curr_fp = curr_fps[arc->timing_group];
+        float curr_bpm = curr_bpms[arc->timing_group];
+        draw_arc_head(arc, arc_segment, render_ctx, &arctap_renderer->arc_head,
                       current_ms, curr_bpm, base_bpm, scroll_speed, curr_fp);
       }
-      rlEnableDepthTest();
 
       // Arctaps
       for (int i = arctap_list->size - 1; i >= 0; i--)
