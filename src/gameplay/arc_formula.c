@@ -10,6 +10,7 @@
 #include "constants.h"
 #include "arc_formula.h"
 #include "raymath.h"
+#include "data/custom_types/dynamic_list.h"
 
 float lane_to_world_x(float lane)
 {
