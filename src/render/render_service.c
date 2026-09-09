@@ -83,7 +83,7 @@ void render_arcs_and_shadows(NoteRenderLists *note_render_lists, RenderContext *
       // Following Arccaps
       for (int i = 0; i < arccap_list->size; i++)
       {
-        ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
+        ArcSegment *arc_segment = *(ArcSegment **)list_get(arccap_list, i);
         draw_arccap(arc_segment, &arc_renderer->arccap.mesh, arc_renderer->arccap.material, current_ms);
       }
 
