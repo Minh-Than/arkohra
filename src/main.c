@@ -4,6 +4,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 */
 
 #include "data/app_configs/app_config.h"
+#include <sys/param.h>
 #define RINI_IMPLEMENTATION
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
@@ -131,7 +132,7 @@ int main()
         last_opened_chart_path = cJSON_GetObjectItemCaseSensitive(json, "lastOpenedChartPath");
         char aff_file_search[16]; TextCopy(aff_file_search, "2.aff");
         if (cJSON_IsString(last_opened_chart_path) && last_opened_chart_path->valuestring != NULL)
-          TextCopy(aff_file_search, last_opened_chart_path->valuestring);
+          text_copy_bounded(aff_file_search, 16, last_opened_chart_path->valuestring);
 
         charts = cJSON_GetObjectItemCaseSensitive(json, "charts");
         cJSON_ArrayForEach(chart_item, charts)
@@ -149,57 +150,57 @@ int main()
           render_ctx.chart_settings = chart_settings_init(&app_configs);
 
           render_ctx.chart_settings.scroll_speed = app_configs.scroll_speed;
-          TextCopy(render_ctx.chart_settings.chart_path, TextFormat("%s/%s", dir, chart_path->valuestring));
-          TextCopy(render_ctx.chart_settings.audio_path, TextFormat("%s/%s", dir, audio_path->valuestring));
+          text_copy_bounded(render_ctx.chart_settings.chart_path, MAXPATHLEN, TextFormat("%s/%s", dir, chart_path->valuestring));
+          text_copy_bounded(render_ctx.chart_settings.audio_path, MAXPATHLEN, TextFormat("%s/%s", dir, audio_path->valuestring));
 
           cJSON *jacket_path = cJSON_GetObjectItemCaseSensitive(chart_item, "jacketPath");
           if (cJSON_IsString(jacket_path) && jacket_path->valuestring != NULL)
-            TextCopy(render_ctx.chart_settings.jacket_path, TextFormat("%s/%s", dir, jacket_path->valuestring));
+            text_copy_bounded(render_ctx.chart_settings.jacket_path, MAXPATHLEN, TextFormat("%s/%s", dir, jacket_path->valuestring));
 
           cJSON *background_path = cJSON_GetObjectItemCaseSensitive(chart_item, "backgroundPath");
           if (cJSON_IsString(background_path) && background_path->valuestring != NULL)
-            TextCopy(render_ctx.chart_settings.background_path, TextFormat("%s/%s", dir, background_path->valuestring));
+            text_copy_bounded(render_ctx.chart_settings.background_path, MAXPATHLEN, TextFormat("%s/%s", dir, background_path->valuestring));
 
           cJSON *base_bpm = cJSON_GetObjectItemCaseSensitive(chart_item, "baseBpm");
           if (cJSON_IsNumber(base_bpm)) render_ctx.chart_settings.base_bpm = (float)base_bpm->valuedouble;
 
           cJSON *bpm_text = cJSON_GetObjectItemCaseSensitive(chart_item, "bpmText");
           if (cJSON_IsString(bpm_text) && bpm_text->valuestring != NULL)
-            TextCopy(render_ctx.chart_settings.bpm_text, bpm_text->valuestring);
+            text_copy_bounded(render_ctx.chart_settings.bpm_text, 256, bpm_text->valuestring);
 
           cJSON *sync_base_bpm = cJSON_GetObjectItemCaseSensitive(chart_item, "syncBaseBpm");
           if (cJSON_IsBool(sync_base_bpm)) render_ctx.chart_settings.sync_base_bpm = cJSON_IsTrue(sync_base_bpm);
 
           cJSON *title = cJSON_GetObjectItemCaseSensitive(chart_item, "title");
           if (cJSON_IsString(title) && title->valuestring != NULL)
-            TextCopy(render_ctx.chart_settings.title, title->valuestring);
+            text_copy_bounded(render_ctx.chart_settings.title, 256, title->valuestring);
 
           cJSON *composer = cJSON_GetObjectItemCaseSensitive(chart_item, "composer");
           if (cJSON_IsString(composer) && composer->valuestring != NULL)
-            TextCopy(render_ctx.chart_settings.composer, composer->valuestring);
+            text_copy_bounded(render_ctx.chart_settings.composer, 256, composer->valuestring);
 
           cJSON *alias = cJSON_GetObjectItemCaseSensitive(chart_item, "alias");
           if (cJSON_IsString(alias) && alias->valuestring != NULL)
-            TextCopy(render_ctx.chart_settings.alias, alias->valuestring);
+            text_copy_bounded(render_ctx.chart_settings.alias, 256, alias->valuestring);
 
           cJSON *charter = cJSON_GetObjectItemCaseSensitive(chart_item, "charter");
           if (cJSON_IsString(charter) && charter->valuestring != NULL)
-            TextCopy(render_ctx.chart_settings.charter, charter->valuestring);
+            text_copy_bounded(render_ctx.chart_settings.charter, 256, charter->valuestring);
 
           cJSON *illustrator = cJSON_GetObjectItemCaseSensitive(chart_item, "illustrator");
           if (cJSON_IsString(illustrator) && illustrator->valuestring != NULL)
-            TextCopy(render_ctx.chart_settings.illustrator, illustrator->valuestring);
+            text_copy_bounded(render_ctx.chart_settings.illustrator, 256, illustrator->valuestring);
 
           cJSON *difficulty = cJSON_GetObjectItemCaseSensitive(chart_item, "difficulty");
           if (cJSON_IsString(difficulty) && difficulty->valuestring != NULL)
-            TextCopy(render_ctx.chart_settings.difficulty, difficulty->valuestring);
+            text_copy_bounded(render_ctx.chart_settings.difficulty, 256, difficulty->valuestring);
 
           cJSON *chart_constant = cJSON_GetObjectItemCaseSensitive(chart_item, "chartConstant");
           if (cJSON_IsNumber(chart_constant)) render_ctx.chart_settings.chart_constant = (float)chart_constant->valuedouble;
 
           cJSON *difficulty_color = cJSON_GetObjectItemCaseSensitive(chart_item, "difficultyColor");
           if (cJSON_IsString(difficulty_color) && difficulty_color->valuestring != NULL)
-            TextCopy(render_ctx.chart_settings.difficulty_color, difficulty_color->valuestring);
+            text_copy_bounded(render_ctx.chart_settings.difficulty_color, 256, difficulty_color->valuestring);
 
           cJSON *skin = cJSON_GetObjectItemCaseSensitive(chart_item, "skin");
           if (cJSON_IsObject(skin)){

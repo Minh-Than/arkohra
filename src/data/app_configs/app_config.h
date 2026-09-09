@@ -2,6 +2,7 @@
 #define APP_CONFIG_H
 
 #include <stdbool.h>
+#include <sys/param.h>
 #include "data/custom_types/dynamic_list.h"
 #include "rini.h"
 #include "raylib.h"
@@ -18,7 +19,7 @@ typedef enum
 
 typedef struct
 {
-  char          ffmpeg_path[MAX_PATH_LEN], recent_project[MAX_PATH_LEN];
+  char          ffmpeg_path[MAXPATHLEN], recent_project[MAXPATHLEN];
   float         scroll_speed, music_volume, hit_volume;
   float         app_window_scale;
   AspectRatio   playfield_ratio;

@@ -2,25 +2,26 @@
 #define CHART_SETTINGS_H
 
 #include <stdbool.h>
+#include <sys/param.h>
 #include "data/app_configs/app_config.h"
 #include "render/texture/single_line_type.h"
 #include "render/texture/skin_side.h"
 
 typedef struct {
-  char  chart_path[256];
-  char  audio_path[256];
-  char  jacket_path[256];
+  char  chart_path[MAXPATHLEN];
+  char  audio_path[MAXPATHLEN];
+  char  jacket_path[MAXPATHLEN];
   float base_bpm;
-  char  bpm_text[32];
+  char  bpm_text[256];
   bool  sync_base_bpm;
   int   audio_offset;
-  char  background_path[256];
+  char  background_path[MAXPATHLEN];
   char  title[256];
   char  composer[256];
-  char  charter[128];
-  char  alias[32];
-  char  illustrator[32];
-  char  difficulty[16];
+  char  charter[256];
+  char  alias[256];
+  char  illustrator[256];
+  char  difficulty[256];
   float chart_constant;
   char  difficulty_color[16];
 

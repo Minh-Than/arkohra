@@ -39,9 +39,9 @@ void app_configs_write_to_file(AppConfigs *app_configs, rini_data *d)
   rini_set_value_text(d, "ffmpeg_path"     , app_configs->ffmpeg_path     , rini_get_value_description(*d, "ffmpeg_path"));
   rini_set_value_text(d, "recent_project"  , app_configs->recent_project  , rini_get_value_description(*d, "recent_project"));
 
-  char app_dir [MAX_PATH_LEN];
-  char ini_path[MAX_PATH_LEN];
-  if (get_appdata_path("arckohra", app_dir, MAX_PATH_LEN) != 0) return;
+  char app_dir [MAXPATHLEN];
+  char ini_path[MAXPATHLEN];
+  if (get_appdata_path("arckohra", app_dir, MAXPATHLEN) != 0) return;
 
   if (!dir_exists(app_dir)) {
     printf("Creating directory: %s\n", app_dir);
@@ -51,7 +51,7 @@ void app_configs_write_to_file(AppConfigs *app_configs, rini_data *d)
     }
   }
 
-  snprintf(ini_path, MAX_PATH_LEN, "%s/config.ini", app_dir);
+  snprintf(ini_path, MAXPATHLEN, "%s/config.ini", app_dir);
   rini_save(*d, ini_path);
 }
 

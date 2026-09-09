@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <sys/param.h>
 #include "raylib.h"
 #include "resource_util.h"
 
@@ -15,11 +16,11 @@ bool rini_key_exists(rini_data *data, const char *key)
 
 rini_data fetch_rini_config()
 {
-  char app_dir [MAX_PATH_LEN];
-  char ini_path[MAX_PATH_LEN];
+  char app_dir [MAXPATHLEN];
+  char ini_path[MAXPATHLEN];
 
   // Step 1: Get the app data directory path
-  if (get_appdata_path("arckohra", app_dir, MAX_PATH_LEN) != 0) {
+  if (get_appdata_path("arckohra", app_dir, MAXPATHLEN) != 0) {
     printf("ERROR: Could not resolve app data path.\n");
     return (rini_data){ 0 };
   }
@@ -34,7 +35,7 @@ rini_data fetch_rini_config()
   }
 
   // Build full path to the .ini file
-  snprintf(ini_path, MAX_PATH_LEN, "%s/config.ini", app_dir);
+  snprintf(ini_path, MAXPATHLEN, "%s/config.ini", app_dir);
 
   // Step 3: Load the config — this works even if the file doesn't exist!
   //         rini_load() returns an empty rini_data if the file is missing.
@@ -75,3 +76,9 @@ int get_appdata_path(const char* appName, char* outPath, int maxLen) {
   return 0;
 }
 
+void text_copy_bounded(char *dst, size_t dst_size, const char *src)
+{
+  if (dst == NULL || dst_size == 0) return;
+  if (src == NULL) { dst[0] = '\0'; return; }
+  snprintf(dst, dst_size, "%s", src);
+}
