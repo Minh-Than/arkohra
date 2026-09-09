@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "data/gameplay_events/hold.h"
 #include "raylib.h"
+#include "render/note_render_lists.h"
 #include "rlgl.h"
 #include "chart_reader.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
@@ -16,7 +17,7 @@
 
 static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
 {
-  tg->arctaps.size = 0;
+  list_clear(&tg->arctaps);
 
   // Pass 1: rebuild tg->arctaps from arc->arctaps
   for (int j = 0; j < tg->arcs.size; j++)
@@ -214,7 +215,6 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
       Hold *hold = (Hold *)list_get(&tg->holds, j);
       hold->start_fp = get_floor_position(&tg->timing_events, hold->start_timing);
       hold->end_fp   = get_floor_position(&tg->timing_events, hold->end_timing);
-      // itv_tree_insert(&tg->holds_tree, hold, (Interval){ .low = &hold->start_fp, .high = &hold->end_fp });
     }
     list_sort_by(&tg->holds, hold_compare_start_fp_asc);
     hold_build_tree(&tg->holds_tree, &tg->holds, 0, tg->holds.size - 1);
@@ -323,6 +323,7 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
 
 static void process_note_render_lists(ChartReader *chart_reader, RenderContext *render_ctx, float current_ms, double *curr_fps, float *curr_bpms)
 {
+  render_lists_clear(&chart_reader->render_lists);
   List *timing_groups = &chart_reader->timing_groups;
 
   for (int i = 0; i < timing_groups->size; i++) {
@@ -396,8 +397,6 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
   render_holds_taps      (ls, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed, curr_fps);
   render_arcs_and_shadows(ls, render_ctx, arc_renderer     , current_ms, base_bpm, scroll_speed, curr_fps, curr_bpms);
   render_arctaps         (ls, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed, curr_fps, curr_bpms);
-
-  render_lists_unload(ls);
 }
 
 void chart_reader_print(ChartReader *chart_reader)

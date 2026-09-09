@@ -14,6 +14,7 @@ typedef struct {
 } NoteRenderLists;
 
 void render_lists_initialize(NoteRenderLists *render_lists);
+void render_lists_clear(NoteRenderLists *render_lists);
 void render_lists_unload(NoteRenderLists *render_lists);
 
 #endif // NOTE_RENDER_LIST_H

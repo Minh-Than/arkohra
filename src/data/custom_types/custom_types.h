@@ -22,6 +22,7 @@ void list_sort_by(List *list, int (*compare)(const void *a, const void *b));
 int  cmp3(const void *a, const void *b);
 int  bisect_right(List *list, const void *target, int (*compare)(const void *a, const void *b));
 int  bisect_left(List *list, const void *target, int (*compare)(const void *a, const void *b));
+void list_clear(List *list);
 void list_free(List *list);
 void list_print(const List *list, void (*print_elem)(const void *elem),
                 const char *header);

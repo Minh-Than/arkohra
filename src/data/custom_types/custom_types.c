@@ -78,6 +78,12 @@ int bisect_left(List *list, const void *target, int (*compare)(const void *a, co
   return low;
 }
 
+void list_clear(List *list)
+{
+  if (!list) return;
+  list->size = 0;
+}
+
 void list_free(List *list)
 {
   if (!list) return;
