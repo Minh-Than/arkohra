@@ -2,7 +2,6 @@
 #define COMMAND_PALETTE_H
 
 #include "windows/window_inst.h"
-// #include "data/custom_types/custom_types.h"
 
 typedef struct
 {

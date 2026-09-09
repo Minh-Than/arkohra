@@ -2,7 +2,7 @@
 #define APP_CONFIG_H
 
 #include <stdbool.h>
-#include "data/custom_types/custom_types.h"
+#include "data/custom_types/dynamic_list.h"
 #include "rini.h"
 #include "raylib.h"
 #include "resource_util.h"

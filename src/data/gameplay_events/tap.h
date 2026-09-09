@@ -1,7 +1,7 @@
 #ifndef TAP_H
 #define TAP_H
 
-#include "data/custom_types/custom_types.h"
+#include "data/custom_types/dynamic_list.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
 #include "render/render_service.h"

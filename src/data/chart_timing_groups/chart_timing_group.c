@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "chart_timing_group.h"
-#include "data/custom_types/custom_types.h"
+#include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/arc.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "data/gameplay_events/timing_event.h"
