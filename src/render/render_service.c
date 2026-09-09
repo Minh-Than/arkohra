@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "constants.h"
+#include "data/custom_types/custom_types.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
@@ -84,6 +85,9 @@ void render_arcs_and_shadows(NoteRenderLists *note_render_lists, RenderContext *
       for (int i = 0; i < arccap_list->size; i++)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arccap_list, i);
+        int start_timing = arc_segment->arc->start_timing;
+        int end_timing = arc_segment->arc->end_timing;
+        if (!between_int_range_inclusive(current_ms, start_timing, end_timing)) continue;
         draw_arccap(arc_segment, &arc_renderer->arccap.mesh, arc_renderer->arccap.material, 1.0f, ARCCAP_ALPHA, current_ms);
       }
 

@@ -15,4 +15,6 @@ char *trim_whitespace(char *str);
 
 // Comparators
 int double_compare_asc(const void *a, const void *b);
+bool between_int_range_exclusive(int value, int low, int high);
+bool between_int_range_inclusive(int value, int low, int high);
 #endif // CUSTOM_TYPES_H

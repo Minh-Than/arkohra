@@ -51,3 +51,13 @@ int double_compare_asc(const void *a, const void *b)
   if (*da > *db) return 1;
   return 0;
 }
+
+bool between_int_range_exclusive(int value, int low, int high)
+{
+  return low < value && value < high;
+}
+
+bool between_int_range_inclusive(int value, int low, int high)
+{
+  return low <= value && value <= high;
+}
