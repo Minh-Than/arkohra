@@ -80,7 +80,7 @@ void render_arcs_and_shadows(NoteRenderLists *note_render_lists, RenderContext *
         draw_arc_shadow(arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
       }
 
-      // Following Arccaps
+      // Following arccaps
       for (int i = 0; i < arccap_list->size; i++)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arccap_list, i);
@@ -125,7 +125,7 @@ void render_arcs_and_shadows(NoteRenderLists *note_render_lists, RenderContext *
 void render_arctaps(NoteRenderLists *note_render_lists, RenderContext *render_ctx, ArctapRenderer *arctap_renderer,
                     float current_ms, float base_bpm, float scroll_speed, double *curr_fps, float *curr_bpms)
 {
-  List *arc_head_list = &note_render_lists->arc_head_render_list;
+  List *arc_list = &note_render_lists->arc_render_list;
   List *arctap_list = &note_render_lists->arctap_render_list;
   BeginMode3D(render_ctx->camera);
     rlDisableBackfaceCulling();
@@ -133,9 +133,9 @@ void render_arctaps(NoteRenderLists *note_render_lists, RenderContext *render_ct
       rlScalef(1.7896f, 1.0f, 1.0f);
 
       // Arc heads
-      for(int i = arc_head_list->size - 1; i >= 0; i--)
+      for(int i = arc_list->size - 1; i >= 0; i--)
       {
-        ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_head_list, i);
+        ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
         int tg = arc_segment->arc->timing_group;
         double curr_fp =  curr_fps[tg];
         float curr_bpm = curr_bpms[tg];

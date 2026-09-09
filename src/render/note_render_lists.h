@@ -2,7 +2,7 @@
 #define NOTE_RENDER_LIST_H
 
 #include <stdbool.h>
-#include "data/custom_types/custom_types.h"
+#include "data/custom_types/dynamic_list.h"
 
 typedef struct {
   List hold_render_list;
@@ -10,7 +10,6 @@ typedef struct {
   List arc_render_list;
   List arccap_render_list;
   List arctap_render_list;
-  List arc_head_render_list;
 } NoteRenderLists;
 
 void render_lists_initialize(NoteRenderLists *render_lists);

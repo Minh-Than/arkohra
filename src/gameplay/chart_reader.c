@@ -324,8 +324,8 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
 static void process_note_render_lists(ChartReader *chart_reader, RenderContext *render_ctx, float current_ms, double *curr_fps, float *curr_bpms)
 {
   render_lists_clear(&chart_reader->render_lists);
-  List *timing_groups = &chart_reader->timing_groups;
 
+  List *timing_groups = &chart_reader->timing_groups;
   for (int i = 0; i < timing_groups->size; i++) {
     ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
 
@@ -355,9 +355,8 @@ static void process_note_render_lists(ChartReader *chart_reader, RenderContext *
     double curr_arc_itv_arr[]  = { curr_fp + chart_reader->low_z_clip, curr_fp + chart_reader->high_z_clip };
     Interval curr_arc_interval = { .low = &curr_arc_itv_arr[0], .high = &curr_arc_itv_arr[1] };
     itv_tree_get_overlaps(&tg->arc_segments_tree, &chart_reader->render_lists.arc_render_list, curr_arc_interval);
-    itv_tree_get_overlaps(&tg->arc_segments_tree, &chart_reader->render_lists.arc_head_render_list, curr_arc_interval);
 
-    // Arccaps
+    // Following arccaps
     Interval arccap_interval = { .low = &curr_fp, .high = &curr_fp };
     itv_tree_get_overlaps(&tg->arc_segments_tree, &chart_reader->render_lists.arccap_render_list, arccap_interval);
 
@@ -376,7 +375,6 @@ static void process_note_render_lists(ChartReader *chart_reader, RenderContext *
   list_sort_by(&chart_reader->render_lists.hold_render_list, arc_segment_const_void_compare_start_fp_asc);
   list_sort_by(&chart_reader->render_lists.tap_render_list, tapfp_compare_fp_asc);
   list_sort_by(&chart_reader->render_lists.arc_render_list, arc_segment_const_void_compare_start_fp_asc);
-  list_sort_by(&chart_reader->render_lists.arc_head_render_list, arc_segment_const_void_compare_start_fp_asc);
   list_sort_by(&chart_reader->render_lists.arctap_render_list, arctapfp_compare_fp_asc);
 }
 
