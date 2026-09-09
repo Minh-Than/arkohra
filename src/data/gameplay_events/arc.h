@@ -58,7 +58,7 @@ void draw_arc_head(ArcSegment *arc_segment, RenderContext *render_ctx, MeshRende
                    float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp);
 void draw_arc_segment(ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos);
 void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, float z_pos);
-void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float current_ms);
+void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale, float alpha, float current_ms);
 bool should_draw_height_indicator(ArcSegment *arc_segment);
 
 #endif // ARC_H

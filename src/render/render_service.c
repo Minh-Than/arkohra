@@ -1,14 +1,14 @@
 #include <math.h>
 #include <stdlib.h>
+#include "constants.h"
+#include "raylib.h"
+#include "raymath.h"
+#include "rlgl.h"
 #include "render_service.h"
-#include "data/custom_types/custom_types.h"
 #include "data/gameplay_events/arc.h"
 #include "data/gameplay_events/arctap.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
-#include "raylib.h"
-#include "raymath.h"
-#include "rlgl.h"
 
 void render_holds_taps(NoteRenderLists *note_render_lists, RenderContext *render_ctx, HoldTapRenderer *hold_tap_renderer,
                        float current_ms, float base_bpm, float scroll_speed, double *curr_fps)
@@ -17,9 +17,9 @@ void render_holds_taps(NoteRenderLists *note_render_lists, RenderContext *render
   List *tap_list = &note_render_lists->tap_render_list;
   BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
+    rlDisableBackfaceCulling();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
-      rlDisableBackfaceCulling();
       BeginBlendMode(BLEND_ALPHA);
         // Holds
         for(int i = hold_list->size - 1; i >= 0; i--)
@@ -37,8 +37,8 @@ void render_holds_taps(NoteRenderLists *note_render_lists, RenderContext *render
           draw_tap(&hold_tap_renderer->tap, tap, render_ctx, base_bpm, scroll_speed, curr_fp);
         }
       EndBlendMode();
-      rlEnableBackfaceCulling();
     rlPopMatrix();
+    rlEnableBackfaceCulling();
     rlEnableDepthTest();
   EndMode3D();
 }
@@ -51,10 +51,10 @@ void render_arcs_and_shadows(NoteRenderLists *note_render_lists, RenderContext *
   List *arctap_list = &note_render_lists->arctap_render_list;
   BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
+    rlDisableBackfaceCulling();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
       BeginBlendMode(BLEND_ALPHA);
-      rlDisableBackfaceCulling();
 
       // Arctap shadows
       for (int i = 0; i < arctap_list->size; i++)
@@ -64,8 +64,8 @@ void render_arcs_and_shadows(NoteRenderLists *note_render_lists, RenderContext *
         double curr_fp = curr_fps[arctap->timing_group];
         float z_pos    = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
         Matrix tr      = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
-                                            MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc),
-                                                            0.0f, z_pos));
+                                        MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc),
+                                                        0.0f, z_pos));
         DrawMesh(arc_renderer->arctap_shadow.mesh, arc_renderer->arctap_shadow.material, tr);
       }
 
@@ -84,7 +84,7 @@ void render_arcs_and_shadows(NoteRenderLists *note_render_lists, RenderContext *
       for (int i = 0; i < arccap_list->size; i++)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arccap_list, i);
-        draw_arccap(arc_segment, &arc_renderer->arccap.mesh, arc_renderer->arccap.material, current_ms);
+        draw_arccap(arc_segment, &arc_renderer->arccap.mesh, arc_renderer->arccap.material, 1.0f, ARCCAP_ALPHA, current_ms);
       }
 
       // Height indicators + Arcs/Traces
@@ -98,9 +98,26 @@ void render_arcs_and_shadows(NoteRenderLists *note_render_lists, RenderContext *
         draw_height_indicator(arc_segment, &arc_renderer->height_indicator.mesh, arc_renderer->height_indicator.material, z_pos);
         draw_arc_segment(arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
       }
-      rlEnableBackfaceCulling();
+
+      // Approaching arccaps
+      for(int i = 0; i < arc_list->size; i++)
+      {
+        ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
+        Arc *arc = arc_segment->arc;
+        if (arc->is_void) continue;
+        if (!arc->is_head) continue;
+        if (arc->start_timing - current_ms <= 0) continue;
+        if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) continue;
+
+        double curr_fp =  curr_fps[arc->timing_group];
+        float diff_fp_z = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+        float head_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f, diff_fp_z / -100.0f), 0.0f, ARCCAP_ALPHA);
+        float head_scale = Clamp(Lerp(1.0f, ARCCAP_FAR_SCALE, diff_fp_z / -100.0f), 1.0f, ARCCAP_FAR_SCALE);
+        draw_arccap(arc_segment, &arc_renderer->arccap.mesh, arc_renderer->arccap.material, head_scale, head_alpha, current_ms);
+      }
       EndBlendMode();
     rlPopMatrix();
+    rlEnableBackfaceCulling();
     rlEnableDepthTest();
   EndMode3D();
 }
@@ -111,11 +128,10 @@ void render_arctaps(NoteRenderLists *note_render_lists, RenderContext *render_ct
   List *arc_head_list = &note_render_lists->arc_head_render_list;
   List *arctap_list = &note_render_lists->arctap_render_list;
   BeginMode3D(render_ctx->camera);
+    rlDisableBackfaceCulling();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
-      rlDisableBackfaceCulling();
 
-      rlDisableDepthTest();
       // Arc heads
       for(int i = arc_head_list->size - 1; i >= 0; i--)
       {
@@ -137,7 +153,7 @@ void render_arctaps(NoteRenderLists *note_render_lists, RenderContext *render_ct
         float z_pos    = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
         draw_arctap(&arctap_renderer->arctap, arctap, z_pos);
       }
-      rlEnableBackfaceCulling();
     rlPopMatrix();
+    rlEnableBackfaceCulling();
   EndMode3D();
 }

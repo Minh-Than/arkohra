@@ -352,7 +352,7 @@ static void process_note_render_lists(ChartReader *chart_reader, RenderContext *
     }
 
     // Arcs
-    double curr_arc_itv_arr[]   = { curr_fp + chart_reader->low_z_clip, curr_fp + chart_reader->high_z_clip };
+    double curr_arc_itv_arr[]  = { curr_fp + chart_reader->low_z_clip, curr_fp + chart_reader->high_z_clip };
     Interval curr_arc_interval = { .low = &curr_arc_itv_arr[0], .high = &curr_arc_itv_arr[1] };
     itv_tree_get_overlaps(&tg->arc_segments_tree, &chart_reader->render_lists.arc_render_list, curr_arc_interval);
     itv_tree_get_overlaps(&tg->arc_segments_tree, &chart_reader->render_lists.arc_head_render_list, curr_arc_interval);

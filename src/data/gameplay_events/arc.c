@@ -468,7 +468,7 @@ void draw_arc_head(ArcSegment *arc_segment, RenderContext *render_ctx, MeshRende
 {
   Arc *arc = arc_segment->arc;
   if (!arc->is_head) return;
-  if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) return ;
+  if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) return;
 
   int is_void_shader = arc->is_void ? 1 : 0;
   int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
@@ -535,12 +535,15 @@ void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, fl
   rlEnableDepthMask();
 }
 
-void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float current_ms)
+void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale, float alpha, float current_ms)
 {
   Arc *arc = arc_segment->arc;
+
   float arccap_x = arc_world_x_at(current_ms, arc);
   float arccap_y = arc_world_y_at(current_ms, arc);
   float arccap_scale = arc->is_void ? ARCCAP_TRACE_SCALE : ARCCAP_ARC_SCALE;
+  arccap_scale *= scale;
+  mat.maps->color = ColorAlpha(mat.maps->color, alpha);
   Matrix tr = MatrixMultiply(MatrixScale(arccap_scale, arccap_scale, 1.0f), MatrixTranslate(arccap_x, arccap_y, 0.0f));
   DrawMesh(*mesh, mat, tr);
 }
