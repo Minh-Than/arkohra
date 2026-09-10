@@ -141,7 +141,6 @@ defaultplatform("ARM64")
 
 filter("configurations:Debug")
 defines({ "DEBUG" })
-optimize("On")
 symbols("On")
 
 filter("configurations:Release")
