@@ -16,12 +16,14 @@ void render_holds_taps(NoteRenderLists *note_render_lists, RenderContext *render
   List *beatline_list = &note_render_lists->beatline_render_list;
   List *hold_list = &note_render_lists->hold_render_list;
   List *tap_list = &note_render_lists->tap_render_list;
+
   BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
     rlDisableBackfaceCulling();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
       BeginBlendMode(BLEND_ALPHA);
+
         // Beatlines
         for(int i = 0; i < beatline_list->size; i++)
         {
@@ -30,6 +32,18 @@ void render_holds_taps(NoteRenderLists *note_render_lists, RenderContext *render
           float z_pos    = floor_position_to_z(beatline->fp - curr_fp, base_bpm, scroll_speed);
           DrawBeatline(z_pos, Lerp(beatline->thickness, beatline->thickness * 5, z_pos / -100.0f), beatline->color);
         }
+      EndBlendMode();
+    rlPopMatrix();
+    rlEnableBackfaceCulling();
+    rlEnableDepthTest();
+  EndMode3D();
+
+  BeginMode3D(render_ctx->camera);
+    rlDisableDepthTest();
+    rlDisableBackfaceCulling();
+    rlPushMatrix();
+      rlScalef(1.7896f, 1.0f, 1.0f);
+      BeginBlendMode(BLEND_ALPHA);
 
         // Holds
         for(int i = hold_list->size - 1; i >= 0; i--)
