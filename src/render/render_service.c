@@ -1,19 +1,19 @@
 #include <math.h>
 #include <stdlib.h>
 #include "constants.h"
+#include "data/app_configs/app_config.h"
 #include "data/custom_types/custom_types.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
 #include "render_service.h"
-#include "data/gameplay_events/arc.h"
-#include "data/gameplay_events/arctap.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
 
 void render_holds_taps(NoteRenderLists *note_render_lists, RenderContext *render_ctx, HoldTapRenderer *hold_tap_renderer,
                        float current_ms, float base_bpm, float scroll_speed, double *curr_fps)
 {
+  List *beatline_list = &note_render_lists->beatline_render_list;
   List *hold_list = &note_render_lists->hold_render_list;
   List *tap_list = &note_render_lists->tap_render_list;
   BeginMode3D(render_ctx->camera);
@@ -22,6 +22,15 @@ void render_holds_taps(NoteRenderLists *note_render_lists, RenderContext *render
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
       BeginBlendMode(BLEND_ALPHA);
+        // Beatlines
+        for(int i = 0; i < beatline_list->size; i++)
+        {
+          BeatLine *beatline = (BeatLine *)list_get(beatline_list, i);
+          double curr_fp = curr_fps[beatline->timing_group];
+          float z_pos    = floor_position_to_z(beatline->fp - curr_fp, base_bpm, scroll_speed);
+          DrawBeatline(z_pos, Lerp(beatline->thickness, beatline->thickness * 5, z_pos / -100.0f), beatline->color);
+        }
+
         // Holds
         for(int i = hold_list->size - 1; i >= 0; i--)
         {

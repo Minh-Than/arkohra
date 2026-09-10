@@ -228,8 +228,20 @@ int main()
 
         if (status)
         {
+          // Stop audio entirely
+          pause = true;
+          render_ctx.audio_clock.total_audio_length = 0;
+          StopMusicStream(music);
+          UnloadMusicStream(music);
+          music = LoadMusicStream(render_ctx.chart_settings.audio_path);
+          music.looping = false;
+          render_ctx.audio_clock.total_audio_length = (int)roundf(GetMusicTimeLength(music) * 1000);
+          SetMusicPan(music, 0.0f);
+          SetMusicVolume(music, app_configs.music_volume);
+
           // Update chart reader
           if(chart_reader.initialized) chart_reader_unload(&chart_reader);
+
           chart_reader = chart_reader_parse((char *)&render_ctx.chart_settings.chart_path, &render_ctx, &texture_group.arc);
           chart_settings_print(&render_ctx.chart_settings);
 
@@ -282,14 +294,6 @@ int main()
           font_services.hud_notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
           list_free(&hud_code_points);
 
-          // Update music stream + audio clock
-          pause = true;
-          StopMusicStream(music);
-          UnloadMusicStream(music);
-          music = LoadMusicStream(render_ctx.chart_settings.audio_path);
-          music.looping = false;
-          SetMusicPan(music, 0.0f);
-          SetMusicVolume(music, app_configs.music_volume);
           PlayMusicStream(music);
           PauseMusicStream(music);
           audio_clock_start(&render_ctx.audio_clock);

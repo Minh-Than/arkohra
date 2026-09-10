@@ -5,6 +5,7 @@
 #include "./hold.h"         // IWYU pragma: export
 #include "./arc.h"          // IWYU pragma: export
 #include "./arctap.h"       // IWYU pragma: export
+#include "./beatline.h"     // IWYU pragma: export
 #include "./timing_event.h" // IWYU pragma: export
 
 typedef enum

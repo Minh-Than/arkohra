@@ -3,6 +3,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "color_services.h"
+#include "constants.h"
+#include "data/custom_types/dynamic_list.h"
+#include "data/gameplay_events/beatline.h"
 #include "data/gameplay_events/hold.h"
 #include "raylib.h"
 #include "render/note_render_lists.h"
@@ -103,10 +107,11 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
   {
     case TIMING_GROUP:
       {
-        ChartTimingGroup init_tg = timing_group_init();
-        list_push(&chart_reader->timing_groups, &init_tg);
         *tg_count += 1;
         *current_tg = *tg_count - 1;
+        ChartTimingGroup init_tg = timing_group_init();
+        init_tg.value = *current_tg;
+        list_push(&chart_reader->timing_groups, &init_tg);
         break;
       }
     case TIMING_EVENT:
@@ -207,6 +212,14 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
 
     list_sort_by(&tg->arcs, arc_compare_start_timing_asc);
     chart_reader_rebuild_arctaps(tg);
+
+    // Beatlines
+    if (tg->value == 0)
+    {
+      tg->beatlines = beatline_generate(tg, render_ctx->audio_clock.total_audio_length, render_ctx->chart_settings.audio_offset,
+                                        color_from_rgba(BEATLINE_CL), BEATLINE_THICKNESS);
+      list_sort_by(&tg->beatlines, beatline_compare_fp_asc);
+    }
 
     // Pre-calculate the notes's floor position
     // Arctaps' floor position is already calculated in `chart_reader_rebuild_arctaps`
@@ -318,6 +331,12 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
 
   parse_post_process(render_ctx, &chart_reader, arc_texture);
   chart_reader.initialized = true;
+
+  for (int i = 0; i < chart_reader.timing_groups.size; i++)
+  {
+    ChartTimingGroup *tg = (ChartTimingGroup *)list_get(&chart_reader.timing_groups, i);
+    timing_group_print(tg);
+  }
   return chart_reader;
 }
 
@@ -334,6 +353,17 @@ static void process_note_render_lists(ChartReader *chart_reader, RenderContext *
     float curr_bpm = curr_event != NULL ? curr_event->bpm : render_ctx->chart_settings.base_bpm;
     curr_fps[i]  = curr_fp;
     curr_bpms[i] = curr_bpm;
+
+    // Beatlines
+    BeatLine beatline_low_z_fp  = { .fp = curr_fp + chart_reader->low_z_clip };
+    BeatLine beatline_high_z_fp = { .fp = curr_fp + chart_reader->high_z_clip };
+    int beatline_start_index = bisect_left(&tg->beatlines, &beatline_low_z_fp , beatline_compare_fp_asc);
+    int beatline_end_index   = bisect_left(&tg->beatlines, &beatline_high_z_fp, beatline_compare_fp_asc);
+    for (int j = beatline_start_index; j < beatline_end_index; j++)
+    {
+      BeatLine *beatline = (BeatLine *)list_get(&tg->beatlines, j);
+      list_push(&chart_reader->render_lists.beatline_render_list, beatline);
+    }
 
     // Holds
     double curr_itv_arr[] = { curr_fp + chart_reader->low_z_clip, curr_fp + chart_reader->high_z_clip };
@@ -372,6 +402,7 @@ static void process_note_render_lists(ChartReader *chart_reader, RenderContext *
     }
   }
 
+  list_sort_by(&chart_reader->render_lists.beatline_render_list, beatline_compare_fp_asc);
   list_sort_by(&chart_reader->render_lists.hold_render_list, arc_segment_const_void_compare_start_fp_asc);
   list_sort_by(&chart_reader->render_lists.tap_render_list, tapfp_compare_fp_asc);
   list_sort_by(&chart_reader->render_lists.arc_render_list, arc_segment_const_void_compare_start_fp_asc);

@@ -1,3 +1,4 @@
+#include "constants.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
@@ -6,7 +7,6 @@
 
 AppConfigs app_configs_init(rini_data *d)
 {
-
   if (!rini_key_exists(d, "playfield_ratio"))   rini_set_value     (d, "playfield_ratio" ,    0, "Window aspect ratio");
   if (!rini_key_exists(d, "app_window_scale"))  rini_set_float     (d, "app_window_scale", 1.0f, "Window scaling for resizing purpose");
   if (!rini_key_exists(d, "scroll_speed"))      rini_set_float     (d, "scroll_speed"    , 3.0f, "Chart scrolling speed");
@@ -183,7 +183,8 @@ void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float hei
 
     rlSetTexture(0);
 }
-void DrawThickLine3D(Vector3 start, Vector3 end, float thick, Color color)
+
+void DrawConnector(Vector3 start, Vector3 end, float thick, Color color)
 {
   float half_thick = thick / 2;
   float dx = end.x - start.x;
@@ -202,5 +203,23 @@ void DrawThickLine3D(Vector3 start, Vector3 end, float thick, Color color)
     rlVertex3f(start.x + right.x, start.y + right.y, start.z);
     rlVertex3f(end.x   + right.x, end.y   + right.y, end.z  );
     rlVertex3f(end.x   + left.x , end.y   + left.y , end.z  );
+  rlEnd();
+}
+
+void DrawBeatline(float z_pos, float thick, Color color)
+{
+  float half_track_x = LANE_WIDTH * 2;
+  float half_thick = thick / 2;
+
+  rlBegin(RL_TRIANGLES);
+    rlColor4ub(color.r, color.g, color.b, color.a);
+
+    rlVertex3f(-half_track_x, 0.0f,  half_thick + z_pos);
+    rlVertex3f( half_track_x, 0.0f,  half_thick + z_pos);
+    rlVertex3f(-half_track_x, 0.0f, -half_thick + z_pos);
+
+    rlVertex3f( half_track_x, 0.0f,  half_thick + z_pos);
+    rlVertex3f( half_track_x, 0.0f, -half_thick + z_pos);
+    rlVertex3f(-half_track_x, 0.0f, -half_thick + z_pos);
   rlEnd();
 }

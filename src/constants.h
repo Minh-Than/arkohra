@@ -29,6 +29,7 @@ static const float SKY_LABEL_SIZE_X      = 9.0f;
 static const float SKY_LABEL_SIZE_Y      = 1.0f;
 static const float SINGLE_LINE_SIZE_X    = 1.28f;
 static const float SINGLE_LINE_SIZE_Y    = 100.0f;
+static const float BEATLINE_THICKNESS    = 0.35f;
 
 static const float MINIMUM_ARC_RES    = 1.0f;
 static const float MAXIMUM_ARC_RES    = 10.0f;
@@ -51,6 +52,7 @@ static const unsigned char ETR_DIFF_COLOR[4] = { 67 , 52 , 85 , 255 };
 static const unsigned char LIGHT_CONNECTOR_CL[4]   = { 104, 189, 211, 255 };
 static const unsigned char CONFICT_CONNECTOR_CL[4] = { 150, 85 , 142, 255 };
 
+static const unsigned char BEATLINE_CL[4]       = { 130, 130, 130, 57  };
 static const unsigned char ARC_BLUE_LOW_CL[4]   = { 25 , 160, 235, 160 };
 static const unsigned char ARC_BLUE_HIGH_CL[4]  = { 12 , 212, 212, 160 };
 static const unsigned char ARC_PINK_LOW_CL[4]   = { 240, 105, 155, 160 };

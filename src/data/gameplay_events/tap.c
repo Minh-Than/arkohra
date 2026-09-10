@@ -5,6 +5,7 @@
 #include "tap.h"
 #include "color_services.h"
 #include "constants.h"
+#include "data/app_configs/app_config.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "render/mesh_renderable.h"
@@ -31,13 +32,13 @@ void draw_tap(MeshRenderable *tap_r, Tap *tap, RenderContext *render_ctx, float 
   {
     float x = *(float *)list_get(&tap->connector_x, k);
     float y = *(float *)list_get(&tap->connector_y, k);
-    DrawThickLine3D((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos - 0.1f },
-                    (Vector3){ x, y - 0.21f, z_pos - 0.1f },
-                    Lerp(0.04f, 0.11f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
-                    render_ctx->chart_settings.skin_side == SK_CONFLICT
-                      ? color_from_rgba(CONFICT_CONNECTOR_CL)
-                      : color_from_rgba(LIGHT_CONNECTOR_CL)
-                    );
+    DrawConnector((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos - 0.1f },
+                  (Vector3){ x, y - 0.21f, z_pos - 0.1f },
+                  Lerp(0.04f, 0.11f, z_pos / -100.0f),
+                  render_ctx->chart_settings.skin_side == SK_CONFLICT
+                    ? color_from_rgba(CONFICT_CONNECTOR_CL)
+                    : color_from_rgba(LIGHT_CONNECTOR_CL)
+                  );
   }
 }
 

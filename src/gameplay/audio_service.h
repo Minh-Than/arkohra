@@ -8,6 +8,7 @@ typedef struct
   double start_wall_time;   // GetTime() when playback is started/resumed
   double accumulated_ms;    // Total elapsed ms
   bool is_playing;
+  int total_audio_length;
 } AudioClock;
 
 void audio_clock_start(AudioClock *clock);

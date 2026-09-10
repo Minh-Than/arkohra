@@ -5,6 +5,7 @@
 #include "data/custom_types/dynamic_list.h"
 
 typedef struct {
+  List beatline_render_list;
   List hold_render_list;
   List tap_render_list;
   List arc_render_list;

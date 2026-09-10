@@ -5,7 +5,7 @@
 
 typedef struct
 {
-  MeshRenderable hold, tap, connector;
+  MeshRenderable hold, tap;
 } HoldTapRenderer;
 
 #endif // HOLD_TAP_LAYER_H

@@ -152,16 +152,10 @@ PlayfieldObjs playfield_objs_init(RenderContext *render_ctx, TextureGroup *textu
     1
   );
 
-  Mesh connector_mesh = GenMeshPlane(0.1f, 1, 1, 1);
-  UploadMesh(&connector_mesh, false);
-  Material connector_material = LoadMaterialDefault();
-  connector_material.maps[MATERIAL_MAP_DIFFUSE].color = color_from_hex("#983C8E");
   objs.tap_hold_renderer = (HoldTapRenderer){
     .hold  = hold_load_mesh(&texture_group->hold),
     .tap   = tap_load_mesh(&texture_group->tap),
-    .connector = (MeshRenderable){ .mesh = connector_mesh, .material = connector_material },
   };
-  set_mesh_transforms(&objs.tap_hold_renderer.connector, (Matrix[]){MatrixIdentity()}, 1);
 
   Mesh height_indicator_mesh = GenMeshPlane(0.5f, 1, 1, 1);
   UploadMesh(&height_indicator_mesh, false);
@@ -249,7 +243,6 @@ void playfield_objs_unload(PlayfieldObjs *scene) {
 
   renderable_unload(&scene->tap_hold_renderer.tap);
   renderable_unload(&scene->tap_hold_renderer.hold);
-  renderable_unload(&scene->tap_hold_renderer.connector);
 
   renderable_unload(&scene->arc_renderer.height_indicator);
   renderable_unload(&scene->arc_renderer.arccap);
