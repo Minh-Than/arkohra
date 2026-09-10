@@ -81,8 +81,8 @@ int hold_compare_start_fp_asc(const void *a, const void *b)
   Hold *hold_b = (Hold *) b;
   double sfp_a = hold_a->start_fp;
   double sfp_b = hold_b->start_fp;
-  if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
-  if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a > sfp_b) return 1;
+  if (fabs(sfp_a - sfp_b) > 1e-6)
+    return sfp_a < sfp_b ? -1 : 1;
   return 0;
 }
 
@@ -92,8 +92,8 @@ int hold_const_void_compare_start_fp_asc(const void *a, const void *b)
   const Hold *hold_b = *(const Hold *const *) b;
   double sfp_a = hold_a->start_fp;
   double sfp_b = hold_b->start_fp;
-  if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
-  if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a > sfp_b) return 1;
+  if (fabs(sfp_a - sfp_b) > 1e-6)
+    return sfp_a < sfp_b ? -1 : 1;
   return 0;
 }
 

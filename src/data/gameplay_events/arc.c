@@ -419,10 +419,10 @@ int arc_segment_compare_start_fp_asc(const void *a, const void *b)
 {
   const ArcSegment *segment_a = (const ArcSegment *) a;
   const ArcSegment *segment_b = (const ArcSegment *) b;
-  float sfp_a = segment_a->start_fp;
-  float sfp_b = segment_b->start_fp;
-  if (fabsf(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
-  if (fabsf(sfp_a - sfp_b) > 1e-6 && sfp_a > sfp_b) return 1;
+  double sfp_a = segment_a->start_fp;
+  double sfp_b = segment_b->start_fp;
+  if (fabs(sfp_a - sfp_b) > 1e-6)
+    return sfp_a < sfp_b ? -1 : 1;
   return 0;
 }
 
@@ -432,8 +432,8 @@ int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b)
   const ArcSegment *segment_b = *(const ArcSegment *const *) b;
   double sfp_a = segment_a->start_fp;
   double sfp_b = segment_b->start_fp;
-  if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a < sfp_b) return -1;
-  if (fabs(sfp_a - sfp_b) > 1e-6 && sfp_a > sfp_b) return 1;
+  if (fabs(sfp_a - sfp_b) > 1e-6)
+    return sfp_a < sfp_b ? -1 : 1;
   return 0;
 }
 
