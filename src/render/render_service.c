@@ -164,6 +164,7 @@ void render_arctaps(List *timing_groups, NoteRenderLists *note_render_lists, Ren
   List *arc_list = &note_render_lists->arc_render_list;
   List *arctap_list = &note_render_lists->arctap_render_list;
   BeginMode3D(render_ctx->camera);
+    rlDisableDepthTest();
     rlDisableBackfaceCulling();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
@@ -178,8 +179,15 @@ void render_arctaps(List *timing_groups, NoteRenderLists *note_render_lists, Ren
         draw_arc_head(tg, arc_segment, render_ctx, &arctap_renderer->arc_head,
                       current_ms, curr_bpm, base_bpm, scroll_speed, curr_fp);
       }
-      rlEnableDepthTest();
+    rlPopMatrix();
+    rlEnableBackfaceCulling();
+    rlEnableDepthTest();
+  EndMode3D();
 
+  BeginMode3D(render_ctx->camera);
+    rlDisableBackfaceCulling();
+    rlPushMatrix();
+      rlScalef(1.7896f, 1.0f, 1.0f);
       // Arctaps
       for (int i = arctap_list->size - 1; i >= 0; i--)
       {
