@@ -127,7 +127,8 @@ void render_arcs_and_shadows(List *timing_groups, NoteRenderLists *note_render_l
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
         float z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-        if (!tg->props.no_height_indicator)
+        if (!tg->props.no_height_indicator &&
+            !(!tg->props.no_clip && tg->props.no_input && arc_segment->arc->start_timing - current_ms < 0))
           draw_height_indicator(arc_segment, &arc_renderer->height_indicator.mesh, arc_renderer->height_indicator.material, z_pos);
         draw_arc_segment(tg, arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
       }
