@@ -11,7 +11,9 @@
 List parse_int_array(const char *str);
 
 // String-related
+typedef int (*token_fn)(char *token, void *user);
 char *trim_whitespace(char *str);
+int split(char *str, char delimiter, token_fn fn, void *user);
 
 // Comparators
 int double_compare_asc(const void *a, const void *b);

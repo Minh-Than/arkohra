@@ -2,7 +2,6 @@
 #define CHART_READER_H
 
 #include <stdbool.h>
-#include "data/custom_types/custom_types.h"
 #include "raylib.h"
 #include "render/layers/hold_tap_layer.h"
 #include "render/layers/arc_layer.h"

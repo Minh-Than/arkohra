@@ -5,18 +5,14 @@
 #include <stdbool.h>
 #include "color_services.h"
 #include "constants.h"
-#include "data/custom_types/dynamic_list.h"
-#include "data/gameplay_events/beatline.h"
-#include "data/gameplay_events/hold.h"
 #include "raylib.h"
-#include "render/note_render_lists.h"
 #include "rlgl.h"
 #include "chart_reader.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
 #include "data/custom_types/custom_types.h"
-#include "data/gameplay_events/arc.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
+#include "render/note_render_lists.h"
 #include "render/render_service.h"
 
 static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
@@ -72,33 +68,6 @@ static bool parse_aff_header(char *line, ChartSettings *chart_settings)
   return end_of_header;
 }
 
-static int parse_arctaps(const char *line, List *out)
-{
-  const char *lb = strchr(line, '['); if (!lb) return 0;
-  const char *rb = strchr(lb  , ']'); if (!rb) return 0;
-
-  int count = 0;
-  const char *p = lb + 1;
-
-  while (p < rb)
-  {
-    const char *tap = strstr(p, "arctap(");
-    if (!tap || tap >= rb) break;
-
-    p = tap + 7; // Start at character after "arctap("
-    char *end;
-    int val = strtol(p, &end, 10);
-
-    // No number found, skip ahead
-    if (end == p) { p++; continue; }
-
-    list_push(out, &val);
-    p = end; // end points past the number, at ')'
-  }
-
-  return count;
-}
-
 static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count, int *current_tg)
 {
   ChartTimingGroup *tg = (ChartTimingGroup *)list_get(&chart_reader->timing_groups, *current_tg);
@@ -111,6 +80,7 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
         *current_tg = *tg_count - 1;
         ChartTimingGroup init_tg = timing_group_init();
         init_tg.value = *current_tg;
+        parse_tg_props(line, &init_tg);
         list_push(&chart_reader->timing_groups, &init_tg);
         break;
       }
@@ -421,11 +391,12 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
   float curr_bpms[chart_reader->timing_groups.size];
 
   process_note_render_lists(chart_reader, render_ctx, current_ms, curr_fps, curr_bpms);
+  List *tgs           = &chart_reader->timing_groups;
   NoteRenderLists *ls = &chart_reader->render_lists;
 
-  render_holds_taps      (ls, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed, curr_fps);
-  render_arcs_and_shadows(ls, render_ctx, arc_renderer     , current_ms, base_bpm, scroll_speed, curr_fps, curr_bpms);
-  render_arctaps         (ls, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed, curr_fps, curr_bpms);
+  render_holds_taps      (tgs, ls, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed, curr_fps);
+  render_arcs_and_shadows(tgs, ls, render_ctx, arc_renderer     , current_ms, base_bpm, scroll_speed, curr_fps, curr_bpms);
+  render_arctaps         (tgs, ls, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed, curr_fps, curr_bpms);
 }
 
 void chart_reader_print(ChartReader *chart_reader)

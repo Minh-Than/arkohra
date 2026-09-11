@@ -2,17 +2,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "arc.h"
-#include "color_services.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
+#include "arc.h"
 #include "constants.h"
+#include "color_services.h"
 #include "data/custom_types/custom_types.h"
 #include "data/gameplay_events/arctap.h"
+#include "gameplay/arc_formula.h"
 #include "render/mesh_renderable.h"
 #include "render/playfield/playfield_services.h"
-#include "gameplay/arc_formula.h"
 
 // ARC
 ArcType arctype_get_by_string(char *str)
@@ -254,11 +254,11 @@ void generate_arc_body_mesh(List *arc_segments_list, Arc *arc, Texture2D *textur
 
 MeshRenderable generate_arc_head_mesh(Texture2D *texture, RenderContext *render_ctx)
 {
-  //  10 13
-  //   /|\    \
-  //  8 | 11
+  //   2 5
+  //   /|\   .
+  //  0 | 3
   //   \|/
-  //   9 12
+  //   1 4
 
   // Per mesh
   const int VERTICES_COUNT  = 6;
@@ -281,8 +281,8 @@ MeshRenderable generate_arc_head_mesh(Texture2D *texture, RenderContext *render_
   float world_x_head, world_y_head;
 
   float head_v[VERTICES_COUNT * 3] = {
-    -0.0433f, -0.025f, 0.0f,    0.0f, -0.035f, 0.03f,    0.0f, 0.05f, 0.0f,
-     0.0433f, -0.025f, 0.0f,    0.0f, -0.035f, 0.03f,    0.0f, 0.05f, 0.0f,
+    -0.0433f, -0.025f, 0.0f,    0.0f, -0.03f, 0.07f,    0.0f, 0.05f, 0.0f,
+     0.0433f, -0.025f, 0.0f,    0.0f, -0.03f, 0.07f,    0.0f, 0.05f, 0.0f,
   };
   for (int v = 0; v < VERTICES_COUNT * 3; v++) r.mesh.vertices[v] = head_v[v];
   for (int face = 0; face < 2; face++)

@@ -124,6 +124,30 @@ MeshRenderable arctap_shadow_load_mesh(Texture2D *texture)
   return r;
 }
 
+void parse_arctaps(const char *line, List *out)
+{
+  const char *lb = strchr(line, '['); if (!lb) return;
+  const char *rb = strchr(lb  , ']'); if (!rb) return;
+
+  const char *p = lb + 1;
+
+  while (p < rb)
+  {
+    const char *tap = strstr(p, "arctap(");
+    if (!tap || tap >= rb) break;
+
+    p = tap + 7; // Start at character after "arctap("
+    char *end;
+    int val = strtol(p, &end, 10);
+
+    // No number found, skip ahead
+    if (end == p) { p++; continue; }
+
+    list_push(out, &val);
+    p = end; // end points past the number, at ')'
+  }
+}
+
 void arctap_fp_print(const void *elem)
 {
   ArcTapFP *arctap_fp = (ArcTapFP *)elem;

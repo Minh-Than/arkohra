@@ -17,6 +17,7 @@ typedef struct
 void draw_arctap(MeshRenderable *arctap_r, ArcTap *arctap, float z_pos);
 MeshRenderable arctap_load_mesh(Texture2D *texture);
 MeshRenderable arctap_shadow_load_mesh(Texture2D *texture);
+void parse_arctaps(const char *line, List *out);
 
 typedef struct {
   ArcTap *arctap;
