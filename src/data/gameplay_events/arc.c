@@ -452,11 +452,10 @@ void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContex
 {
   Arc *arc = arc_segment->arc;
   Vector4 shadow_tint = ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
-  int should_clip_shader =
-    (!tg->props.no_clip &&
-     arc->is_void &&
-     arc->start_timing - current_ms <= 0)
-    ? 1 : 0;
+  bool arc_prop_validate;
+  if (arc->is_void) arc_prop_validate = !tg->props.no_clip;
+  else              arc_prop_validate = !tg->props.no_clip && tg->props.no_input;
+  int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
@@ -472,11 +471,10 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext 
   if (!arc->is_head) return;
   if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) return;
 
-  int should_clip_shader =
-    (!tg->props.no_clip &&
-     arc->is_void &&
-     arc->start_timing - current_ms <= 0)
-    ? 1 : 0;
+  bool arc_prop_validate;
+  if (arc->is_void) arc_prop_validate = !tg->props.no_clip;
+  else              arc_prop_validate = !tg->props.no_clip && tg->props.no_input;
+  int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
@@ -511,11 +509,10 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderConte
     tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
     tint_high = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL));
   }
-  int should_clip_shader =
-    (!tg->props.no_clip &&
-     arc->is_void &&
-     arc->start_timing - current_ms <= 0)
-    ? 1 : 0;
+  bool arc_prop_validate;
+  if (arc->is_void) arc_prop_validate = !tg->props.no_clip;
+  else              arc_prop_validate = !tg->props.no_clip && tg->props.no_input;
+  int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
@@ -530,10 +527,10 @@ void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, fl
   if (!should_draw_height_indicator(arc_segment)) return;
 
   Arc *arc = arc_segment->arc;
-  float arc_world_x1 = arc_x_to_world(arc->x1);
-  float arc_world_y1 = arc_y_to_world(arc->y1);
-  Matrix tr = MatrixMultiply(MatrixScale(1.0f, arc_world_y1, 1.0f),
-                             MatrixTranslate(arc_world_x1, arc_world_y1 * 0.5f, z_pos));
+  float arc_world_x = arc_x_to_world(arc->x1);
+  float arc_world_y = arc_y_to_world(arc->y1);
+  Matrix tr = MatrixMultiply(MatrixScale(1.0f, arc_world_y, 1.0f),
+                             MatrixTranslate(arc_world_x, arc_world_y * 0.5f, z_pos));
 
   rlDisableDepthMask();
   mat.maps->color = arc->color == 0 ? color_from_rgba(ARC_BLUE_HIGH_CL) : color_from_rgba(ARC_PINK_HIGH_CL);
