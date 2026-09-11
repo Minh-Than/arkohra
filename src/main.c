@@ -54,7 +54,6 @@ int main()
       // 0,
       TextFormat("resources/shaders/glsl%i/arc_shader.fs", GLSL_VERSION)
   );
-  int isVoid_loc = GetShaderLocation(arc_shader, "isVoid");
   int shouldClip_loc = GetShaderLocation(arc_shader, "shouldClip");
   int negativeBPM_loc = GetShaderLocation(arc_shader, "negativeBPM");
   int tintLow_loc = GetShaderLocation(arc_shader, "tintLow");
@@ -68,7 +67,6 @@ int main()
     .chart_settings  = chart_settings_init(&app_configs),
     .arc_shader = {
       .shader = arc_shader,
-      .isVoid_loc = isVoid_loc,
       .shouldClip_loc = shouldClip_loc,
       .negativeBPM_loc = negativeBPM_loc,
       .tintLow_loc = tintLow_loc,

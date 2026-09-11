@@ -2,6 +2,7 @@
 #define ARC_H
 
 #include <string.h>
+#include "data/chart_timing_groups/chart_timing_group.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
 #include "data/custom_types/custom_types.h"
@@ -53,10 +54,10 @@ int arc_segment_compare_start_fp_asc(const void *a, const void *b);
 int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b);
 void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high);
 
-void draw_arc_shadow(ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos);
-void draw_arc_head(ArcSegment *arc_segment, RenderContext *render_ctx, MeshRenderable *mesh_r,
+void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos);
+void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, MeshRenderable *mesh_r,
                    float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp);
-void draw_arc_segment(ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos);
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos);
 void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, float z_pos);
 void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale, float alpha, float current_ms);
 bool should_draw_height_indicator(ArcSegment *arc_segment);

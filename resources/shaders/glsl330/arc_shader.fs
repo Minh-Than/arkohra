@@ -7,7 +7,6 @@ in vec3 fragPosition;
 uniform sampler2D texture0;
 uniform vec4 colDiffuse;
 
-uniform bool isVoid;
 uniform bool shouldClip;
 uniform bool negativeBPM;
 
@@ -19,7 +18,7 @@ out vec4 finalColor;
 void main()
 {
   float sign = negativeBPM ? -1.0 : 1.0;
-  if (shouldClip && isVoid && (sign * fragPosition.z > 0.0)) discard;   // cut everything past the current playhead position
+  if (shouldClip && (sign * fragPosition.z > 0.0)) discard;   // cut everything past the current playhead position
 
   // convert to arc y coord
   float h = clamp((fragPosition.y - 1.0) / 4.5, 0.0, 1.0);

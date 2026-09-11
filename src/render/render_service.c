@@ -105,7 +105,7 @@ void render_arcs_and_shadows(List *timing_groups, NoteRenderLists *note_render_l
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
         float z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-        draw_arc_shadow(arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
+        draw_arc_shadow(tg, arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
       }
 
       // Following arccaps
@@ -129,7 +129,7 @@ void render_arcs_and_shadows(List *timing_groups, NoteRenderLists *note_render_l
         float z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
         if (!tg->props.no_height_indicator)
           draw_height_indicator(arc_segment, &arc_renderer->height_indicator.mesh, arc_renderer->height_indicator.material, z_pos);
-        draw_arc_segment(arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
+        draw_arc_segment(tg, arc_segment, render_ctx, current_ms, curr_bpm, z_pos);
       }
 
       // Approaching arccaps
@@ -171,10 +171,10 @@ void render_arctaps(List *timing_groups, NoteRenderLists *note_render_lists, Ren
       for(int i = arc_list->size - 1; i >= 0; i--)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
-        int tg = arc_segment->arc->timing_group;
-        double curr_fp =  curr_fps[tg];
-        float curr_bpm = curr_bpms[tg];
-        draw_arc_head(arc_segment, render_ctx, &arctap_renderer->arc_head,
+        ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
+        double curr_fp =  curr_fps[tg->value];
+        float curr_bpm = curr_bpms[tg->value];
+        draw_arc_head(tg, arc_segment, render_ctx, &arctap_renderer->arc_head,
                       current_ms, curr_bpm, base_bpm, scroll_speed, curr_fp);
       }
       rlEnableDepthTest();

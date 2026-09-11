@@ -448,14 +448,16 @@ void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high)
   arc_segment_build_tree(tree, list, mid + 1, high);
 }
 
-void draw_arc_shadow(ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos)
+void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos)
 {
   Arc *arc = arc_segment->arc;
   Vector4 shadow_tint = ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
-  int is_void_shader = arc->is_void ? 1 : 0;
-  int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+  int should_clip_shader =
+    (!tg->props.no_clip &&
+     arc->is_void &&
+     arc->start_timing - current_ms <= 0)
+    ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &shadow_tint, SHADER_UNIFORM_VEC4);
@@ -463,17 +465,19 @@ void draw_arc_shadow(ArcSegment *arc_segment, RenderContext *render_ctx, float c
   DrawMesh(arc_segment->shadow_r.mesh, arc_segment->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
 }
 
-void draw_arc_head(ArcSegment *arc_segment, RenderContext *render_ctx, MeshRenderable *mesh_r,
+void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, MeshRenderable *mesh_r,
                    float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp)
 {
   Arc *arc = arc_segment->arc;
   if (!arc->is_head) return;
   if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) return;
 
-  int is_void_shader = arc->is_void ? 1 : 0;
-  int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+  int should_clip_shader =
+    (!tg->props.no_clip &&
+     arc->is_void &&
+     arc->start_timing - current_ms <= 0)
+    ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
 
@@ -495,7 +499,7 @@ void draw_arc_head(ArcSegment *arc_segment, RenderContext *render_ctx, MeshRende
   DrawMesh(mesh_r->mesh, mesh_r->material, tr);
 }
 
-void draw_arc_segment(ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos)
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos)
 {
   Arc *arc = arc_segment->arc;
 
@@ -507,10 +511,12 @@ void draw_arc_segment(ArcSegment *arc_segment, RenderContext *render_ctx, float 
     tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
     tint_high = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL));
   }
-  int is_void_shader = arc->is_void ? 1 : 0;
-  int should_clip_shader = arc->start_timing - current_ms <= 0 ? 1 : 0;
+  int should_clip_shader =
+    (!tg->props.no_clip &&
+     arc->is_void &&
+     arc->start_timing - current_ms <= 0)
+    ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.isVoid_loc     , &is_void_shader     , SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
