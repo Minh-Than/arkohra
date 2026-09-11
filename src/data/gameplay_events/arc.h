@@ -46,10 +46,11 @@ typedef struct {
   double start_fp, end_fp;
 } ArcSegment;
 
-void generate_segments(List *arc_segments_list, Arc *arc,  Texture2D *texture, List *timing_events, RenderContext *render_ctx);
-void generate_arc_body_mesh(List *arc_segments_list, Arc *arc, Texture2D *texture, List *timing_events, RenderContext *render_ctx, float *curr_timing);
+void generate_segments(ChartTimingGroup *tg, Arc *arc, Texture2D *texture, RenderContext *render_ctx);
+void generate_arc_body_mesh(List *timing_events, List *arc_segments_list, Arc *arc, Texture2D *texture, RenderContext *render_ctx,
+                            float curr_timing, float increment);
 MeshRenderable generate_arc_head_mesh(Texture2D *texture, RenderContext *render_ctx);
-void shadow_segment_generate_mesh(List *arc_segments_list, Arc *arc, List *timing_events, RenderContext *render_ctx);
+void generate_arc_shadow_mesh(List *timing_events, List *arc_segments_list, Arc *arc, RenderContext *render_ctx, float curr_timing, float increment, int i);
 int arc_segment_compare_start_fp_asc(const void *a, const void *b);
 int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b);
 void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high);

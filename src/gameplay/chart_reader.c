@@ -256,8 +256,7 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
             fabsf(connected_arc->y1 - arc->y2) > 1e-6) continue;
         if (!(connected_arc->is_void ^ arc->is_void)) connected_arc->is_head = false;
       }
-      generate_segments(&tg->arc_segments, arc, arc_texture, &tg->timing_events, render_ctx);
-      shadow_segment_generate_mesh(&tg->arc_segments, arc, &tg->timing_events, render_ctx);
+      generate_segments(tg, arc, arc_texture, render_ctx);
     };
     list_sort_by(&tg->arc_segments, arc_segment_compare_start_fp_asc);
     arc_segment_build_tree(&tg->arc_segments_tree, &tg->arc_segments, 0, tg->arc_segments.size - 1);
