@@ -1,11 +1,17 @@
 #include <stdio.h>
+#include <math.h>
+#include <string.h>
 #include "chart_timing_group.h"
+#include "constants.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/gameplay_events.h"
+#include "raylib.h"
 #include "render/mesh_renderable.h"
 
 TGPropTypes determine_tg_prop(char *str)
 {
+  if (strstr(str, (const char*)"name=") != NULL) return TG_NAME;
+  if (strstr(str, (const char*)"arcresolution=") != NULL) return ARC_RESOLUTION;
   if (strstr(str, (const char*)"noinput" ) != NULL ||
       strstr(str, (const char*)"noinoput") != NULL) return NO_INPUT;
   if (strstr(str, (const char*)"noclip"  ) != NULL) return NO_CLIP;
@@ -15,9 +21,28 @@ TGPropTypes determine_tg_prop(char *str)
   return NO_TG_PROP;
 }
 
+void tg_props_print(TimingGroupProps *tg_props)
+{
+  printf("Arc Resolution - %.1f\n", tg_props->arc_res);
+  if (tg_props->no_input)
+    printf("- No input\n");
+  if (tg_props->no_clip)
+    printf("- No clip\n");
+  if (tg_props->no_arccap)
+    printf("- No arccap\n");
+  if (tg_props->no_shadow)
+    printf("- No shadow\n");
+  if (tg_props->no_height_indicator)
+    printf("- No height\n");
+}
+
 ChartTimingGroup timing_group_init()
 {
   ChartTimingGroup tg = { 0 };
+
+  TextCopy(tg.props.name, "");
+  tg.props.arc_res = MINIMUM_ARC_RES;
+
   List t_events; list_init(&t_events, sizeof(TimingEvent)); tg.timing_events = t_events;
   List taps    ; list_init(&taps, sizeof(Tap))            ; tg.taps = taps;
   List holds   ; list_init(&holds, sizeof(Hold))          ; tg.holds = holds;
@@ -36,14 +61,17 @@ ChartTimingGroup timing_group_init()
   return tg;
 }
 
-void timing_group_print(ChartTimingGroup *tg)
+void timing_group_info_print(ChartTimingGroup *tg)
 {
-  printf("Timing group %d:\n", tg->value);
-  list_print(&tg->timing_events, timing_event_print, "Timing event");
-  list_print(&tg->taps, tap_print, "Taps");
-  list_print(&tg->holds, hold_print, "Holds");
-  list_print(&tg->arcs, arc_print, "Arcs");
-  list_print(&tg->beatlines, beatline_print, "Beat lines");
+  printf("\n\x1b[32mTiming group %d (%s):\x1b[0m\n", tg->value, tg->props.name);
+  tg_props_print(&tg->props);
+  printf("---------------------\n");
+  printf("- Event count:  \x1b[33m%zu\n\x1b[0m", tg->timing_events.size);
+  printf("- Tap count:    \x1b[33m%zu\n\x1b[0m", tg->taps.size);
+  printf("- Hold count:   \x1b[33m%zu\n\x1b[0m", tg->holds.size);
+  printf("- Arc count:    \x1b[33m%zu\n\x1b[0m", tg->arcs.size);
+  printf("- Arctap count: \x1b[33m%zu\n\x1b[0m", tg->arctaps.size);
+  printf("\n");
 }
 
 void timing_group_unload(ChartTimingGroup *tg)
@@ -89,12 +117,35 @@ static int update_tg_props(char *token, void *user)
   ChartTimingGroup *tg = (ChartTimingGroup *)user;
   switch (determine_tg_prop(token))
   {
+    case TG_NAME:
+      {
+        char name[256];
+        int matched = sscanf(token, "name=\"%255[^\"]\"", name);
+        if (matched == 1)
+        {
+          strncpy(tg->props.name, name, sizeof(tg->props.name) - 1);
+          tg->props.name[sizeof(tg->props.name) - 1] = '\0';
+        }
+        break;
+      }
+    case ARC_RESOLUTION:
+      {
+        float arc_res;
+        int matched = sscanf(token, "arcresolution=%f", &arc_res);
+        if (matched == 1)
+        {
+          tg->props.arc_res = fmaxf(fminf(arc_res, MAXIMUM_ARC_RES), MINIMUM_ARC_RES);
+        }
+        break;
+      }
     case NO_INPUT:  tg->props.no_input  = true; break;
     case NO_CLIP:   tg->props.no_clip   = true; break;
     case NO_ARCCAP: tg->props.no_arccap = true; break;
     case NO_SHADOW: tg->props.no_shadow = true; break;
     case NO_HEIGHT_INDICATOR: tg->props.no_height_indicator = true; break;
-    case NO_TG_PROP: break;
+    case NO_TG_PROP:
+    default:
+      break;
   };
 
   return 1;

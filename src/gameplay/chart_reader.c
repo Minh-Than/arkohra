@@ -15,6 +15,21 @@
 #include "render/note_render_lists.h"
 #include "render/render_service.h"
 
+void chart_reader_print(ChartReader *chart_reader)
+{
+  for (int i = 0; i < chart_reader->timing_groups.size; i++)
+    timing_group_info_print((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
+}
+
+void chart_reader_unload(ChartReader *chart_reader)
+{
+  chart_reader->initialized = false;
+  render_lists_unload(&chart_reader->render_lists);
+  for (int i = 0; i < chart_reader->timing_groups.size; i++)
+    timing_group_unload((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
+  list_free(&chart_reader->timing_groups);
+}
+
 static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
 {
   list_clear(&tg->arctaps);
@@ -300,13 +315,9 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
   if (lines != NULL) UnloadFileText(aff_data);
 
   parse_post_process(render_ctx, &chart_reader, arc_texture);
-  chart_reader.initialized = true;
+  chart_reader_print(&chart_reader);
 
-  for (int i = 0; i < chart_reader.timing_groups.size; i++)
-  {
-    ChartTimingGroup *tg = (ChartTimingGroup *)list_get(&chart_reader.timing_groups, i);
-    timing_group_print(tg);
-  }
+  chart_reader.initialized = true;
   return chart_reader;
 }
 
@@ -397,19 +408,4 @@ void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_rea
   render_holds_taps      (tgs, ls, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed, curr_fps);
   render_arcs_and_shadows(tgs, ls, render_ctx, arc_renderer     , current_ms, base_bpm, scroll_speed, curr_fps, curr_bpms);
   render_arctaps         (tgs, ls, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed, curr_fps, curr_bpms);
-}
-
-void chart_reader_print(ChartReader *chart_reader)
-{
-  for (int i = 0; i < chart_reader->timing_groups.size; i++)
-    timing_group_print((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
-}
-
-void chart_reader_unload(ChartReader *chart_reader)
-{
-  chart_reader->initialized = false;
-  render_lists_unload(&chart_reader->render_lists);
-  for (int i = 0; i < chart_reader->timing_groups.size; i++)
-    timing_group_unload((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
-  list_free(&chart_reader->timing_groups);
 }

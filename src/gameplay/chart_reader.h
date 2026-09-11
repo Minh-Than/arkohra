@@ -17,10 +17,10 @@ typedef struct {
 } ChartReader;
 
 ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Texture2D *arc_texture);
+void chart_reader_print(ChartReader *chart_reader);
+void chart_reader_unload(ChartReader *chart_reader);
 void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_reader,
                                HoldTapRenderer *hold_tap_renderer, ArcRenderer *arc_renderer, ArctapRenderer *arctap_renderer,
                                float current_ms);
-void chart_reader_print(ChartReader *chart_reader);
-void chart_reader_unload(ChartReader *chart_reader);
 
 #endif // CHART_READER_H

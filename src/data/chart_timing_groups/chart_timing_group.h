@@ -4,9 +4,9 @@
 #include <stdbool.h>
 #include "./data/custom_types/custom_types.h"
 
-// TODO: name and arcresolution later
 typedef enum {
-  // NAME,
+  TG_NAME,
+  ARC_RESOLUTION,
   NO_INPUT,
   NO_CLIP,
   NO_ARCCAP,
@@ -18,9 +18,12 @@ typedef enum {
 TGPropTypes determine_tg_prop(char *str);
 
 typedef struct {
+  char name[256];
+  float arc_res;
   bool no_input, no_clip, no_arccap, no_height_indicator, no_shadow;
-  // char name[256];
 } TimingGroupProps;
+
+void tg_props_print(TimingGroupProps *tg_props);
 
 typedef struct {
   int value;
@@ -35,7 +38,7 @@ typedef struct {
 } ChartTimingGroup;
 
 ChartTimingGroup timing_group_init();
-void timing_group_print(ChartTimingGroup *chart_tg);
+void timing_group_info_print(ChartTimingGroup *tg);
 void timing_group_unload(ChartTimingGroup *chart_tg);
 void parse_tg_props(const char *line, ChartTimingGroup *tg);
 
