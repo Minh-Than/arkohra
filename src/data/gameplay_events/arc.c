@@ -452,9 +452,8 @@ void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContex
 {
   Arc *arc = arc_segment->arc;
   Vector4 shadow_tint = ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
-  bool arc_prop_validate;
-  if (arc->is_void) arc_prop_validate = !tg->props.no_clip;
-  else              arc_prop_validate = !tg->props.no_clip && tg->props.no_input;
+  bool arc_prop_validate = !tg->props.no_clip;
+  if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
   int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
@@ -471,9 +470,8 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext 
   if (!arc->is_head) return;
   if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) return;
 
-  bool arc_prop_validate;
-  if (arc->is_void) arc_prop_validate = !tg->props.no_clip;
-  else              arc_prop_validate = !tg->props.no_clip && tg->props.no_input;
+  bool arc_prop_validate = !tg->props.no_clip;
+  if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
   int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
@@ -509,9 +507,8 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderConte
     tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
     tint_high = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL));
   }
-  bool arc_prop_validate;
-  if (arc->is_void) arc_prop_validate = !tg->props.no_clip;
-  else              arc_prop_validate = !tg->props.no_clip && tg->props.no_input;
+  bool arc_prop_validate = !tg->props.no_clip;
+  if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
   int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
   SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
