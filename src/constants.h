@@ -29,7 +29,7 @@ static const float SKY_LABEL_SIZE_X      = 9.0f;
 static const float SKY_LABEL_SIZE_Y      = 1.0f;
 static const float SINGLE_LINE_SIZE_X    = 1.28f;
 static const float SINGLE_LINE_SIZE_Y    = 100.0f;
-static const float BEATLINE_THICKNESS    = 0.35f;
+static const float BEATLINE_THICKNESS    = 0.25f;
 
 static const float MINIMUM_ARC_RES    = 1.0f;
 static const float MAXIMUM_ARC_RES    = 10.0f;
