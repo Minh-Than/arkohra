@@ -2,12 +2,17 @@
 #include "color_services.h"
 #include "constants.h"
 #include "hud_services.h"
+#include "data/chart_settings/chart_settings.h"
+#include "gameplay/audio_service.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
 
-void hud_services_render(TextureGroup *texture_group, ChartSettings *chart_settings, FontServices *font_services)
+void hud_services_render(TextureGroup *texture_group, RenderContext *render_ctx, FontServices *font_services, float current_ms)
 {
+  ChartSettings *chart_settings = &render_ctx->chart_settings;
+  AudioClock *audio_clock = &render_ctx->audio_clock;
+
   // TODO: move these shits away from calculating each frame
   float width_ratio         = (float)GetScreenWidth()  / 1280;
   float height_ratio        = (float)GetScreenHeight() / 720;
@@ -41,6 +46,18 @@ void hud_services_render(TextureGroup *texture_group, ChartSettings *chart_setti
                       (Vector2){ 0.0f, JACKET_HUD_SIZE }, 0.0f, JACKET_HUD_SIZE / (float)texture_group->jacket_diff.width, 
                       color_from_hex(chart_settings->difficulty_color));
 
+        // Progress bar + glow
+        rlPushMatrix();
+          rlTranslatef(JACKET_HUD_SIZE, JACKET_HUD_SIZE * 0.55f, 0.0f);
+          float progress_glow_x = (fabsf(GetScreenWidth() - info_panel_posX) - 70.0f) *
+                                                         (current_ms / audio_clock->total_audio_length);
+          DrawLineEx(Vector2Zero(), (Vector2){ progress_glow_x, 0.0f }, 5.0f, WHITE);
+          DrawTextureEx(texture_group->progres_glow,
+                        (Vector2){ progress_glow_x - texture_group->progres_glow.width * 0.5f,
+                                  -texture_group->progres_glow.height *0.5f },
+                        0.0f, 1.0f, WHITE);
+        rlPopMatrix();
+
         float diff_spacing = 1.0f;
         float diff_text_width = JACKET_HUD_SIZE;
         Vector2 diff_v = MeasureTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, 44.0f, diff_spacing);
@@ -48,7 +65,6 @@ void hud_services_render(TextureGroup *texture_group, ChartSettings *chart_setti
         float diff_text_offsetX = (diff_text_width - (diff_v.x * diff_text_scale)) / 2;
         BeginShaderMode(font_services->hud_sdf_shader);
           rlPushMatrix();
-            //Vector2 diff_v = MeasureTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, 46.0f, 0);
             rlTranslatef(diff_text_offsetX, 0.0f, 0.0f);
             rlScalef(diff_text_scale, 1.0f, 1.0f);
             DrawTextEx(font_services->hud_notosans_tc_reg, chart_settings->difficulty, (Vector2) { 0.0f, JACKET_HUD_SIZE }, 44.0f, diff_spacing, WHITE);

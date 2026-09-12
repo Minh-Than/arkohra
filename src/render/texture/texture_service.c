@@ -16,6 +16,7 @@ TextureGroup textures_init()
   Texture2D jacket_bg_texture       = LoadTexture("resources/gameplay/HUD/JacketBackground.png");
   Texture2D jacket_img_texture      = LoadTexture("resources/gameplay/DefaultJacket.png");
   Texture2D jacket_diff_texture     = LoadTexture("resources/gameplay/HUD/Difficulty.png");
+  Texture2D progress_glow_texture   = LoadTexture("resources/gameplay/HUD/ProgressGlow.png");
 
   Texture2D tap_texture             = LoadTexture("resources/gameplay/Note/Light/TapNoteLight.png");
   Texture2D hold_texture            = LoadTexture("resources/gameplay/Note/Light/HoldNoteLight.png");
@@ -54,6 +55,7 @@ TextureGroup textures_init()
     .jacket_bg      = jacket_bg_texture,
     .jacket_img     = jacket_img_texture,
     .jacket_diff    = jacket_diff_texture,
+    .progres_glow   = progress_glow_texture,
     .tap            = tap_texture,
     .hold           = hold_texture,
     .arc            = arc_texture,
@@ -79,6 +81,7 @@ void textures_unload(TextureGroup* texture_group)
   UnloadTexture(texture_group->jacket_bg);
   UnloadTexture(texture_group->jacket_img);
   UnloadTexture(texture_group->jacket_diff);
+  UnloadTexture(texture_group->progres_glow);
   UnloadTexture(texture_group->tap);
   UnloadTexture(texture_group->hold);
   UnloadTexture(texture_group->arc);

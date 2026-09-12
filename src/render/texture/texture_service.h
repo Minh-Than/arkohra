@@ -18,6 +18,7 @@ typedef struct
   Texture2D jacket_bg;
   Texture2D jacket_img;
   Texture2D jacket_diff;
+  Texture2D progres_glow;
 
   Texture2D tap, hold, arc, arc_height_indicator, arccap, arctap, arctap_shadow;
 } TextureGroup;

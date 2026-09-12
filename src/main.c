@@ -51,26 +51,18 @@ int main()
   FontServices font_services    = font_services_init(GLSL_VERSION);
   Shader arc_shader             = LoadShader(
       TextFormat("resources/shaders/glsl%i/arc_shader.vs", GLSL_VERSION),
-      // 0,
       TextFormat("resources/shaders/glsl%i/arc_shader.fs", GLSL_VERSION)
   );
-  int shouldClip_loc = GetShaderLocation(arc_shader, "shouldClip");
-  int negativeBPM_loc = GetShaderLocation(arc_shader, "negativeBPM");
-  int tintLow_loc = GetShaderLocation(arc_shader, "tintLow");
-  int tintHigh_loc = GetShaderLocation(arc_shader, "tintHigh");
-  printf("negativeBPM: %d\n", negativeBPM_loc);
-  printf("mvp loc: %d\n", arc_shader.locs[SHADER_LOC_MATRIX_MVP]);
-  printf("matModel loc: %d\n", arc_shader.locs[SHADER_LOC_MATRIX_MODEL]);
 
   RenderContext render_ctx = {
     .camera          = camera_init_playfield(),
     .chart_settings  = chart_settings_init(&app_configs),
     .arc_shader = {
       .shader = arc_shader,
-      .shouldClip_loc = shouldClip_loc,
-      .negativeBPM_loc = negativeBPM_loc,
-      .tintLow_loc = tintLow_loc,
-      .tintHigh_loc = tintHigh_loc
+      .shouldClip_loc = GetShaderLocation(arc_shader, "shouldClip"),
+      .negativeBPM_loc = GetShaderLocation(arc_shader, "negativeBPM"),
+      .tintLow_loc = GetShaderLocation(arc_shader, "tintLow"),
+      .tintHigh_loc = GetShaderLocation(arc_shader, "tintHigh")
     },
     .audio_clock     = { 0 },
   };
@@ -371,7 +363,7 @@ int main()
       ClearBackground(WHITE);
 
       playfield_render(&render_ctx, &chart_reader, &texture_group, &playfield_objs, current_ms - render_ctx.chart_settings.audio_offset);
-      hud_services_render(&texture_group, &render_ctx.chart_settings, &font_services);
+      hud_services_render(&texture_group, &render_ctx, &font_services, current_ms);
       windows_services_render(&window_group);
 
       // Debug FPS
