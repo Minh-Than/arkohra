@@ -102,7 +102,7 @@ void arc_print(const void *elem)
   printf(";");
 }
 
-void generate_segments(ChartTimingGroup *tg, Arc *arc, Texture2D *texture, RenderContext *render_ctx)
+void generate_segment_meshes(ChartTimingGroup *tg, Arc *arc, Texture2D *texture, RenderContext *render_ctx)
 {
   int arc_duration      = arc->end_timing - arc->start_timing;
   float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res * tg->props.arc_res);
@@ -110,21 +110,23 @@ void generate_segments(ChartTimingGroup *tg, Arc *arc, Texture2D *texture, Rende
   segment_count         = (int)fmax(segment_count, 1);
 
   List *timing_events = &tg->timing_events;
-  List *arc_segments  = &tg->arc_segments;
   float curr_timing = 0.0f;
   for (int i = 0; i < segment_count; i++)
   {
     float increment = fminf(arc->end_timing - arc->start_timing - curr_timing, segment_length);
-    generate_arc_body_mesh  (timing_events, arc_segments, arc, texture, render_ctx, curr_timing, increment);
-    int segment_idx = arc_segments->size - 1;
-    generate_arc_shadow_mesh(timing_events, arc_segments, arc, render_ctx, curr_timing, increment, segment_idx);
+    double start_fp = get_floor_position(timing_events, curr_timing + arc->start_timing);
+    double end_fp = get_floor_position(timing_events, curr_timing + increment + arc->start_timing);
+
+    ArcSegment arc_segment = { .arc = arc, .start_fp = start_fp, .end_fp = end_fp };
+    arc_segment.mesh_r   = generate_arc_body_mesh  (timing_events, arc, texture, render_ctx, curr_timing, increment);
+    arc_segment.shadow_r = generate_arc_shadow_mesh(timing_events, arc, render_ctx, curr_timing, increment);
+    list_push(&tg->arc_segments, &arc_segment);
+
     curr_timing += increment;
   }
 }
 
-// ARC SEGMENT
-void generate_arc_body_mesh(List *timing_events, List *arc_segments_list, Arc *arc, Texture2D *texture, RenderContext *render_ctx,
-                            float curr_timing, float increment)
+MeshRenderable generate_arc_body_mesh(List *timing_events, Arc *arc, Texture2D *texture, RenderContext *render_ctx, float curr_timing, float increment)
 {
   //   2 6
   //  /| |\
@@ -171,9 +173,6 @@ void generate_arc_body_mesh(List *timing_events, List *arc_segments_list, Arc *a
   r.mesh.texcoords =          (float *)malloc(TEXCOORDS_COUNT * 2 * sizeof(float));
   r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * sizeof(unsigned short));
 
-  double start_fp = 0;
-  double end_fp = 0;
-
   // Vertices for each face
   for (int j = 0; j < VERTICES_COUNT; j++)
   {
@@ -187,15 +186,15 @@ void generate_arc_body_mesh(List *timing_events, List *arc_segments_list, Arc *a
     float world_y = zero_duration
       ? arc_y_to_world(is_front_of_arc ? arc->y1 : arc->y2)
       : arc_world_y_at(target_timing, &temp_arc);
-    if (is_front_of_arc) start_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
-    if (!is_front_of_arc) end_fp = get_floor_position(timing_events, target_timing + arc->start_timing);
 
     // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
     float segment_start_timing = curr_timing + arc->start_timing;
     float z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
-                                render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
+                                          render_ctx->chart_settings.base_bpm,
+                                          render_ctx->chart_settings.scroll_speed);
     float z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
-                                render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
+                                          render_ctx->chart_settings.base_bpm,
+                                          render_ctx->chart_settings.scroll_speed);
     float world_z  = z_target - z_segment;
 
     // each x-y-z per vertex
@@ -251,79 +250,10 @@ void generate_arc_body_mesh(List *timing_events, List *arc_segments_list, Arc *a
   r.material.shader = render_ctx->arc_shader.shader;
   set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 
-  ArcSegment sgm = { .arc = arc, .mesh_r = r, .start_fp = start_fp, .end_fp = end_fp };
-  list_push(arc_segments_list, &sgm);
-}
-
-MeshRenderable generate_arc_head_mesh(Texture2D *texture, RenderContext *render_ctx)
-{
-  //   2 5
-  //   /|\   .
-  //  0 | 3
-  //   \|/
-  //   1 4
-
-  // Per mesh
-  const int VERTICES_COUNT  = 6;
-  const int TRIANGLE_COUNT  = 2;
-  const int TEXCOORDS_COUNT = 6;
-  const int INDICES_COUNT   = TRIANGLE_COUNT * 3;
-
-  MeshRenderable r = { 0 };
-
-  r.mesh.vertexCount   = VERTICES_COUNT;
-  r.mesh.triangleCount = TRIANGLE_COUNT;
-
-  r.mesh.vertices  =          (float *)malloc(VERTICES_COUNT  * 3 * sizeof(float));
-  r.mesh.normals   =          (float *)malloc(VERTICES_COUNT  * 3 * sizeof(float));
-  r.mesh.texcoords =          (float *)malloc(TEXCOORDS_COUNT * 2 * sizeof(float));
-  r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * sizeof(unsigned short));
-
-  double start_fp = 0;
-  double end_fp = 0;
-  float world_x_head, world_y_head;
-
-  float head_v[VERTICES_COUNT * 3] = {
-    -0.0433f, -0.025f, 0.0f,    0.0f, -0.03f, 0.07f,    0.0f, 0.05f, 0.0f,
-     0.0433f, -0.025f, 0.0f,    0.0f, -0.03f, 0.07f,    0.0f, 0.05f, 0.0f,
-  };
-  for (int v = 0; v < VERTICES_COUNT * 3; v++) r.mesh.vertices[v] = head_v[v];
-  for (int face = 0; face < 2; face++)
-  {
-      int vbase = face * 3 * 3; // 3 vertices per triangle, no sharing between the two flaps
-      Vector3 p  = { r.mesh.vertices[vbase + 0], r.mesh.vertices[vbase + 1], r.mesh.vertices[vbase + 2] };
-      Vector3 p1 = { r.mesh.vertices[vbase + 3], r.mesh.vertices[vbase + 4], r.mesh.vertices[vbase + 5] };
-      Vector3 p2 = { r.mesh.vertices[vbase + 6], r.mesh.vertices[vbase + 7], r.mesh.vertices[vbase + 8] };
-
-      Vector3 edge1  = Vector3Subtract(p1, p);
-      Vector3 edge2  = Vector3Subtract(p2, p);
-      Vector3 normal = Vector3Normalize(Vector3CrossProduct(edge1, edge2));
-
-      for (int v = 0; v < 3; v++)
-      {
-          r.mesh.normals[vbase + v*3 + 0] = normal.x;
-          r.mesh.normals[vbase + v*3 + 1] = normal.y;
-          r.mesh.normals[vbase + v*3 + 2] = normal.z;
-      }
-  }
-
-  float head_uv[TEXCOORDS_COUNT * 2] = {
-     0.0f, 0.0f,   0.0f, 1.0f,   1.0f, 0.0f,
-     1.0f, 0.0f,   1.0f, 1.0f,   0.0f, 0.0f,
-  };
-  for (int t = 0; t < TEXCOORDS_COUNT * 2; t++) r.mesh.texcoords[t] = head_uv[t];
-  for (int i = 0; i < INDICES_COUNT; i++) r.mesh.indices[i] = i;
-
-  UploadMesh(&r.mesh, false);
-
-  r.material = LoadMaterialDefault();
-  r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
-  r.material.shader = render_ctx->arc_shader.shader;
-  set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
   return r;
 }
 
-void generate_arc_shadow_mesh(List *timing_events, List *arc_segments_list, Arc *arc, RenderContext *render_ctx, float curr_timing, float increment, int i)
+MeshRenderable generate_arc_shadow_mesh(List *timing_events, Arc *arc, RenderContext *render_ctx, float curr_timing, float increment)
 {
   // WARNING:
   // 3--2
@@ -382,9 +312,11 @@ void generate_arc_shadow_mesh(List *timing_events, List *arc_segments_list, Arc 
     // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
     float segment_start_timing = curr_timing + arc->start_timing;
     float z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
-                                render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
+                                          render_ctx->chart_settings.base_bpm,
+                                          render_ctx->chart_settings.scroll_speed);
     float z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
-                                render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
+                                          render_ctx->chart_settings.base_bpm,
+                                          render_ctx->chart_settings.scroll_speed);
     float world_z  = z_target - z_segment;
 
     // each x-y-z per vertex
@@ -407,8 +339,75 @@ void generate_arc_shadow_mesh(List *timing_events, List *arc_segments_list, Arc 
 
   set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 
-  ArcSegment *sgm = (ArcSegment *)list_get(arc_segments_list, i);
-  sgm->shadow_r = r;
+  return r;
+}
+
+MeshRenderable generate_arc_head_mesh(Texture2D *texture, RenderContext *render_ctx)
+{
+  //   2 5
+  //   /|\   .
+  //  0 | 3
+  //   \|/
+  //   1 4
+
+  // Per mesh
+  const int VERTICES_COUNT  = 6;
+  const int TRIANGLE_COUNT  = 2;
+  const int TEXCOORDS_COUNT = 6;
+  const int INDICES_COUNT   = TRIANGLE_COUNT * 3;
+
+  MeshRenderable r = { 0 };
+
+  r.mesh.vertexCount   = VERTICES_COUNT;
+  r.mesh.triangleCount = TRIANGLE_COUNT;
+
+  r.mesh.vertices  =          (float *)malloc(VERTICES_COUNT  * 3 * sizeof(float));
+  r.mesh.normals   =          (float *)malloc(VERTICES_COUNT  * 3 * sizeof(float));
+  r.mesh.texcoords =          (float *)malloc(TEXCOORDS_COUNT * 2 * sizeof(float));
+  r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * sizeof(unsigned short));
+
+  double start_fp = 0;
+  double end_fp = 0;
+  float world_x_head, world_y_head;
+
+  float head_v[VERTICES_COUNT * 3] = {
+    -0.0433f, -0.025f, 0.0f,    0.0f, -0.03f, 0.07f,    0.0f, 0.05f, 0.0f,
+     0.0433f, -0.025f, 0.0f,    0.0f, -0.03f, 0.07f,    0.0f, 0.05f, 0.0f,
+  };
+  for (int v = 0; v < VERTICES_COUNT * 3; v++) r.mesh.vertices[v] = head_v[v];
+  for (int face = 0; face < 2; face++)
+  {
+    int vbase = face * 3 * 3; // 3 vertices per triangle, no sharing between the two flaps
+    Vector3 p  = { r.mesh.vertices[vbase + 0], r.mesh.vertices[vbase + 1], r.mesh.vertices[vbase + 2] };
+    Vector3 p1 = { r.mesh.vertices[vbase + 3], r.mesh.vertices[vbase + 4], r.mesh.vertices[vbase + 5] };
+    Vector3 p2 = { r.mesh.vertices[vbase + 6], r.mesh.vertices[vbase + 7], r.mesh.vertices[vbase + 8] };
+
+    Vector3 edge1  = Vector3Subtract(p1, p);
+    Vector3 edge2  = Vector3Subtract(p2, p);
+    Vector3 normal = Vector3Normalize(Vector3CrossProduct(edge1, edge2));
+
+    for (int v = 0; v < 3; v++)
+    {
+      r.mesh.normals[vbase + v*3 + 0] = normal.x;
+      r.mesh.normals[vbase + v*3 + 1] = normal.y;
+      r.mesh.normals[vbase + v*3 + 2] = normal.z;
+    }
+  }
+
+  float head_uv[TEXCOORDS_COUNT * 2] = {
+    0.0f, 0.0f,   0.0f, 1.0f,   1.0f, 0.0f,
+    1.0f, 0.0f,   1.0f, 1.0f,   0.0f, 0.0f,
+  };
+  for (int t = 0; t < TEXCOORDS_COUNT * 2; t++) r.mesh.texcoords[t] = head_uv[t];
+  for (int i = 0; i < INDICES_COUNT; i++) r.mesh.indices[i] = i;
+
+  UploadMesh(&r.mesh, false);
+
+  r.material = LoadMaterialDefault();
+  r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
+  r.material.shader = render_ctx->arc_shader.shader;
+  set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
+  return r;
 }
 
 int arc_segment_compare_start_fp_asc(const void *a, const void *b)
