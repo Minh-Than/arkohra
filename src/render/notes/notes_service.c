@@ -115,6 +115,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
   EndMode3D();
 
   // Arcs + shadows + arccaps + height_indicator
+  rlSetClipPlanes(0.01f, 90.0f);
   BeginMode3D(camera);
     rlDisableDepthTest();
     rlDisableBackfaceCulling();
@@ -131,6 +132,8 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         if (tg->props.no_shadow) continue;
         double curr_fp = curr_fps[arctap->timing_group];
         float z_pos    = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
+        float fade_ratio = (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE);
+        notes_service->arctap_shadow.material.maps[MATERIAL_MAP_DIFFUSE].color = Fade((Color){ 90, 90, 90, 255 }, Clamp(fade_ratio, 0.0f, 0.25f));
         Matrix tr      = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
                                         MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc),
                                                         0.0f, z_pos));
@@ -235,6 +238,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
     rlPopMatrix();
     rlEnableBackfaceCulling();
   EndMode3D();
+  rlSetClipPlanes(0.01f, 100.0f);
 }
 
 void notes_service_unload(NotesService *notes_service)

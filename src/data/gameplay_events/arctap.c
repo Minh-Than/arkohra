@@ -7,7 +7,7 @@
 
 void draw_arctap(MeshRenderable *arctap_r, ArcTap *arctap, float z_pos)
 {
-  float fade_ratio = (z_pos - NOTE_STOP_FADE) / (TAP_START_FADE - NOTE_STOP_FADE);
+  float fade_ratio = (z_pos - SKY_STOP_FADE) / (TAP_START_FADE - SKY_STOP_FADE);
   arctap_r->material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(WHITE, Clamp(fade_ratio, 0.0f, 1.0f));
   Matrix tr = MatrixTranslate(
     arc_world_x_at(arctap->timing, arctap->arc),

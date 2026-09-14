@@ -23,7 +23,7 @@ void draw_tap(MeshRenderable *tap_r, Tap *tap, ChartSettings *chart_settings, fl
   float z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
   float z_scale = Clamp(Lerp(1.8f, 5.8f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
                         1.8f, 5.8f);
-  float fade_ratio = (z_pos - NOTE_STOP_FADE) / (TAP_START_FADE - NOTE_STOP_FADE);
+  float fade_ratio = (z_pos - TAP_STOP_FADE) / (TAP_START_FADE - TAP_STOP_FADE);
   tap_r->material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(WHITE, Clamp(fade_ratio, 0.0f, 1.0f));
   Matrix tr = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
                              MatrixMultiply(MatrixScale(1.0f, 1.0f, z_scale),

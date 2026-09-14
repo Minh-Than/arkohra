@@ -460,7 +460,9 @@ void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high)
 void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, float z_pos)
 {
   Arc *arc = arc_segment->arc;
-  Vector4 shadow_tint = ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
+  float fade_ratio = (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE);
+  Vector4 shadow_tint = !arc->is_void ? ColorNormalize(Fade(color_from_rgba(NOTE_SHADOW_CL), Clamp(fade_ratio, 0.0f, 0.16f)))
+                                      : ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
   int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
@@ -487,12 +489,11 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc
   SetShaderValue(arc_shader->shader, arc_shader->shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
   SetShaderValue(arc_shader->shader, arc_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
 
-  float fade_ratio = (z_pos - NOTE_STOP_FADE) / (ARC_START_FADE - NOTE_STOP_FADE);
+  float fade_ratio = (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
 
   // Default trace tint
   Vector4 tint_low, tint_high;
-  tint_low = tint_high = ColorNormalize(Fade(color_from_rgba(TRACE_CL),
-                                             Clamp(fade_ratio, 0.0f, 0.48f))); 
+  tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); 
   if (!arc->is_void)
   {
     tint_low  = ColorNormalize(Fade(color_from_rgba(arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL),
@@ -514,7 +515,7 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *
 {
   Arc *arc = arc_segment->arc;
 
-  float fade_ratio = (z_pos - NOTE_STOP_FADE) / (ARC_START_FADE - NOTE_STOP_FADE);
+  float fade_ratio = (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
   // Default trace tint
   Vector4 tint_low, tint_high;
   tint_low = tint_high = ColorNormalize(Fade(color_from_rgba(TRACE_CL),
