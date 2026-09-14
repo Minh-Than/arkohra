@@ -119,76 +119,77 @@ int main()
 
           // Reset chart settings
           render_ctx.chart_settings = chart_settings_init(&app_configs);
+          ChartSettings *chart_settings = &render_ctx.chart_settings;
 
-          render_ctx.chart_settings.scroll_speed = app_configs.scroll_speed;
-          text_copy_bounded(render_ctx.chart_settings.chart_path, MAXPATHLEN, TextFormat("%s/%s", dir, chart_path->valuestring));
-          text_copy_bounded(render_ctx.chart_settings.audio_path, MAXPATHLEN, TextFormat("%s/%s", dir, audio_path->valuestring));
+          chart_settings->scroll_speed = app_configs.scroll_speed;
+          text_copy_bounded(chart_settings->chart_path, MAXPATHLEN, TextFormat("%s/%s", dir, chart_path->valuestring));
+          text_copy_bounded(chart_settings->audio_path, MAXPATHLEN, TextFormat("%s/%s", dir, audio_path->valuestring));
 
           cJSON *jacket_path = cJSON_GetObjectItemCaseSensitive(chart_item, "jacketPath");
           if (cJSON_IsString(jacket_path) && jacket_path->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.jacket_path, MAXPATHLEN, TextFormat("%s/%s", dir, jacket_path->valuestring));
+            text_copy_bounded(chart_settings->jacket_path, MAXPATHLEN, TextFormat("%s/%s", dir, jacket_path->valuestring));
 
           cJSON *background_path = cJSON_GetObjectItemCaseSensitive(chart_item, "backgroundPath");
           if (cJSON_IsString(background_path) && background_path->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.background_path, MAXPATHLEN, TextFormat("%s/%s", dir, background_path->valuestring));
+            text_copy_bounded(chart_settings->background_path, MAXPATHLEN, TextFormat("%s/%s", dir, background_path->valuestring));
 
           cJSON *base_bpm = cJSON_GetObjectItemCaseSensitive(chart_item, "baseBpm");
-          if (cJSON_IsNumber(base_bpm)) render_ctx.chart_settings.base_bpm = (float)base_bpm->valuedouble;
+          if (cJSON_IsNumber(base_bpm)) chart_settings->base_bpm = (float)base_bpm->valuedouble;
 
           cJSON *bpm_text = cJSON_GetObjectItemCaseSensitive(chart_item, "bpmText");
           if (cJSON_IsString(bpm_text) && bpm_text->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.bpm_text, 256, bpm_text->valuestring);
+            text_copy_bounded(chart_settings->bpm_text, 256, bpm_text->valuestring);
 
           cJSON *sync_base_bpm = cJSON_GetObjectItemCaseSensitive(chart_item, "syncBaseBpm");
-          if (cJSON_IsBool(sync_base_bpm)) render_ctx.chart_settings.sync_base_bpm = cJSON_IsTrue(sync_base_bpm);
+          if (cJSON_IsBool(sync_base_bpm)) chart_settings->sync_base_bpm = cJSON_IsTrue(sync_base_bpm);
 
           cJSON *title = cJSON_GetObjectItemCaseSensitive(chart_item, "title");
           if (cJSON_IsString(title) && title->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.title, 256, title->valuestring);
+            text_copy_bounded(chart_settings->title, 256, title->valuestring);
 
           cJSON *composer = cJSON_GetObjectItemCaseSensitive(chart_item, "composer");
           if (cJSON_IsString(composer) && composer->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.composer, 256, composer->valuestring);
+            text_copy_bounded(chart_settings->composer, 256, composer->valuestring);
 
           cJSON *alias = cJSON_GetObjectItemCaseSensitive(chart_item, "alias");
           if (cJSON_IsString(alias) && alias->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.alias, 256, alias->valuestring);
+            text_copy_bounded(chart_settings->alias, 256, alias->valuestring);
 
           cJSON *charter = cJSON_GetObjectItemCaseSensitive(chart_item, "charter");
           if (cJSON_IsString(charter) && charter->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.charter, 256, charter->valuestring);
+            text_copy_bounded(chart_settings->charter, 256, charter->valuestring);
 
           cJSON *illustrator = cJSON_GetObjectItemCaseSensitive(chart_item, "illustrator");
           if (cJSON_IsString(illustrator) && illustrator->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.illustrator, 256, illustrator->valuestring);
+            text_copy_bounded(chart_settings->illustrator, 256, illustrator->valuestring);
 
           cJSON *difficulty = cJSON_GetObjectItemCaseSensitive(chart_item, "difficulty");
           if (cJSON_IsString(difficulty) && difficulty->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.difficulty, 256, difficulty->valuestring);
+            text_copy_bounded(chart_settings->difficulty, 256, difficulty->valuestring);
 
           cJSON *chart_constant = cJSON_GetObjectItemCaseSensitive(chart_item, "chartConstant");
-          if (cJSON_IsNumber(chart_constant)) render_ctx.chart_settings.chart_constant = (float)chart_constant->valuedouble;
+          if (cJSON_IsNumber(chart_constant)) chart_settings->chart_constant = (float)chart_constant->valuedouble;
 
           cJSON *difficulty_color = cJSON_GetObjectItemCaseSensitive(chart_item, "difficultyColor");
           if (cJSON_IsString(difficulty_color) && difficulty_color->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.difficulty_color, 256, difficulty_color->valuestring);
+            text_copy_bounded(chart_settings->difficulty_color, 256, difficulty_color->valuestring);
 
           cJSON *skin = cJSON_GetObjectItemCaseSensitive(chart_item, "skin");
           if (cJSON_IsObject(skin)){
             cJSON *side = cJSON_GetObjectItemCaseSensitive(skin, "side");
             if (cJSON_IsString(side) && side->valuestring != NULL)
             {
-              render_ctx.chart_settings.skin_track = skin_side_get_by_string(side->valuestring);
-              render_ctx.chart_settings.skin_side  = skin_side_get_by_string(side->valuestring);
+              chart_settings->skin_track = skin_side_get_by_string(side->valuestring);
+              chart_settings->skin_side  = skin_side_get_by_string(side->valuestring);
             }
 
             cJSON *track = cJSON_GetObjectItemCaseSensitive(skin, "track");
             if (cJSON_IsString(track) && track->valuestring != NULL)
-              render_ctx.chart_settings.skin_track = skin_side_get_by_string(track->valuestring);
+              chart_settings->skin_track = skin_side_get_by_string(track->valuestring);
 
             cJSON *single_line= cJSON_GetObjectItemCaseSensitive(skin, "singleLine");
             if (cJSON_IsString(single_line) && single_line->valuestring != NULL)
-              render_ctx.chart_settings.sl_type = single_line_get_by_string(single_line->valuestring);
+              chart_settings->sl_type = single_line_get_by_string(single_line->valuestring);
           }
 
           status = true;
@@ -220,52 +221,56 @@ int main()
           chart_settings_print(&render_ctx.chart_settings);
 
           // Update texture group
-          textures_unload(&texture_group);
-          texture_group = textures_init();
-          if (!TextIsEqual(render_ctx.chart_settings.jacket_path, ""))
+          ChartSettings *chart_settings = &render_ctx.chart_settings;
+          TrackService *track_service = &render_ctx.track_service;
+          NotesService *notes_service = &render_ctx.notes_service;
+          HudService *hud_service = &render_ctx.hud_service;
+          if (!TextIsEqual(chart_settings->jacket_path, ""))
           {
-            UnloadTexture(render_ctx.hud_service.jacket_img);
-            render_ctx.hud_service.jacket_img = LoadTexture(render_ctx.chart_settings.jacket_path);
-            if (!IsTextureValid(render_ctx.hud_service.jacket_img))
-              render_ctx.hud_service.jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
-            SetTextureFilter(render_ctx.hud_service.jacket_img, TEXTURE_FILTER_BILINEAR);
+            UnloadTexture(hud_service->jacket_img);
+            hud_service->jacket_img = LoadTexture(chart_settings->jacket_path);
+            if (!IsTextureValid(hud_service->jacket_img))
+              hud_service->jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
+            SetTextureFilter(hud_service->jacket_img, TEXTURE_FILTER_BILINEAR);
           }
-          if (!TextIsEqual(render_ctx.chart_settings.background_path, ""))
+          if (!TextIsEqual(chart_settings->background_path, ""))
           {
-            UnloadTexture(render_ctx.track_service.background_tex);
-            render_ctx.track_service.background_tex = LoadTexture(render_ctx.chart_settings.background_path);
-            if (!IsTextureValid(render_ctx.track_service.background_tex))
-              render_ctx.track_service.background_tex = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
-            SetTextureFilter(render_ctx.track_service.background_tex, TEXTURE_FILTER_BILINEAR);
+            UnloadTexture(track_service->background_tex);
+            track_service->background_tex = LoadTexture(chart_settings->background_path);
+            if (!IsTextureValid(track_service->background_tex))
+              track_service->background_tex = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
+            SetTextureFilter(track_service->background_tex, TEXTURE_FILTER_BILINEAR);
           }
 
-          UnloadTexture(render_ctx.track_service.track_tex);
-          render_ctx.track_service.track_tex = skin_side_get_track(render_ctx.chart_settings.skin_track);
-          SetTextureWrap(render_ctx.track_service.track_tex, TEXTURE_WRAP_REPEAT);
+          UnloadTexture(track_service->track_tex);
+          track_service->track_tex = skin_side_get_track(chart_settings->skin_track);
+          SetTextureWrap(track_service->track_tex, TEXTURE_WRAP_REPEAT);
 
-          UnloadTexture(render_ctx.notes_service.hold_tex);
-          render_ctx.notes_service.hold_tex = skin_side_get_hold(render_ctx.chart_settings.skin_side);
+          UnloadTexture(notes_service->hold_tex);
+          notes_service->hold_tex = skin_side_get_hold(chart_settings->skin_side);
           SetTextureFilter(render_ctx.notes_service.hold_tex, TEXTURE_FILTER_BILINEAR);
 
-          UnloadTexture(render_ctx.notes_service.tap_tex);
-          render_ctx.notes_service.tap_tex = skin_side_get_tap(render_ctx.chart_settings.skin_side);
-          SetTextureFilter(render_ctx.notes_service.tap_tex, TEXTURE_FILTER_BILINEAR);
+          UnloadTexture(notes_service->tap_tex);
+          notes_service->tap_tex = skin_side_get_tap(chart_settings->skin_side);
+          SetTextureFilter(notes_service->tap_tex, TEXTURE_FILTER_BILINEAR);
 
-          UnloadTexture(render_ctx.notes_service.arctap_tex);
-          render_ctx.notes_service.arctap_tex = skin_side_get_arctap(render_ctx.chart_settings.skin_side);
-          SetTextureFilter(render_ctx.notes_service.arctap_tex, TEXTURE_FILTER_BILINEAR);
+          UnloadTexture(notes_service->arctap_tex);
+          notes_service->arctap_tex = skin_side_get_arctap(chart_settings->skin_side);
+          SetTextureFilter(notes_service->arctap_tex, TEXTURE_FILTER_BILINEAR);
 
-          UnloadTexture(render_ctx.track_service.single_line_tex);
-          render_ctx.track_service.single_line_tex = single_line_get(render_ctx.chart_settings.sl_type);
-          SetTextureWrap(render_ctx.track_service.single_line_tex, TEXTURE_WRAP_REPEAT);
+          UnloadTexture(track_service->single_line_tex);
+          track_service->single_line_tex = single_line_get(chart_settings->sl_type);
+          SetTextureWrap(track_service->single_line_tex, TEXTURE_WRAP_REPEAT);
 
           List hud_code_points; list_init(&hud_code_points, sizeof(int));
           for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
-          AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.title);
-          AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.composer);
-          AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.difficulty);
-          if (IsFontValid(render_ctx.hud_service.notosans_tc_reg)) UnloadFont(render_ctx.hud_service.notosans_tc_reg);
-          render_ctx.hud_service.notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
+          AddStringToCodepointList(&hud_code_points, chart_settings->title);
+          AddStringToCodepointList(&hud_code_points, chart_settings->composer);
+          AddStringToCodepointList(&hud_code_points, chart_settings->difficulty);
+          if (IsFontValid(hud_service->notosans_tc_reg)) UnloadFont(hud_service->notosans_tc_reg);
+          hud_service->notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45,
+                                                     (int *)hud_code_points.data,
+                                                     hud_code_points.size);
           list_free(&hud_code_points);
 
           PlayMusicStream(music);
