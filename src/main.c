@@ -4,7 +4,6 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 */
 
 #include "data/app_configs/app_config.h"
-#include <sys/param.h>
 #define RINI_IMPLEMENTATION
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
@@ -64,7 +63,6 @@ int main()
 
   Music music = LoadMusicStream("");
   music.looping = false;
-  bool pause = true;
   SetMusicPan(music, 0.0f);
   SetMusicVolume(music, app_configs.music_volume);
   PlayMusicStream(music);
@@ -82,7 +80,6 @@ int main()
     if (IsFileDropped())
     {
       // Pause audio before processing
-      pause = true;
       PauseMusicStream(music);
       audio_clock_pause(&render_ctx.audio_clock);
 
@@ -208,7 +205,6 @@ int main()
         if (status)
         {
           // Stop audio entirely
-          pause = true;
           render_ctx.audio_clock.total_audio_length = 0;
           StopMusicStream(music);
           UnloadMusicStream(music);
@@ -288,7 +284,7 @@ int main()
 
     if (IsWindowResized()) recalibrate_camera(&render_ctx.camera);
 
-    if (!pause)
+    if (render_ctx.audio_clock.is_playing)
     {
       // Playfield: Track & Single Line Scrolling
       static float scroll_offset = 0.0f;
@@ -304,30 +300,26 @@ int main()
 
       if (!IsMusicStreamPlaying(music) && render_ctx.audio_clock.is_playing)
       {
-        pause = true;
         audio_clock_pause(&render_ctx.audio_clock);
       }
 
       if (IsKeyPressed(KEY_Q))
       {
         // Song reached to the end naturally (without manually pausing)
-        if (!pause && !IsMusicStreamPlaying(music))
+        if (render_ctx.audio_clock.is_playing && !IsMusicStreamPlaying(music))
         {
-          pause = false;
           StopMusicStream(music);
           PlayMusicStream(music);
           audio_clock_start(&render_ctx.audio_clock);
         }
         else
         {
-          pause = !pause;
-          if (pause) { PauseMusicStream(music) ; audio_clock_pause(&render_ctx.audio_clock) ; }
-          else       { ResumeMusicStream(music); audio_clock_resume(&render_ctx.audio_clock); }
+          if (render_ctx.audio_clock.is_playing) { PauseMusicStream(music) ; audio_clock_pause(&render_ctx.audio_clock) ; }
+          else                                   { ResumeMusicStream(music); audio_clock_resume(&render_ctx.audio_clock); }
         }
       }
       if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_Q))
       {
-        pause = true;
         StopMusicStream(music);
         PlayMusicStream(music);
         PauseMusicStream(music);
