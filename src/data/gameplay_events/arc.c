@@ -92,6 +92,20 @@ MeshRenderable generate_arc_height_mesh(Texture2D *texture)
   return r;
 }
 
+Color arc_get_color_low(int color)
+{
+  if (color == 0)       return color_from_rgba(ARC_BLUE_LOW_CL);
+  else if (color == 1)  return color_from_rgba(ARC_PINK_LOW_CL);
+  else                  return color_from_rgba(ARC_GREEN_LOW_CL);
+}
+
+Color arc_get_color_high(int color)
+{
+  if (color == 0)       return color_from_rgba(ARC_BLUE_HIGH_CL);
+  else if (color == 1)  return color_from_rgba(ARC_PINK_HIGH_CL);
+  else                  return color_from_rgba(ARC_GREEN_HIGH_CL);
+}
+
 void arc_print(const void *elem)
 {
   const Arc *arc = (const Arc *)elem;
@@ -496,10 +510,8 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc
   tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); 
   if (!arc->is_void)
   {
-    tint_low  = ColorNormalize(Fade(color_from_rgba(arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL),
-                                    Clamp(fade_ratio, 0.0f, 0.62f)));
-    tint_high = ColorNormalize(Fade(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL),
-                                    Clamp(fade_ratio, 0.0f, 0.62f)));
+    tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color) , Clamp(fade_ratio, 0.0f, ARC_ALPHA)));
+    tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, ARC_ALPHA)));
   }
   SetShaderValue(arc_shader->shader, arc_shader->tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
   SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
@@ -518,14 +530,11 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *
   float fade_ratio = (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
   // Default trace tint
   Vector4 tint_low, tint_high;
-  tint_low = tint_high = ColorNormalize(Fade(color_from_rgba(TRACE_CL),
-                                             Clamp(fade_ratio, 0.0f, 0.48f))); 
+  tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL));
   if (!arc->is_void)
   {
-    tint_low  = ColorNormalize(Fade(color_from_rgba(arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL),
-                                    Clamp(fade_ratio, 0.0f, 0.62f)));
-    tint_high = ColorNormalize(Fade(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL),
-                                    Clamp(fade_ratio, 0.0f, 0.62f)));
+    tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color) , Clamp(fade_ratio, 0.0f, ARC_ALPHA)));
+    tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, ARC_ALPHA)));
   }
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
@@ -550,7 +559,7 @@ void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, fl
                              MatrixTranslate(arc_world_x, arc_world_y * 0.5f, z_pos));
 
   rlDisableDepthMask();
-  mat.maps->color = arc->color == 0 ? color_from_rgba(ARC_BLUE_HIGH_CL) : color_from_rgba(ARC_PINK_HIGH_CL);
+  mat.maps->color = arc_get_color_high(arc->color);
   DrawMesh(*mesh, mat, MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), tr));
   rlEnableDepthMask();
 }
