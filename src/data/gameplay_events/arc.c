@@ -553,13 +553,14 @@ void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, fl
   if (!should_draw_height_indicator(arc_segment)) return;
 
   Arc *arc = arc_segment->arc;
+  float fade_ratio = (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
   float arc_world_x = arc_x_to_world(arc->x1);
   float arc_world_y = arc_y_to_world(arc->y1);
   Matrix tr = MatrixMultiply(MatrixScale(1.0f, arc_world_y, 1.0f),
                              MatrixTranslate(arc_world_x, arc_world_y * 0.5f, z_pos));
 
   rlDisableDepthMask();
-  mat.maps->color = arc_get_color_high(arc->color);
+  mat.maps->color = Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, 1.0f));
   DrawMesh(*mesh, mat, MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), tr));
   rlEnableDepthMask();
 }

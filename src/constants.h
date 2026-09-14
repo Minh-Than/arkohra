@@ -33,7 +33,7 @@ static const float BEATLINE_THICKNESS    = 0.25f;
 
 static const float SKY_STOP_FADE     =  -90.0f;
 static const float TAP_STOP_FADE     = -100.0f;
-static const float SKY_START_FADE    =  -60.0f;
+static const float SKY_START_FADE    =  -70.0f;
 static const float TAP_START_FADE    =  -80.0f;
 static const float SHADOW_START_FADE =   40.0f;
 
@@ -62,12 +62,12 @@ static const unsigned char LIGHT_CONNECTOR_CL[4]   = { 104, 189, 211, 255 };
 static const unsigned char CONFICT_CONNECTOR_CL[4] = { 150, 85 , 142, 255 };
 
 static const unsigned char BEATLINE_CL[4]       = { 130, 130, 130, 57  };
-static const unsigned char ARC_BLUE_LOW_CL[4]   = { 25 , 160, 235, 255 };
-static const unsigned char ARC_BLUE_HIGH_CL[4]  = { 12 , 212, 212, 255 };
-static const unsigned char ARC_PINK_LOW_CL[4]   = { 240, 105, 155, 255 };
-static const unsigned char ARC_PINK_HIGH_CL[4]  = { 255, 150, 220, 255 };
-static const unsigned char ARC_GREEN_LOW_CL[4]  = { 40 , 200, 30 , 255 };
-static const unsigned char ARC_GREEN_HIGH_CL[4] = { 35 , 255, 108, 255 };
+static const unsigned char ARC_BLUE_LOW_CL[4]   = { 25 , 160, 235 };
+static const unsigned char ARC_BLUE_HIGH_CL[4]  = { 12 , 212, 212 };
+static const unsigned char ARC_PINK_LOW_CL[4]   = { 240, 105, 155 };
+static const unsigned char ARC_PINK_HIGH_CL[4]  = { 255, 150, 220 };
+static const unsigned char ARC_GREEN_LOW_CL[4]  = { 40 , 200, 30  };
+static const unsigned char ARC_GREEN_HIGH_CL[4] = { 35 , 255, 108 };
 static const unsigned char TRACE_CL[4]          = { 145, 120, 170, 122 };
 static const unsigned char NOTE_SHADOW_CL[4]    = { 90 , 90 , 90 , 40  };
 
