@@ -23,13 +23,14 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "gameplay/audio_service.h"
 #include "gameplay/camera/camera_service.h"
 #include "gameplay/chart_reader.h"
-#include "gameplay/hud/hud_services.h"
-#include "render/playfield/playfield_services.h"
 #include "render/render_service.h"
 #include "render/texture/texture_service.h"
 #include "render/texture/skin_side.h"
 #include "render/texture/single_line_type.h"
 #include "render/mesh_renderable.h"
+#include "render/hud/hud_services.h"
+#include "render/notes/notes_service.h"
+#include "render/track/track_service.h"
 #include "windows/window_inst.h"
 #include "windows/window_services.h"
 
@@ -48,26 +49,14 @@ int main()
 
   WindowGroup window_group      = window_services_init();
 
-  FontServices font_services    = font_services_init(GLSL_VERSION);
-  Shader arc_shader             = LoadShader(
-      TextFormat("resources/shaders/glsl%i/arc_shader.vs", GLSL_VERSION),
-      TextFormat("resources/shaders/glsl%i/arc_shader.fs", GLSL_VERSION)
-  );
-
   RenderContext render_ctx = {
     .camera          = camera_init_playfield(),
     .chart_settings  = chart_settings_init(&app_configs),
-    .arc_shader = {
-      .shader = arc_shader,
-      .shouldClip_loc = GetShaderLocation(arc_shader, "shouldClip"),
-      .negativeBPM_loc = GetShaderLocation(arc_shader, "negativeBPM"),
-      .tintLow_loc = GetShaderLocation(arc_shader, "tintLow"),
-      .tintHigh_loc = GetShaderLocation(arc_shader, "tintHigh")
-    },
-    .audio_clock     = { 0 },
+    .audio_clock = { 0 },
+    .track_service = track_service_init(),
+    .notes_service = notes_service_init(GLSL_VERSION),
+    .hud_service = hud_service_init(GLSL_VERSION)
   };
-
-  PlayfieldObjs playfield_objs  = playfield_objs_init(&render_ctx, &texture_group);
 
   InitAudioDevice();
   Wave wave = LoadWave(render_ctx.chart_settings.audio_path);
@@ -232,7 +221,11 @@ int main()
           // Update chart reader
           if(chart_reader.initialized) chart_reader_unload(&chart_reader);
 
-          chart_reader = chart_reader_parse((char *)&render_ctx.chart_settings.chart_path, &render_ctx, &texture_group.arc);
+          chart_reader = chart_reader_parse((char *)&render_ctx.chart_settings.chart_path,
+                                            &render_ctx.chart_settings,
+                                            &render_ctx.audio_clock,
+                                            &render_ctx.notes_service.arc_tex,
+                                            &render_ctx.notes_service.arc_shader.shader);
           chart_settings_print(&render_ctx.chart_settings);
 
           // Update texture group
@@ -240,48 +233,48 @@ int main()
           texture_group = textures_init();
           if (!TextIsEqual(render_ctx.chart_settings.jacket_path, ""))
           {
-            UnloadTexture(texture_group.jacket_img);
-            texture_group.jacket_img = LoadTexture(render_ctx.chart_settings.jacket_path);
-            if (!IsTextureValid(texture_group.jacket_img))
-              texture_group.jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
-            SetTextureFilter(texture_group.jacket_img, TEXTURE_FILTER_BILINEAR);
+            UnloadTexture(render_ctx.hud_service.jacket_img);
+            render_ctx.hud_service.jacket_img = LoadTexture(render_ctx.chart_settings.jacket_path);
+            if (!IsTextureValid(render_ctx.hud_service.jacket_img))
+              render_ctx.hud_service.jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
+            SetTextureFilter(render_ctx.hud_service.jacket_img, TEXTURE_FILTER_BILINEAR);
           }
           if (!TextIsEqual(render_ctx.chart_settings.background_path, ""))
           {
-            UnloadTexture(texture_group.background);
-            texture_group.background = LoadTexture(render_ctx.chart_settings.background_path);
-            if (!IsTextureValid(texture_group.background))
-              texture_group.background = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
-            SetTextureFilter(texture_group.background, TEXTURE_FILTER_BILINEAR);
+            UnloadTexture(render_ctx.track_service.background_tex);
+            render_ctx.track_service.background_tex = LoadTexture(render_ctx.chart_settings.background_path);
+            if (!IsTextureValid(render_ctx.track_service.background_tex))
+              render_ctx.track_service.background_tex = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
+            SetTextureFilter(render_ctx.track_service.background_tex, TEXTURE_FILTER_BILINEAR);
           }
 
-          UnloadTexture(texture_group.track);
-          skin_side_load_track(render_ctx.chart_settings.skin_track, &texture_group);
-          SetTextureWrap(texture_group.track, TEXTURE_WRAP_REPEAT);
+          UnloadTexture(render_ctx.track_service.track_tex);
+          render_ctx.track_service.track_tex = skin_side_get_track(render_ctx.chart_settings.skin_track);
+          SetTextureWrap(render_ctx.track_service.track_tex, TEXTURE_WRAP_REPEAT);
 
-          UnloadTexture(texture_group.hold);
-          skin_side_load_hold(render_ctx.chart_settings.skin_side, &texture_group);
-          SetTextureFilter(texture_group.hold, TEXTURE_FILTER_BILINEAR);
+          UnloadTexture(render_ctx.notes_service.hold_tex);
+          render_ctx.notes_service.hold_tex = skin_side_get_hold(render_ctx.chart_settings.skin_side);
+          SetTextureFilter(render_ctx.notes_service.hold_tex, TEXTURE_FILTER_BILINEAR);
 
-          UnloadTexture(texture_group.tap);
-          skin_side_load_tap(render_ctx.chart_settings.skin_side, &texture_group);
-          SetTextureFilter(texture_group.tap, TEXTURE_FILTER_BILINEAR);
+          UnloadTexture(render_ctx.notes_service.tap_tex);
+          render_ctx.notes_service.tap_tex = skin_side_get_tap(render_ctx.chart_settings.skin_side);
+          SetTextureFilter(render_ctx.notes_service.tap_tex, TEXTURE_FILTER_BILINEAR);
 
-          UnloadTexture(texture_group.arctap);
-          skin_side_load_arctap(render_ctx.chart_settings.skin_side, &texture_group);
-          SetTextureFilter(texture_group.arctap, TEXTURE_FILTER_BILINEAR);
+          UnloadTexture(render_ctx.notes_service.arctap_tex);
+          render_ctx.notes_service.arctap_tex = skin_side_get_arctap(render_ctx.chart_settings.skin_side);
+          SetTextureFilter(render_ctx.notes_service.arctap_tex, TEXTURE_FILTER_BILINEAR);
 
-          UnloadTexture(texture_group.single_line);
-          single_line_load(render_ctx.chart_settings.sl_type, &texture_group);
-          SetTextureWrap(texture_group.single_line, TEXTURE_WRAP_REPEAT);
+          UnloadTexture(render_ctx.track_service.single_line_tex);
+          render_ctx.track_service.single_line_tex = single_line_get(render_ctx.chart_settings.sl_type);
+          SetTextureWrap(render_ctx.track_service.single_line_tex, TEXTURE_WRAP_REPEAT);
 
           List hud_code_points; list_init(&hud_code_points, sizeof(int));
           for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
           AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.title);
           AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.composer);
           AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.difficulty);
-          if (IsFontValid(font_services.hud_notosans_tc_reg)) UnloadFont(font_services.hud_notosans_tc_reg);
-          font_services.hud_notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
+          if (IsFontValid(render_ctx.hud_service.notosans_tc_reg)) UnloadFont(render_ctx.hud_service.notosans_tc_reg);
+          render_ctx.hud_service.notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
           list_free(&hud_code_points);
 
           PlayMusicStream(music);
@@ -300,8 +293,8 @@ int main()
       // Playfield: Track & Single Line Scrolling
       static float scroll_offset = 0.0f;
       scroll_offset += GetFrameTime() * render_ctx.chart_settings.scroll_speed;
-      renderable_update_scroll(&playfield_objs.track      , scroll_offset);
-      renderable_update_scroll(&playfield_objs.single_line, scroll_offset);
+      renderable_update_scroll(&render_ctx.track_service.track      , scroll_offset);
+      renderable_update_scroll(&render_ctx.track_service.single_line, scroll_offset);
     }
 
     if (IsMusicValid(music))
@@ -362,8 +355,7 @@ int main()
     BeginDrawing();
       ClearBackground(WHITE);
 
-      playfield_render(&render_ctx, &chart_reader, &texture_group, &playfield_objs, current_ms - render_ctx.chart_settings.audio_offset);
-      hud_services_render(&texture_group, &render_ctx, &font_services, current_ms);
+      render_scenes(&render_ctx, &chart_reader, current_ms);
       windows_services_render(&window_group);
 
       // Debug FPS
@@ -386,10 +378,9 @@ int main()
   CloseAudioDevice();
 
   chart_reader_unload(&chart_reader);
-  playfield_objs_unload(&playfield_objs);
   textures_unload(&texture_group);
   windows_services_unload(&window_group);
-  font_services_unload(&font_services);
+  render_unload(&render_ctx);
 
   // One last config writing just in case
   app_configs_write_to_file(&app_configs, &rini_d);

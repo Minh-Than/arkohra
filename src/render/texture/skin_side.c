@@ -18,52 +18,65 @@ SkinSide skin_side_get_by_string(char *str)
   return SK_LIGHT;
 }
 
-void skin_side_load_track(SkinSide side, TextureGroup *texture_group)
+Texture2D skin_side_get_track(SkinSide side)
 {
+  Texture2D texture;
   switch (side)
   {
-    case SK_LIGHT:         texture_group->track = LoadTexture("resources/gameplay/Track/TrackWhite.png"); break;
-    case SK_CONFLICT:      texture_group->track = LoadTexture("resources/gameplay/Track/TrackConflict.png"); break;
-    case SK_COLORLESS:     texture_group->track = LoadTexture("resources/gameplay/Track/TrackColorless.png"); break;
-    case SK_BLACK:         texture_group->track = LoadTexture("resources/gameplay/Track/TrackBlack.png"); break;
-    case SK_NIJUUSEI:      texture_group->track = LoadTexture("resources/gameplay/Track/TrackNijuusei.png"); break;
-    case SK_REI:           texture_group->track = LoadTexture("resources/gameplay/Track/TrackRei.png"); break;
-    case SK_CONFLICTVS:    texture_group->track = LoadTexture("resources/gameplay/Track/TrackConflictVs.png"); break;
-    case SK_TEMPESTISSIMO: texture_group->track = LoadTexture("resources/gameplay/Track/TrackTempestissimo.png"); break;
-    case SK_FINALE:        texture_group->track = LoadTexture("resources/gameplay/Track/TrackFinale.png"); break;
-    case SK_PENTIMENT:     texture_group->track = LoadTexture("resources/gameplay/Track/TrackPentiment.png"); break;
-    case SK_ARCANA:        texture_group->track = LoadTexture("resources/gameplay/Track/TrackArcana.png"); break;
+    default:
+    case SK_LIGHT:         texture = LoadTexture("resources/gameplay/Track/TrackWhite.png"); break;
+    case SK_CONFLICT:      texture = LoadTexture("resources/gameplay/Track/TrackConflict.png"); break;
+    case SK_COLORLESS:     texture = LoadTexture("resources/gameplay/Track/TrackColorless.png"); break;
+    case SK_BLACK:         texture = LoadTexture("resources/gameplay/Track/TrackBlack.png"); break;
+    case SK_NIJUUSEI:      texture = LoadTexture("resources/gameplay/Track/TrackNijuusei.png"); break;
+    case SK_REI:           texture = LoadTexture("resources/gameplay/Track/TrackRei.png"); break;
+    case SK_CONFLICTVS:    texture = LoadTexture("resources/gameplay/Track/TrackConflictVs.png"); break;
+    case SK_TEMPESTISSIMO: texture = LoadTexture("resources/gameplay/Track/TrackTempestissimo.png"); break;
+    case SK_FINALE:        texture = LoadTexture("resources/gameplay/Track/TrackFinale.png"); break;
+    case SK_PENTIMENT:     texture = LoadTexture("resources/gameplay/Track/TrackPentiment.png"); break;
+    case SK_ARCANA:        texture = LoadTexture("resources/gameplay/Track/TrackArcana.png"); break;
   }
+
+  return texture;
 }
 
-void skin_side_load_hold(SkinSide side, TextureGroup *texture_group)
+Texture2D skin_side_get_hold(SkinSide side)
 {
+  Texture2D texture;
   switch (side)
   {
-    case SK_LIGHT:    texture_group->hold = LoadTexture("resources/gameplay/Note/Light/HoldNoteLight.png"); break;
-    case SK_CONFLICT: texture_group->hold = LoadTexture("resources/gameplay/Note/Conflict/HoldNoteConflict.png"); break;
-    default:    texture_group->hold = LoadTexture("resources/gameplay/Note/Light/HoldNoteLight.png"); break;
+    case SK_LIGHT:    texture = LoadTexture("resources/gameplay/Note/Light/HoldNoteLight.png"); break;
+    case SK_CONFLICT: texture = LoadTexture("resources/gameplay/Note/Conflict/HoldNoteConflict.png"); break;
+    default:          texture = LoadTexture("resources/gameplay/Note/Light/HoldNoteLight.png"); break;
   }
+
+  return texture;
 }
 
-void skin_side_load_tap(SkinSide side, TextureGroup *texture_group)
+Texture2D skin_side_get_tap(SkinSide side)
 {
+  Texture2D texture;
   switch (side)
   {
-    case SK_LIGHT:    texture_group->tap = LoadTexture("resources/gameplay/Note/Light/TapNoteLight.png"); break;
-    case SK_CONFLICT: texture_group->tap = LoadTexture("resources/gameplay/Note/Conflict/TapNoteConflict.png"); break;
-    default: texture_group->tap = LoadTexture("resources/gameplay/Note/Light/TapNoteLight.png"); break;
+    case SK_LIGHT:    texture = LoadTexture("resources/gameplay/Note/Light/TapNoteLight.png"); break;
+    case SK_CONFLICT: texture = LoadTexture("resources/gameplay/Note/Conflict/TapNoteConflict.png"); break;
+    default:          texture = LoadTexture("resources/gameplay/Note/Light/TapNoteLight.png"); break;
   }
+
+  return texture;
 }
 
-void skin_side_load_arctap(SkinSide side, TextureGroup *texture_group)
+Texture2D skin_side_get_arctap(SkinSide side)
 {
+  Texture2D texture;
   switch (side)
   {
-    case SK_LIGHT:    texture_group->arctap = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png"); break;
-    case SK_CONFLICT: texture_group->arctap = LoadTexture("resources/gameplay/Note/Conflict/ArcTapConflict.png"); break;
-    default: texture_group->arctap = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png"); break;
+    case SK_LIGHT:    texture = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png"); break;
+    case SK_CONFLICT: texture = LoadTexture("resources/gameplay/Note/Conflict/ArcTapConflict.png"); break;
+    default:          texture = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png"); break;
   }
+
+  return texture;
 }
 
 void skin_side_print(SkinSide side)

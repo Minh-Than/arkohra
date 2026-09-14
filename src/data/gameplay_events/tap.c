@@ -17,7 +17,7 @@ void tap_print(const void *elem)
   printf("(%d,%.2f)", tap->timing, tap->lane);
 }
 
-void draw_tap(MeshRenderable *tap_r, Tap *tap, RenderContext *render_ctx, float base_bpm, float scroll_speed, double curr_fp)
+void draw_tap(MeshRenderable *tap_r, Tap *tap, ChartSettings *chart_settings, float base_bpm, float scroll_speed, double curr_fp)
 {
   double diff_fp = tap->fp - curr_fp;
   float z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
@@ -35,7 +35,7 @@ void draw_tap(MeshRenderable *tap_r, Tap *tap, RenderContext *render_ctx, float 
     DrawConnector((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos - 0.1f },
                   (Vector3){ x, y - 0.21f, z_pos - 0.1f },
                   Lerp(0.04f, 0.11f, z_pos / -100.0f),
-                  render_ctx->chart_settings.skin_side == SK_CONFLICT
+                  chart_settings->skin_side == SK_CONFLICT
                     ? color_from_rgba(CONFICT_CONNECTOR_CL)
                     : color_from_rgba(LIGHT_CONNECTOR_CL)
                   );

@@ -12,7 +12,6 @@
 #include "data/gameplay_events/arctap.h"
 #include "gameplay/arc_formula.h"
 #include "render/mesh_renderable.h"
-#include "render/playfield/playfield_services.h"
 
 // ARC
 ArcType arctype_get_by_string(char *str)
@@ -35,7 +34,7 @@ int arc_compare_start_timing_asc(const void *a, const void *b)
   return arc_a->start_timing - arc_b->start_timing;
 }
 
-MeshRenderable generate_arccap_mesh(Texture2D *texture, RenderContext *render_ctx)
+MeshRenderable generate_arccap_mesh(Texture2D *texture)
 {
   float half_size_x = 0.02f;
   float half_size_y = 0.035f;
@@ -80,6 +79,19 @@ MeshRenderable generate_arccap_mesh(Texture2D *texture, RenderContext *render_ct
   return r;
 }
 
+MeshRenderable generate_arc_height_mesh(Texture2D *texture)
+{
+  Mesh height_indicator_mesh = GenMeshPlane(0.5f, 1, 1, 1);
+  UploadMesh(&height_indicator_mesh, false);
+  Material height_indicator_material = LoadMaterialDefault();
+  height_indicator_material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
+
+  MeshRenderable r = { .mesh = height_indicator_mesh, .material = height_indicator_material };
+  renderable_set_transforms(&r, (Matrix[]){MatrixIdentity()}, 1);
+
+  return r;
+}
+
 void arc_print(const void *elem)
 {
   const Arc *arc = (const Arc *)elem;
@@ -102,31 +114,8 @@ void arc_print(const void *elem)
   printf(";");
 }
 
-void generate_segment_meshes(ChartTimingGroup *tg, Arc *arc, Texture2D *texture, RenderContext *render_ctx)
-{
-  int arc_duration      = arc->end_timing - arc->start_timing;
-  float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res * tg->props.arc_res);
-  int segment_count     = (int)ceilf(arc_duration / segment_length);
-  segment_count         = (int)fmax(segment_count, 1);
-
-  List *timing_events = &tg->timing_events;
-  float curr_timing = 0.0f;
-  for (int i = 0; i < segment_count; i++)
-  {
-    float increment = fminf(arc->end_timing - arc->start_timing - curr_timing, segment_length);
-    double start_fp = get_floor_position(timing_events, curr_timing + arc->start_timing);
-    double end_fp = get_floor_position(timing_events, curr_timing + increment + arc->start_timing);
-
-    ArcSegment arc_segment = { .arc = arc, .start_fp = start_fp, .end_fp = end_fp };
-    arc_segment.mesh_r   = generate_arc_body_mesh  (timing_events, arc, texture, render_ctx, curr_timing, increment);
-    arc_segment.shadow_r = generate_arc_shadow_mesh(timing_events, arc, render_ctx, curr_timing, increment);
-    list_push(&tg->arc_segments, &arc_segment);
-
-    curr_timing += increment;
-  }
-}
-
-MeshRenderable generate_arc_body_mesh(List *timing_events, Arc *arc, Texture2D *texture, RenderContext *render_ctx, float curr_timing, float increment)
+MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timing_events, Arc *arc,
+                                      Texture2D *texture, Shader *shader, float curr_timing, float increment)
 {
   //   2 6
   //  /| |\
@@ -190,11 +179,11 @@ MeshRenderable generate_arc_body_mesh(List *timing_events, Arc *arc, Texture2D *
     // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
     float segment_start_timing = curr_timing + arc->start_timing;
     float z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
-                                          render_ctx->chart_settings.base_bpm,
-                                          render_ctx->chart_settings.scroll_speed);
+                                          chart_settings->base_bpm,
+                                          chart_settings->scroll_speed);
     float z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
-                                          render_ctx->chart_settings.base_bpm,
-                                          render_ctx->chart_settings.scroll_speed);
+                                          chart_settings->base_bpm,
+                                          chart_settings->scroll_speed);
     float world_z  = z_target - z_segment;
 
     // each x-y-z per vertex
@@ -247,13 +236,14 @@ MeshRenderable generate_arc_body_mesh(List *timing_events, Arc *arc, Texture2D *
 
   r.material = LoadMaterialDefault();
   r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
-  r.material.shader = render_ctx->arc_shader.shader;
-  set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
+  r.material.shader = *shader;
+  renderable_set_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 
   return r;
 }
 
-MeshRenderable generate_arc_shadow_mesh(List *timing_events, Arc *arc, RenderContext *render_ctx, float curr_timing, float increment)
+MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *timing_events, Arc *arc,
+                                        Shader *shader, float curr_timing, float increment)
 {
   // WARNING:
   // 3--2
@@ -312,11 +302,11 @@ MeshRenderable generate_arc_shadow_mesh(List *timing_events, Arc *arc, RenderCon
     // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
     float segment_start_timing = curr_timing + arc->start_timing;
     float z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
-                                          render_ctx->chart_settings.base_bpm,
-                                          render_ctx->chart_settings.scroll_speed);
+                                          chart_settings->base_bpm,
+                                          chart_settings->scroll_speed);
     float z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
-                                          render_ctx->chart_settings.base_bpm,
-                                          render_ctx->chart_settings.scroll_speed);
+                                          chart_settings->base_bpm,
+                                          chart_settings->scroll_speed);
     float world_z  = z_target - z_segment;
 
     // each x-y-z per vertex
@@ -335,14 +325,38 @@ MeshRenderable generate_arc_shadow_mesh(List *timing_events, Arc *arc, RenderCon
 
   r.material = LoadMaterialDefault();
   r.material.maps[MATERIAL_MAP_DIFFUSE].color = color_from_rgba(NOTE_SHADOW_CL);
-  r.material.shader = render_ctx->arc_shader.shader;
+  r.material.shader = *shader;
 
-  set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
+  renderable_set_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
 
   return r;
 }
 
-MeshRenderable generate_arc_head_mesh(Texture2D *texture, RenderContext *render_ctx)
+void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg, Arc *arc, Texture2D *texture, Shader *shader)
+{
+  int arc_duration      = arc->end_timing - arc->start_timing;
+  float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res * tg->props.arc_res);
+  int segment_count     = (int)ceilf(arc_duration / segment_length);
+  segment_count         = (int)fmax(segment_count, 1);
+
+  List *timing_events = &tg->timing_events;
+  float curr_timing = 0.0f;
+  for (int i = 0; i < segment_count; i++)
+  {
+    float increment = fminf(arc->end_timing - arc->start_timing - curr_timing, segment_length);
+    double start_fp = get_floor_position(timing_events, curr_timing + arc->start_timing);
+    double end_fp = get_floor_position(timing_events, curr_timing + increment + arc->start_timing);
+
+    ArcSegment arc_segment = { .arc = arc, .start_fp = start_fp, .end_fp = end_fp };
+    arc_segment.mesh_r   = generate_arc_body_mesh  (chart_settings, timing_events, arc, texture, shader, curr_timing, increment);
+    arc_segment.shadow_r = generate_arc_shadow_mesh(chart_settings, timing_events, arc, shader, curr_timing, increment);
+    list_push(&tg->arc_segments, &arc_segment);
+
+    curr_timing += increment;
+  }
+}
+
+MeshRenderable generate_arc_head_mesh(Texture2D *texture, Shader *shader)
 {
   //   2 5
   //   /|\   .
@@ -405,8 +419,8 @@ MeshRenderable generate_arc_head_mesh(Texture2D *texture, RenderContext *render_
 
   r.material = LoadMaterialDefault();
   r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
-  r.material.shader = render_ctx->arc_shader.shader;
-  set_mesh_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
+  r.material.shader = *shader;
+  renderable_set_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
   return r;
 }
 
@@ -443,7 +457,7 @@ void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high)
   arc_segment_build_tree(tree, list, mid + 1, high);
 }
 
-void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos)
+void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, float z_pos)
 {
   Arc *arc = arc_segment->arc;
   Vector4 shadow_tint = ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
@@ -451,14 +465,14 @@ void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContex
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
   int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &shadow_tint, SHADER_UNIFORM_VEC4);
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &shadow_tint, SHADER_UNIFORM_VEC4);
+  SetShaderValue(arc_shader->shader, arc_shader->shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+  SetShaderValue(arc_shader->shader, arc_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+  SetShaderValue(arc_shader->shader, arc_shader->tintLow_loc , &shadow_tint, SHADER_UNIFORM_VEC4);
+  SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, &shadow_tint, SHADER_UNIFORM_VEC4);
   DrawMesh(arc_segment->shadow_r.mesh, arc_segment->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
 }
 
-void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, MeshRenderable *mesh_r,
+void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, MeshRenderable *mesh_r,
                    float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp)
 {
   Arc *arc = arc_segment->arc;
@@ -469,8 +483,8 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext 
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
   int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+  SetShaderValue(arc_shader->shader, arc_shader->shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+  SetShaderValue(arc_shader->shader, arc_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
 
   Vector4 tint_low, tint_high;
   tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); // Default trace tint
@@ -479,8 +493,8 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext 
     tint_low  = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_LOW_CL : ARC_PINK_LOW_CL));
     tint_high = ColorNormalize(color_from_rgba( arc->color == 0 ? ARC_BLUE_HIGH_CL : ARC_PINK_HIGH_CL));
   }
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
+  SetShaderValue(arc_shader->shader, arc_shader->tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
+  SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
 
   float x_pos = arc_x_to_world(arc->x1);
   float y_pos = arc_y_to_world(arc->y1);
@@ -490,7 +504,7 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext 
   DrawMesh(mesh_r->mesh, mesh_r->material, tr);
 }
 
-void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos)
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, float z_pos)
 {
   Arc *arc = arc_segment->arc;
 
@@ -506,10 +520,10 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderConte
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
   int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
-  SetShaderValue(render_ctx->arc_shader.shader, render_ctx->arc_shader.tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
+  SetShaderValue(arc_shader->shader, arc_shader->shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+  SetShaderValue(arc_shader->shader, arc_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+  SetShaderValue(arc_shader->shader, arc_shader->tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
+  SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
 
   DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
 }

@@ -8,11 +8,24 @@
 #include "rlgl.h"
 #include "raymath.h"
 
-void hud_services_render(TextureGroup *texture_group, RenderContext *render_ctx, FontServices *font_services, float current_ms)
+HudService hud_service_init(int glsl)
 {
-  ChartSettings *chart_settings = &render_ctx->chart_settings;
-  AudioClock *audio_clock = &render_ctx->audio_clock;
+  HudService service = { 0 };
+  service.hud_sdf_shader = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
+  service.saira_regular  = GenerateSDF((char *)"resources/fonts/Saira-Regular.ttf", 45, NULL, 95);
+  service.saira_medium   = GenerateSDF((char *)"resources/fonts/Saira-Medium.ttf", 45, NULL, 95);
 
+  // f.noto_sans_tc_regular = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, NULL, 95);
+  List hud_code_points; list_init(&hud_code_points, sizeof(int));
+  for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
+  service.notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
+  list_free(&hud_code_points);
+
+  return service;
+}
+
+void hud_services_render(TextureGroup *texture_group, ChartSettings *chart_settings, AudioClock *audio_clock, FontServices *font_services, float current_ms)
+{
   // TODO: move these shits away from calculating each frame
   float width_ratio         = (float)GetScreenWidth()  / 1280;
   float height_ratio        = (float)GetScreenHeight() / 720;
@@ -103,4 +116,12 @@ void hud_services_render(TextureGroup *texture_group, RenderContext *render_ctx,
       EndShaderMode();
     rlPopMatrix();
   rlPopMatrix();
+}
+
+void hud_service_unload(HudService *hud_service)
+{
+  UnloadFont(font_services->saira_regular);
+  UnloadFont(font_services->saira_medium);
+  UnloadFont(font_services->hud_notosans_tc_reg);
+  UnloadShader(font_services->hud_sdf_shader);
 }

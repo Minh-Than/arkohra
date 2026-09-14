@@ -99,30 +99,6 @@ void AddStringToCodepointList(List *list, const char *text)
   }
 }
 
-FontServices font_services_init(int glsl)
-{
-  FontServices f    = { 0 };
-  f.hud_sdf_shader = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
-  f.saira_regular  = GenerateSDF((char *)"resources/fonts/Saira-Regular.ttf", 45, NULL, 95);
-  f.saira_medium   = GenerateSDF((char *)"resources/fonts/Saira-Medium.ttf", 45, NULL, 95);
-
-  // f.noto_sans_tc_regular = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, NULL, 95);
-  List hud_code_points; list_init(&hud_code_points, sizeof(int));
-  for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
-  f.hud_notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
-  list_free(&hud_code_points);
-
-  return f;
-}
-
-void font_services_unload(FontServices *font_services)
-{
-  UnloadFont(font_services->saira_regular);
-  UnloadFont(font_services->saira_medium);
-  UnloadFont(font_services->hud_notosans_tc_reg);
-  UnloadShader(font_services->hud_sdf_shader);
-}
-
 void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height, float length, Color color)
 {
     float x = position.x;
