@@ -247,6 +247,7 @@ links({
 	"CoreAudio.framework",
 	"CoreVideo.framework",
 	"AudioToolbox.framework",
+    "QuartzCore.framework",
 })
 
 filter({})
