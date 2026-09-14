@@ -31,6 +31,10 @@ static const float SINGLE_LINE_SIZE_X    = 1.28f;
 static const float SINGLE_LINE_SIZE_Y    = 100.0f;
 static const float BEATLINE_THICKNESS    = 0.25f;
 
+static const float NOTE_STOP_FADE   = -100.0f;
+static const float ARC_START_FADE   = -70.0f;
+static const float TAP_START_FADE   = -80.0f;
+
 static const float MINIMUM_ARC_RES    = 1.0f;
 static const float MAXIMUM_ARC_RES    = 10.0f;
 static const float ARC_SEGMENT_LENGTH = 1000.0f / 14.0f;

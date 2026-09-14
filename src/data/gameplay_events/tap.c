@@ -23,9 +23,12 @@ void draw_tap(MeshRenderable *tap_r, Tap *tap, ChartSettings *chart_settings, fl
   float z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
   float z_scale = Clamp(Lerp(1.8f, 5.8f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
                         1.8f, 5.8f);
+  float fade_ratio = (z_pos - NOTE_STOP_FADE) / (TAP_START_FADE - NOTE_STOP_FADE);
+  tap_r->material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(WHITE, Clamp(fade_ratio, 0.0f, 1.0f));
   Matrix tr = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
                              MatrixMultiply(MatrixScale(1.0f, 1.0f, z_scale),
                                             MatrixTranslate(lane_to_world_x(tap->lane), 0.0f, z_pos)));
+
   DrawMesh(tap_r->mesh, tap_r->material, tr);
 
   for (int k = 0; k < tap->connector_x.size; k++)
@@ -34,10 +37,10 @@ void draw_tap(MeshRenderable *tap_r, Tap *tap, ChartSettings *chart_settings, fl
     float y = *(float *)list_get(&tap->connector_y, k);
     DrawConnector((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos - 0.1f },
                   (Vector3){ x, y - 0.21f, z_pos - 0.1f },
-                  Lerp(0.04f, 0.11f, z_pos / -100.0f),
+                  Lerp(0.04f, 0.08f, z_pos / -100.0f),
                   chart_settings->skin_side == SK_CONFLICT
-                    ? color_from_rgba(CONFICT_CONNECTOR_CL)
-                    : color_from_rgba(LIGHT_CONNECTOR_CL)
+                    ? Fade(color_from_rgba(CONFICT_CONNECTOR_CL), Clamp(fade_ratio, 0.0f, 1.0f))
+                    : Fade(color_from_rgba(LIGHT_CONNECTOR_CL)  , Clamp(fade_ratio, 0.0f, 1.0f))
                   );
   }
 }
