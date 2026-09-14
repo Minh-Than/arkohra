@@ -9,11 +9,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "raygui.h"
 #include "rlgl.h"
 
-#include <time.h>
-#include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include "raylib.h"
 #include "cJSON.h"
 #include "constants.h"
@@ -26,7 +22,6 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "render/texture/texture_service.h"
 #include "render/texture/skin_side.h"
 #include "render/texture/single_line_type.h"
-#include "render/mesh_renderable.h"
 #include "render/hud/hud_services.h"
 #include "render/notes/notes_service.h"
 #include "render/track/track_service.h"

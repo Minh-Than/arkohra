@@ -3,11 +3,8 @@
 #include "raymath.h"
 #include "rlgl.h"
 #include "notes_service.h"
-#include "data/app_configs/app_config.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
-#include "gameplay/chart_reader.h"
-#include "render/mesh_renderable.h"
 
 NotesService notes_service_init(int glsl)
 {

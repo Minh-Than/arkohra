@@ -1,5 +1,3 @@
-#include "render/hud/hud_services.h"
-#include "rlgl.h"
 #include "render_service.h"
 
 void render_scenes(RenderContext *render_ctx, ChartReader *chart_reader, float current_ms)
