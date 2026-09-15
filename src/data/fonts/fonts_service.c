@@ -127,7 +127,6 @@ void font_chain_draw(FontChain *chain, const char *text,
     else
     {
       DrawTextCodepoint(*use, cp, pos, size, tint);
-      base_x = pos.x;
 
       int index = GetGlyphIndex(*use, cp);
       float scale = size / (float)use->baseSize;
@@ -135,6 +134,7 @@ void font_chain_draw(FontChain *chain, const char *text,
         pos.x += use->glyphs[index].advanceX * scale + spacing;
       else
         pos.x += size * 0.5f + spacing; // No glyph at all for this: abitrarily set custom width
+      base_x = pos.x;
     }
 
     offset += cpsize;
