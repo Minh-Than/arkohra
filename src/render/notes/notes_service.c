@@ -18,10 +18,7 @@ NotesService notes_service_init(int glsl)
   service.arctap_tex           = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png");
   service.arctap_shadow_tex    = LoadTexture("resources/gameplay/Note/ArcTapShadow.png");
 
-  SetTextureFilter(service.tap_tex, TEXTURE_FILTER_BILINEAR);
-  SetTextureFilter(service.hold_tex, TEXTURE_FILTER_BILINEAR);
   SetTextureWrap  (service.hold_tex, TEXTURE_WRAP_CLAMP);
-  SetTextureFilter(service.arc_tex, TEXTURE_FILTER_BILINEAR);
   SetTextureWrap  (service.arc_tex, TEXTURE_WRAP_CLAMP);
 
   service.tap              = tap_load_mesh (&service.tap_tex);
