@@ -266,13 +266,14 @@ int main()
 
           List hud_code_points; list_init(&hud_code_points, sizeof(int));
           for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
-          AddStringToCodepointList(&hud_code_points, chart_settings->title);
-          AddStringToCodepointList(&hud_code_points, chart_settings->composer);
-          AddStringToCodepointList(&hud_code_points, chart_settings->difficulty);
-          if (IsFontValid(hud_service->notosans_tc_reg)) UnloadFont(hud_service->notosans_tc_reg);
-          hud_service->notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45,
-                                                     (int *)hud_code_points.data,
-                                                     hud_code_points.size);
+          font_add_string_to_codepoints(&hud_code_points, chart_settings->title);
+          font_add_string_to_codepoints(&hud_code_points, chart_settings->composer);
+          font_add_string_to_codepoints(&hud_code_points, chart_settings->difficulty);
+          for (int i = 0; i < hud_service->font_chain.count; i++)
+            UnloadFont(hud_service->font_chain.fonts[i]);
+          hud_service->font_chain = font_chain_init((char *)"resources/fonts/NotoSansTC-Regular.ttf",
+                                                    (char *)"resources/fonts/NotoSans-Regular.ttf",
+                                                    45, (int *)hud_code_points.data, hud_code_points.size);
           list_free(&hud_code_points);
 
           PlayMusicStream(music);

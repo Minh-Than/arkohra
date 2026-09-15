@@ -14,12 +14,14 @@ HudService hud_service_init(int glsl)
 {
   HudService service = { 0 };
   service.sdf_shader    = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
-  service.saira_regular = GenerateSDF((char *)"resources/fonts/Saira-Regular.ttf", 45, NULL, 95);
-  service.saira_medium  = GenerateSDF((char *)"resources/fonts/Saira-Medium.ttf", 45, NULL, 95);
+  service.saira_regular = font_generate_sdf((char *)"resources/fonts/Saira-Regular.ttf", 45, NULL, 95);
+  service.saira_medium  = font_generate_sdf((char *)"resources/fonts/Saira-Medium.ttf", 45, NULL, 95);
 
   List hud_code_points; list_init(&hud_code_points, sizeof(int));
   for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
-  service.notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
+  service.font_chain = font_chain_init((char *)"resources/fonts/NotoSansTC-Regular.ttf",
+                                       (char *)"resources/fonts/NotoSans-Regular.ttf",
+                                       45, (int *)hud_code_points.data, hud_code_points.size);
   list_free(&hud_code_points);
 
   service.pause_button  = LoadTexture("resources/gameplay/HUD/PauseLight.png");
@@ -29,6 +31,7 @@ HudService hud_service_init(int glsl)
   service.jacket_diff   = LoadTexture("resources/gameplay/HUD/Difficulty.png");
   service.progress_glow = LoadTexture("resources/gameplay/HUD/ProgressGlow.png");
   SetTextureFilter(service.jacket_img, TEXTURE_FILTER_BILINEAR);
+
 
   return service;
 }
@@ -80,16 +83,16 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
                         0.0f, 1.0f, WHITE);
         rlPopMatrix();
 
-        float diff_spacing = 1.0f;
+        float diff_spacing = 0.6f;
         float diff_text_width = JACKET_HUD_SIZE;
-        Vector2 diff_v = MeasureTextEx(hud_service->notosans_tc_reg, chart_settings->difficulty, 44.0f, diff_spacing);
-        float diff_text_scale = diff_v.x <= (diff_text_width - 50) ? 1.0f : (diff_text_width - 50) / diff_v.x;
-        float diff_text_offsetX = (diff_text_width - (diff_v.x * diff_text_scale)) / 2;
+        float diff_w = font_chain_measure(&hud_service->font_chain, chart_settings->difficulty, 44.0f, diff_spacing);
+        float diff_text_scale = diff_w <= (diff_text_width - 50) ? 1.0f : (diff_text_width - 50) / diff_w;
+        float diff_text_offsetX = (diff_text_width - (diff_w * diff_text_scale)) / 2;
         BeginShaderMode(hud_service->sdf_shader);
           rlPushMatrix();
             rlTranslatef(diff_text_offsetX, 0.0f, 0.0f);
             rlScalef(diff_text_scale, 1.0f, 1.0f);
-            DrawTextEx(hud_service->notosans_tc_reg, chart_settings->difficulty, (Vector2) { 0.0f, JACKET_HUD_SIZE }, 44.0f, diff_spacing, WHITE);
+            font_chain_draw(&hud_service->font_chain, chart_settings->difficulty, (Vector2) { 0.0f, JACKET_HUD_SIZE + 1 }, 44.0f, diff_spacing, WHITE);
           rlPopMatrix();
         EndShaderMode();
       rlPopMatrix();
@@ -110,16 +113,16 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
           rlTranslatef(0.0f, 190.0f, 0.0f);
             float tit_cum_max_width = (info_panel_width - jacket_bg_width + 20) / hud_dynamic_scaling;
           rlPushMatrix();
-            Vector2 title_v = MeasureTextEx(hud_service->notosans_tc_reg, chart_settings->title, 66.0f, 1.0f);
-            float title_scale = title_v.x <= tit_cum_max_width ? 1.0f : tit_cum_max_width/title_v.x;
+            float title_w = font_chain_measure(&hud_service->font_chain, chart_settings->title, 66.0f, 1.0f);
+            float title_scale = title_w <= tit_cum_max_width ? 1.0f : tit_cum_max_width / title_w;
             rlScalef(title_scale, 1.0f, 1.0f);
-            DrawTextEx(hud_service->notosans_tc_reg, chart_settings->title, Vector2Zero(), 66.0f, 1.0f, WHITE);
+            font_chain_draw(&hud_service->font_chain, chart_settings->title, Vector2Zero(), 66.0f, 1.0f, WHITE);
           rlPopMatrix();
           rlPushMatrix();
-            Vector2 composer_v = MeasureTextEx(hud_service->notosans_tc_reg, chart_settings->composer, 42.0f, 1.0f);
-            float composer_scale = composer_v.x <= tit_cum_max_width ? 1.0f : tit_cum_max_width/composer_v.x;
+            float composer_w = font_chain_measure(&hud_service->font_chain, chart_settings->composer, 42.0f, 1.0f);
+            float composer_scale = composer_w <= tit_cum_max_width ? 1.0f : tit_cum_max_width / composer_w;
             rlScalef(composer_scale, 1.0f, 1.0f);
-            DrawTextEx(hud_service->notosans_tc_reg, chart_settings->composer, (Vector2){ 0.0f, 75.0f }, 42.0f, 1.0f, WHITE);
+            font_chain_draw(&hud_service->font_chain, chart_settings->composer, (Vector2){ 0.0f, 75.0f }, 42.0f, 1.0f, WHITE);
           rlPopMatrix();
         rlPopMatrix();
       EndShaderMode();
@@ -131,7 +134,6 @@ void hud_service_unload(HudService *hud_service)
 {
   UnloadFont(hud_service->saira_regular);
   UnloadFont(hud_service->saira_medium);
-  UnloadFont(hud_service->notosans_tc_reg);
   UnloadShader(hud_service->sdf_shader);
   UnloadTexture(hud_service->pause_button);
   UnloadTexture(hud_service->info_panel);

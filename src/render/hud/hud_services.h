@@ -2,13 +2,15 @@
 #define HUD_SERVICES_H
 
 #include "data/chart_settings/chart_settings.h"
+#include "data/fonts/fonts_service.h"
 #include "gameplay/audio_service.h"
 #include "raylib.h"
 
 typedef struct {
   Shader sdf_shader;
-  Font notosans_tc_reg, saira_medium, saira_regular;
+  Font saira_medium, saira_regular;
   Texture2D pause_button, info_panel, jacket_bg, jacket_img, jacket_diff, progress_glow;
+  FontChain font_chain;
 } HudService;
 
 HudService hud_service_init(int glsl);
