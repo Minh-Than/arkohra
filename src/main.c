@@ -15,6 +15,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "constants.h"
 #include "resource_util.h"
 #include "data/chart_settings/chart_settings.h"
+#include "data/fonts/fonts_service.h"
 #include "gameplay/audio_service.h"
 #include "gameplay/camera/camera_service.h"
 #include "gameplay/chart_reader.h"
@@ -25,6 +26,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "render/hud/hud_services.h"
 #include "render/notes/notes_service.h"
 #include "render/track/track_service.h"
+#include "render/utils/drawing.h"
 #include "windows/window_inst.h"
 #include "windows/window_services.h"
 

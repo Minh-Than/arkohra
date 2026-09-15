@@ -1,6 +1,7 @@
 #include "constants.h"
 #include "raylib.h"
 #include "raymath.h"
+#include "render/utils/drawing.h"
 #include "rlgl.h"
 #include "notes_service.h"
 #include "data/gameplay_events/gameplay_events.h"

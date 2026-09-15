@@ -5,10 +5,10 @@
 #include "tap.h"
 #include "color_services.h"
 #include "constants.h"
-#include "data/app_configs/app_config.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "render/mesh_renderable.h"
+#include "render/utils/drawing.h"
 #include "gameplay/arc_formula.h"
 
 void tap_print(const void *elem)

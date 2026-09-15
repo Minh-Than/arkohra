@@ -1,4 +1,6 @@
 #include <math.h>
+#include "data/custom_types/dynamic_list.h"
+#include "data/fonts/fonts_service.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
