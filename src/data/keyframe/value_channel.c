@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "keyframe.h"
+#include "value_channel.h"
 
 void value_channel_init(ValueChannel *channel)
 {
