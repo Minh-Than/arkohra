@@ -77,8 +77,8 @@ float easing_get_unit(EasingType easing, float t)
 
 float easing_interpolate(EasingType easing, int timing, int start_timing, int end_timing, float from, float to)
 {
-  if (fabsf(from - to) < 1e-6) return start_timing;
-  if (start_timing == end_timing) return start_timing;
+  if (fabsf(from - to) < 1e-6) return from;
+  if (start_timing == end_timing) return from;
   const float unit_val = (float)(timing - from) / (float)(to - from);
   return start_timing + (end_timing - start_timing) * easing_get_unit(easing, unit_val);
 }
