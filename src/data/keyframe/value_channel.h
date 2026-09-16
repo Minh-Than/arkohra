@@ -14,10 +14,11 @@ int value_kf_compare_timing_asc(const void *a, const void *b);
 
 typedef struct {
   List keyframes;
+  float current_value;
 } ValueChannel;
 
 ValueChannel value_channel_init();
-float value_channel_interpolate(ValueChannel *channel, int timing);
+void value_channel_interpolate(ValueChannel *channel, int timing);
 void value_channel_unload(ValueChannel *channel);
 
 #endif // VALUE_CHANNEL_H

@@ -18,19 +18,19 @@ ValueChannel value_channel_init()
 }
 
 // Keyframes list HAS to be sorted
-float value_channel_interpolate(ValueChannel *channel, int timing)
+void value_channel_interpolate(ValueChannel *channel, int timing)
 {
-  if (channel == NULL) return 0.0f;
+  if (channel == NULL) return; // Ideally this gatecheck should never happen as this will be called during hot load
 
   List *kfs = &channel->keyframes;
-  if(kfs->data == NULL || kfs->size == 0) return 0.0f;
+  if(kfs->data == NULL || kfs->size == 0) return;
 
   ValueKeyframe target_kf = { .timing = timing };
   int current_kf_idx = bisect_left(kfs, &target_kf, value_kf_compare_timing_asc);
   ValueKeyframe *curr_kf = (ValueKeyframe *)list_get(kfs, current_kf_idx);
   ValueKeyframe *next_kf = current_kf_idx == kfs->size - 1 ? curr_kf : (ValueKeyframe *)list_get(kfs, current_kf_idx + 1);
 
-  return easing_interpolate(curr_kf->easing, timing, curr_kf->timing, next_kf->timing, curr_kf->value, next_kf->value);
+  channel->current_value = easing_interpolate(curr_kf->easing, timing, curr_kf->timing, next_kf->timing, curr_kf->value, next_kf->value);
 }
 
 void value_channel_unload(ValueChannel *channel)
