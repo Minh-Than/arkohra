@@ -1,3 +1,4 @@
+#include "data/custom_types/dynamic_list.h"
 #include "external/stb_truetype.h"
 #include "fonts_service.h"
 
@@ -78,39 +79,67 @@ void font_add_string_to_codepoints(List *list, const char *text)
   }
 }
 
-FontChain font_chain_init(const char *primary_path, const char *fallback_path,
-                        int base_size, int *codepoints, int glyph_count)
+typedef struct {
+  unsigned char *data;
+  stbtt_fontinfo info;
+  bool valid;
+} FontProbe;
+
+static FontProbe font_probe_load(const char *path)
 {
-  FontChain chain = { 0 };
-
-  List primary_codepoints;  list_init(&primary_codepoints , sizeof(int));
-  List fallback_codepoints; list_init(&fallback_codepoints, sizeof(int));
-
-  for (int i = 0; i < glyph_count; i++)
-  {
-    int cp = codepoints[i];
-      if (font_file_has_glyph(primary_path, cp)) list_push(&primary_codepoints , &cp);
-      else                                       list_push(&fallback_codepoints, &cp);
-  }
-
-  if (primary_codepoints.size > 0)
-    chain.fonts[chain.count++] = font_generate_sdf((char *)primary_path, base_size,
-                                             (int *)primary_codepoints.data,
-                                             primary_codepoints.size);
-  if (fallback_codepoints.size > 0)
-    chain.fonts[chain.count++] = font_generate_sdf((char *)fallback_path, base_size,
-                                             (int *)fallback_codepoints.data,
-                                             fallback_codepoints.size);
-
-  list_free(&primary_codepoints);
-  list_free(&fallback_codepoints);
-  return chain;
+  FontProbe p = { 0 };
+  int size = 0;
+  p.data = LoadFileData(path, &size);
+  if (p.data)
+    p.valid = stbtt_InitFont(&p.info, p.data, stbtt_GetFontOffsetForIndex(p.data, 0));
+  return p;
 }
 
-void font_chain_draw(FontChain *chain, const char *text,
-                   Vector2 pos, float size, float spacing, Color tint)
+static void font_probe_free(FontProbe *p)
 {
-  if (chain == NULL || chain->count == 0) return;
+  if (p->data) UnloadFileData(p->data);
+  p->data = NULL;
+  p->valid = false;
+}
+
+static bool font_probe_has_glyph(const FontProbe *p, int cp)
+{
+  return p->valid && (stbtt_FindGlyphIndex(&p->info, cp) != 0);
+}
+
+List fonts_init(List *font_path_list, int base_size, int *codepoints, int glyph_count)
+{
+  List result; list_init(&result, sizeof(Font));
+
+  for (int i = 0; i < font_path_list->size; i++)
+  {
+    char *path = *(char **)list_get(font_path_list, i);
+    List codepoint_entry; list_init(&codepoint_entry, sizeof(int));
+
+    // Populate codepoints
+    // (probe the font info once)
+    FontProbe prb = font_probe_load(path);
+    for (int j = 0; j < glyph_count; j++)
+    {
+      int codepoint = codepoints[j];
+      if (font_probe_has_glyph(&prb, codepoint))
+        list_push(&codepoint_entry, &codepoint);
+    }
+    font_probe_free(&prb);
+
+    // Generate final SDF font
+    if (codepoint_entry.size == 0) continue;
+    Font entry_sdf_font = font_generate_sdf(path, base_size, (int *)codepoint_entry.data, codepoint_entry.size);
+    list_push(&result, &entry_sdf_font);
+    list_free(&codepoint_entry);
+  }
+
+  return result;
+}
+
+void fonts_draw_text(List *font_list, const char *text, Vector2 pos, float size, float spacing, Color tint)
+{
+  if (font_list->data == NULL || font_list->size == 0) return;
 
   float base_x = pos.x;
   int offset = 0, cpsize = 0;
@@ -118,9 +147,12 @@ void font_chain_draw(FontChain *chain, const char *text,
   {
     int cp = GetCodepoint(&text[offset], &cpsize);
 
-    Font *use = &chain->fonts[0];
-    for (int i = 0; i < chain->count; i++)
-      if (font_has_glyph(chain->fonts[i], cp)) { use = &chain->fonts[i]; break; }
+    Font *use = (Font *)list_get(font_list, 0);
+    for (int i = 0; i < font_list->size; i++)
+    {
+      Font *f = (Font *)list_get(font_list, i);
+      if (font_has_glyph(*f, cp)) { use = f; break; }
+    }
 
     if (font_is_mark_combining(cp)) // If the mark chained rather than stacked (normal case)
       DrawTextCodepoint(*use, cp, (Vector2){ base_x, pos.y }, size, tint);
@@ -141,9 +173,9 @@ void font_chain_draw(FontChain *chain, const char *text,
   }
 }
 
-float font_chain_measure(FontChain *chain, const char *text, float size, float spacing)
+float fonts_measure_text(List *font_list, const char *text, float size, float spacing)
 {
-  if (chain == NULL || chain->count == 0) return 0;
+  if (font_list->data == NULL || font_list->size == 0) return 0;
 
   float width = 0;
   int offset = 0, cpsize = 0;
@@ -151,9 +183,12 @@ float font_chain_measure(FontChain *chain, const char *text, float size, float s
   {
     int cp = GetCodepoint(&text[offset], &cpsize);
 
-    Font *use = &chain->fonts[0];
-    for (int i = 0; i < chain->count; i++)
-      if (font_has_glyph(chain->fonts[i], cp)) { use = &chain->fonts[i]; break; }
+    Font *use = (Font *)list_get(font_list, 0);
+    for (int i = 0; i < font_list->size; i++)
+    {
+      Font *f = (Font *)list_get(font_list, i);
+      if (font_has_glyph(*f, cp)) { use = f; break; }
+    }
 
     if (!font_is_mark_combining(cp)) // If the mark chained rather than stacked (normal case)
     {
