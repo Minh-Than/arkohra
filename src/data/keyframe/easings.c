@@ -23,7 +23,7 @@ float easing_get_unit(EasingType easing, float t)
     case E_OUT_SINE:      return sinf(t * M_PI * 0.5f);
     case E_INOUT_SINE:    return -(cosf(t * M_PI) - 1.0f) * 0.5f;
     case E_IN_SINE:       return 1.0f - cosf(t * M_PI * 0.5f);
-    case E_OUTQUART:      return 1.0f - powf(1.0f - t, 4.0f);
+    case E_OUT_QUART:     return 1.0f - powf(1.0f - t, 4.0f);
     case E_INOUT_QUART:   return t < 0.5f ? 8.0f * t * t * t * t
                                           : 1.0f - powf(-2.0f * t + 2.0f, 4.0f) * 0.5f;
     case E_IN_QUART:      return t * t * t * t;
