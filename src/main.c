@@ -4,7 +4,6 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 */
 
 #include "data/app_configs/app_config.h"
-#include "data/custom_types/dynamic_list.h"
 #define RINI_IMPLEMENTATION
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
@@ -16,6 +15,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "constants.h"
 #include "resource_util.h"
 #include "data/chart_settings/chart_settings.h"
+#include "data/custom_types/dynamic_list.h"
 #include "data/fonts/fonts_service.h"
 #include "gameplay/audio_service.h"
 #include "gameplay/camera/camera_service.h"

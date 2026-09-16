@@ -1,7 +1,6 @@
 #ifndef FONTS_SERVICE_H
 #define FONTS_SERVICE_H
 
-#define MAX_FONTS 2
 #include "raylib.h"
 #include "data/custom_types/dynamic_list.h"
 
