@@ -111,50 +111,28 @@ List fonts_init(List *font_path_list, int base_size, int *codepoints, int glyph_
 {
   List result; list_init(&result, sizeof(Font));
 
-  // Initialize codepoint list for each font
-  List font_codepoints_entries; list_init(&font_codepoints_entries, sizeof(List));
   for (int i = 0; i < font_path_list->size; i++)
   {
-    List codepoint_entry; list_init(&codepoint_entry, sizeof(int));
-    list_push(&font_codepoints_entries, &codepoint_entry);
-  }
-
-  // Populate font infos in a probing list to prevent loading font data every glyph count
-  List probes; list_init(&probes, sizeof(FontProbe));
-  for (int i = 0; i < font_path_list->size; i++)
-  {
-    FontProbe prb = font_probe_load(*(const char **)list_get(font_path_list, i));
-    list_push(&probes, &prb);
-  }
-
-  // Go thru each glyph codepoint, check if it's in any existing font
-  for (int i = 0; i < glyph_count; i++)
-  {
-    int codepoint = codepoints[i];
-    for (int j = 0; j < font_path_list->size; j++)
-    {
-      if (font_probe_has_glyph((FontProbe *)list_get(&probes, j), codepoint))
-      {
-        List *entry = (List *)list_get(&font_codepoints_entries, j);
-        list_push(entry, &codepoint);
-        break;
-      }
-    }
-  }
-  // Probing finish, freeing...
-  for (int j = 0; j < font_path_list->size; j++) font_probe_free((FontProbe *)list_get(&probes, j));
-
-  // Generate final SDF fonts
-  for (int i = 0; i < font_path_list->size; i++)
-  {
-    List *entry = (List *)list_get(&font_codepoints_entries, i);
-    if (entry->size == 0) continue;
     char *path = *(char **)list_get(font_path_list, i);
-    Font entry_sdf_font = font_generate_sdf(path, base_size, (int *)entry->data, entry->size);
+    List codepoint_entry; list_init(&codepoint_entry, sizeof(int));
+
+    // Populate codepoints
+    // (probe the font info once)
+    FontProbe prb = font_probe_load(path);
+    for (int j = 0; j < glyph_count; j++)
+    {
+      int codepoint = codepoints[j];
+      if (font_probe_has_glyph(&prb, codepoint))
+        list_push(&codepoint_entry, &codepoint);
+    }
+    font_probe_free(&prb);
+
+    // Generate final SDF font
+    if (codepoint_entry.size == 0) continue;
+    Font entry_sdf_font = font_generate_sdf(path, base_size, (int *)codepoint_entry.data, codepoint_entry.size);
     list_push(&result, &entry_sdf_font);
-    list_free(entry);
+    list_free(&codepoint_entry);
   }
-  list_free(&font_codepoints_entries);
 
   return result;
 }
