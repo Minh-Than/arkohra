@@ -1,6 +1,4 @@
 #include <math.h>
-#include "data/custom_types/dynamic_list.h"
-#include "data/fonts/fonts_service.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
@@ -8,6 +6,8 @@
 #include "constants.h"
 #include "hud_services.h"
 #include "data/chart_settings/chart_settings.h"
+#include "data/custom_types/dynamic_list.h"
+#include "data/fonts/fonts_service.h"
 #include "gameplay/audio_service.h"
 
 HudService hud_service_init(int glsl)
@@ -17,12 +17,15 @@ HudService hud_service_init(int glsl)
   service.saira_regular = font_generate_sdf((char *)"resources/fonts/Saira-Regular.ttf", 45, NULL, 95);
   service.saira_medium  = font_generate_sdf((char *)"resources/fonts/Saira-Medium.ttf", 45, NULL, 95);
 
+  const char *paths[] = { "resources/fonts/NotoSans-Regular.ttf" };
+  List font_list; list_init(&font_list, sizeof(char *));
+  for (int i = 0; i < 1; i++) list_push(&font_list, &paths[i]);
+
   List hud_code_points; list_init(&hud_code_points, sizeof(int));
   for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
-  service.font_chain = font_chain_init((char *)"resources/fonts/NotoSansTC-Regular.ttf",
-                                       (char *)"resources/fonts/NotoSans-Regular.ttf",
-                                       45, (int *)hud_code_points.data, hud_code_points.size);
+  service.font_with_fallback = fonts_init(&font_list, 45, (int *)hud_code_points.data, hud_code_points.size);
   list_free(&hud_code_points);
+  list_free(&font_list);
 
   service.pause_button  = LoadTexture("resources/gameplay/HUD/PauseLight.png");
   service.info_panel    = LoadTexture("resources/gameplay/HUD/InfoLight.png");
@@ -31,7 +34,6 @@ HudService hud_service_init(int glsl)
   service.jacket_diff   = LoadTexture("resources/gameplay/HUD/Difficulty.png");
   service.progress_glow = LoadTexture("resources/gameplay/HUD/ProgressGlow.png");
   SetTextureFilter(service.jacket_img, TEXTURE_FILTER_BILINEAR);
-
 
   return service;
 }
@@ -85,14 +87,14 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
 
         float diff_spacing = 0.6f;
         float diff_text_width = JACKET_HUD_SIZE;
-        float diff_w = font_chain_measure(&hud_service->font_chain, chart_settings->difficulty, 44.0f, diff_spacing);
+        float diff_w = fonts_measure_text(&hud_service->font_with_fallback, chart_settings->difficulty, 44.0f, diff_spacing);
         float diff_text_scale = diff_w <= (diff_text_width - 50) ? 1.0f : (diff_text_width - 50) / diff_w;
         float diff_text_offsetX = (diff_text_width - (diff_w * diff_text_scale)) / 2;
         BeginShaderMode(hud_service->sdf_shader);
           rlPushMatrix();
             rlTranslatef(diff_text_offsetX, 0.0f, 0.0f);
             rlScalef(diff_text_scale, 1.0f, 1.0f);
-            font_chain_draw(&hud_service->font_chain, chart_settings->difficulty, (Vector2) { 0.0f, JACKET_HUD_SIZE + 1 }, 44.0f, diff_spacing, WHITE);
+            fonts_draw_text(&hud_service->font_with_fallback, chart_settings->difficulty, (Vector2) { 0.0f, JACKET_HUD_SIZE + 1 }, 44.0f, diff_spacing, WHITE);
           rlPopMatrix();
         EndShaderMode();
       rlPopMatrix();
@@ -113,16 +115,16 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
           rlTranslatef(0.0f, 190.0f, 0.0f);
             float tit_cum_max_width = (info_panel_width - jacket_bg_width + 20) / hud_dynamic_scaling;
           rlPushMatrix();
-            float title_w = font_chain_measure(&hud_service->font_chain, chart_settings->title, 66.0f, 1.0f);
+            float title_w = fonts_measure_text(&hud_service->font_with_fallback, chart_settings->title, 66.0f, 1.0f);
             float title_scale = title_w <= tit_cum_max_width ? 1.0f : tit_cum_max_width / title_w;
             rlScalef(title_scale, 1.0f, 1.0f);
-            font_chain_draw(&hud_service->font_chain, chart_settings->title, Vector2Zero(), 66.0f, 1.0f, WHITE);
+            fonts_draw_text(&hud_service->font_with_fallback, chart_settings->title, Vector2Zero(), 66.0f, 1.0f, WHITE);
           rlPopMatrix();
           rlPushMatrix();
-            float composer_w = font_chain_measure(&hud_service->font_chain, chart_settings->composer, 42.0f, 1.0f);
+            float composer_w = fonts_measure_text(&hud_service->font_with_fallback, chart_settings->composer, 42.0f, 1.0f);
             float composer_scale = composer_w <= tit_cum_max_width ? 1.0f : tit_cum_max_width / composer_w;
             rlScalef(composer_scale, 1.0f, 1.0f);
-            font_chain_draw(&hud_service->font_chain, chart_settings->composer, (Vector2){ 0.0f, 75.0f }, 42.0f, 1.0f, WHITE);
+            fonts_draw_text(&hud_service->font_with_fallback, chart_settings->composer, (Vector2){ 0.0f, 75.0f }, 42.0f, 1.0f, WHITE);
           rlPopMatrix();
         rlPopMatrix();
       EndShaderMode();
@@ -141,4 +143,8 @@ void hud_service_unload(HudService *hud_service)
   UnloadTexture(hud_service->jacket_img);
   UnloadTexture(hud_service->jacket_diff);
   UnloadTexture(hud_service->progress_glow);
+
+  for (int i = 0; i < hud_service->font_with_fallback.size; i++)
+    UnloadFont(*(Font *)list_get(&hud_service->font_with_fallback, i));
+  list_free(&hud_service->font_with_fallback);
 }

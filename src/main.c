@@ -4,6 +4,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 */
 
 #include "data/app_configs/app_config.h"
+#include "data/custom_types/dynamic_list.h"
 #define RINI_IMPLEMENTATION
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
@@ -264,17 +265,27 @@ int main()
           track_service->single_line_tex = single_line_get(chart_settings->sl_type);
           SetTextureWrap(track_service->single_line_tex, TEXTURE_WRAP_REPEAT);
 
+          const char *paths[] = {
+            "resources/fonts/NotoSansTC-Regular.ttf",
+            "resources/fonts/NotoSans-Regular.ttf",
+            "resources/fonts/NotoSansMath-Regular.ttf",
+          };
+          List font_list; list_init(&font_list, sizeof(char *));
+          for (int i = 0; i < 3; i++) list_push(&font_list, &paths[i]);
           List hud_code_points; list_init(&hud_code_points, sizeof(int));
           for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
           font_add_string_to_codepoints(&hud_code_points, chart_settings->title);
           font_add_string_to_codepoints(&hud_code_points, chart_settings->composer);
           font_add_string_to_codepoints(&hud_code_points, chart_settings->difficulty);
-          for (int i = 0; i < hud_service->font_chain.count; i++)
-            UnloadFont(hud_service->font_chain.fonts[i]);
-          hud_service->font_chain = font_chain_init((char *)"resources/fonts/NotoSansTC-Regular.ttf",
-                                                    (char *)"resources/fonts/NotoSans-Regular.ttf",
-                                                    45, (int *)hud_code_points.data, hud_code_points.size);
+          for (int i = 0; i < hud_service->font_with_fallback.size; i++)
+          {
+            Font *font = (Font *)list_get(&hud_service->font_with_fallback, i);
+            UnloadFont(*font);
+          }
+          list_clear(&hud_service->font_with_fallback);
+          hud_service->font_with_fallback = fonts_init(&font_list, 45, (int *)hud_code_points.data, hud_code_points.size);
           list_free(&hud_code_points);
+          list_free(&font_list);
 
           PlayMusicStream(music);
           PauseMusicStream(music);

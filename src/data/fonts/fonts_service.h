@@ -11,15 +11,8 @@ bool font_has_glyph(Font f, int cp);
 bool font_is_mark_combining(int cp);
 void font_add_string_to_codepoints(List *list, const char *text);
 
-typedef struct {
-  Font fonts[MAX_FONTS];
-  int count;
-} FontChain;
-
-FontChain font_chain_init(const char *primary_path, const char *fallback_path,
-                        int base_size, int *codepoints, int glyph_count);
-void font_chain_draw(FontChain *chain, const char *text,
-                   Vector2 pos, float size, float spacing, Color tint);
-float font_chain_measure(FontChain *chain, const char *text, float size, float spacing);
+List  fonts_init(List *font_path_list, int base_size, int *codepoints, int glyph_count);
+void  fonts_draw_text(List *font_list, const char *text, Vector2 pos, float size, float spacing, Color tint);
+float fonts_measure_text(List *font_list, const char *text, float size, float spacing);
 
 #endif // FONTS_SERVICE_H
