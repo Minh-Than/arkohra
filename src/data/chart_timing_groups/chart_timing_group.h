@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "./data/custom_types/custom_types.h"
+#include "data/keyframe/value_channel.h"
 
 typedef enum {
   TG_NAME,
@@ -34,6 +35,7 @@ typedef struct {
   List arctaps; List arctap_fps;
   List timing_events;
   List beatlines;
+  ValueChannel hidegroup_channel;
 
 } ChartTimingGroup;
 

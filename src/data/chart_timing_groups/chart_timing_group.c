@@ -5,6 +5,7 @@
 #include "constants.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/gameplay_events.h"
+#include "data/keyframe/value_channel.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
 
@@ -58,6 +59,8 @@ ChartTimingGroup timing_group_init()
   itv_tree_init(&tg.arc_segments_tree, double_compare_asc);
 
   List beatlines; list_init(&beatlines, sizeof(BeatLine)); tg.beatlines = beatlines;
+
+  tg.hidegroup_channel = value_channel_init();
   return tg;
 }
 
@@ -110,6 +113,8 @@ void timing_group_unload(ChartTimingGroup *tg)
   itv_tree_free(&tg->arc_segments_tree);
 
   list_free(&tg->beatlines);
+
+  value_channel_unload(&tg->hidegroup_channel);
 }
 
 static int update_tg_props(char *token, void *user)

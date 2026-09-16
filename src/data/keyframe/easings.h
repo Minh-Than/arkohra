@@ -3,6 +3,8 @@
 
 typedef enum {
   E_LINEAR,
+  E_STEP_START,
+  E_STEP_END,
   E_OUT_SINE,
   E_INOUT_SINE,
   E_IN_SINE,
@@ -34,5 +36,8 @@ typedef enum {
   E_INOUT_BACK,
   E_IN_BACK,
 } EasingType;
+
+float easing_get_unit(EasingType easing, float t);
+float easing_interpolate(EasingType easing, int timing, int start_timing, int end_timing, float from, float to);
 
 #endif // EASINGS_H
