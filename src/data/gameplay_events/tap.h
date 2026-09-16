@@ -1,10 +1,10 @@
 #ifndef TAP_H
 #define TAP_H
 
+#include "data/chart_settings/chart_settings.h"
 #include "data/custom_types/dynamic_list.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
-#include "render/render_service.h"
 typedef struct
 {
   List  connector_x, connector_y;
@@ -15,7 +15,7 @@ typedef struct
 } Tap;
 
 void tap_print(const void *elem);
-void draw_tap(MeshRenderable *tap_r, Tap *tap, RenderContext *render_ctx, float base_bpm, float scroll_speed, double curr_fp);
+void draw_tap(MeshRenderable *tap_r, Tap *tap, ChartSettings *chart_settings, float base_bpm, float scroll_speed, double curr_fp);
 MeshRenderable tap_load_mesh(Texture2D *texture);
 
 typedef struct {

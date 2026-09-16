@@ -2,11 +2,12 @@
 #define ARC_H
 
 #include <string.h>
+#include "data/chart_settings/chart_settings.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
+#include "data/gameplay_events/arc_shader.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
 #include "data/custom_types/custom_types.h"
-#include "render/render_service.h"
 
 // ARC
 typedef enum
@@ -36,7 +37,10 @@ typedef struct {
 } Arc;
 
 int arc_compare_start_timing_asc(const void *a, const void *b);
-MeshRenderable generate_arccap_mesh(Texture2D *texture, RenderContext *render_ctx);
+MeshRenderable generate_arccap_mesh(Texture2D *texture);
+MeshRenderable generate_arc_height_mesh(Texture2D *texture);
+Color arc_get_color_low(int color);
+Color arc_get_color_high(int color);
 void arc_print(const void *elem);
 
 // ARC SEGMENT
@@ -46,18 +50,16 @@ typedef struct {
   double start_fp, end_fp;
 } ArcSegment;
 
-void generate_segment_meshes(ChartTimingGroup *tg, Arc *arc, Texture2D *texture, RenderContext *render_ctx);
-MeshRenderable generate_arc_body_mesh(List *timing_events, Arc *arc, Texture2D *texture, RenderContext *render_ctx, float curr_timing, float increment);
-MeshRenderable generate_arc_shadow_mesh(List *timing_events, Arc *arc, RenderContext *render_ctx, float curr_timing, float increment);
-MeshRenderable generate_arc_head_mesh(Texture2D *texture, RenderContext *render_ctx);
+void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg, Arc *arc, Texture2D *texture, Shader *shader);
+MeshRenderable generate_arc_head_mesh(Texture2D *texture, Shader *shader);
 int arc_segment_compare_start_fp_asc(const void *a, const void *b);
 int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b);
 void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high);
 
-void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos);
-void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, MeshRenderable *mesh_r,
+void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, float z_pos);
+void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, MeshRenderable *mesh_r,
                    float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp);
-void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, RenderContext *render_ctx, float current_ms, float curr_bpm, float z_pos);
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, float z_pos);
 void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, float z_pos);
 void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale, float alpha, float current_ms);
 bool should_draw_height_indicator(ArcSegment *arc_segment);

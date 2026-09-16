@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "mesh_renderable.h"
 #include "raylib.h"
 
@@ -10,6 +11,13 @@ void renderable_update_scroll(MeshRenderable *r, float scroll_offset)
         r->mesh.texcoords[i * 2 + 1] = r->initial_texcoords[i * 2 + 1] - scroll_offset;
 
     UpdateMeshBuffer(r->mesh, 1, r->mesh.texcoords, r->mesh.vertexCount * 2 * sizeof(float), 0);
+}
+
+void renderable_set_transforms(MeshRenderable *renderable, Matrix *transforms, int count)
+{
+  renderable->transforms = (Matrix *)malloc(count * sizeof(Matrix));
+  renderable->transform_count = count;
+  memcpy(renderable->transforms, transforms, count * sizeof(Matrix));
 }
 
 void renderable_draw(MeshRenderable *r)

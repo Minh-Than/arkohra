@@ -1,7 +1,7 @@
 #ifndef SINGLE_LINE_TYPE_H
 #define SINGLE_LINE_TYPE_H
 
-#include "render/texture/texture_service.h"
+#include "raylib.h"
 typedef enum
 {
   SL_LIGHT,
@@ -11,7 +11,7 @@ typedef enum
 } SingleLineType;
 
 SingleLineType single_line_get_by_string(char *str);
-void single_line_load(SingleLineType sl_type, TextureGroup *texture_group);
+Texture2D single_line_get(SingleLineType sl_type);
 void single_line_print(SingleLineType sl_type);
 
 #endif // SINGLE_LINE_TYPE_H

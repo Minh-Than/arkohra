@@ -4,32 +4,29 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 */
 
 #include "data/app_configs/app_config.h"
-#include <sys/param.h>
 #define RINI_IMPLEMENTATION
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 #include "rlgl.h"
 
-#include <time.h>
-#include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include "raylib.h"
 #include "cJSON.h"
 #include "constants.h"
 #include "resource_util.h"
 #include "data/chart_settings/chart_settings.h"
+#include "data/fonts/fonts_service.h"
 #include "gameplay/audio_service.h"
 #include "gameplay/camera/camera_service.h"
 #include "gameplay/chart_reader.h"
-#include "gameplay/hud/hud_services.h"
-#include "render/playfield/playfield_services.h"
 #include "render/render_service.h"
 #include "render/texture/texture_service.h"
 #include "render/texture/skin_side.h"
 #include "render/texture/single_line_type.h"
-#include "render/mesh_renderable.h"
+#include "render/hud/hud_services.h"
+#include "render/notes/notes_service.h"
+#include "render/track/track_service.h"
+#include "render/utils/drawing.h"
 #include "windows/window_inst.h"
 #include "windows/window_services.h"
 
@@ -48,34 +45,14 @@ int main()
 
   WindowGroup window_group      = window_services_init();
 
-  FontServices font_services    = font_services_init(GLSL_VERSION);
-  Shader arc_shader             = LoadShader(
-      TextFormat("resources/shaders/glsl%i/arc_shader.vs", GLSL_VERSION),
-      // 0,
-      TextFormat("resources/shaders/glsl%i/arc_shader.fs", GLSL_VERSION)
-  );
-  int shouldClip_loc = GetShaderLocation(arc_shader, "shouldClip");
-  int negativeBPM_loc = GetShaderLocation(arc_shader, "negativeBPM");
-  int tintLow_loc = GetShaderLocation(arc_shader, "tintLow");
-  int tintHigh_loc = GetShaderLocation(arc_shader, "tintHigh");
-  printf("negativeBPM: %d\n", negativeBPM_loc);
-  printf("mvp loc: %d\n", arc_shader.locs[SHADER_LOC_MATRIX_MVP]);
-  printf("matModel loc: %d\n", arc_shader.locs[SHADER_LOC_MATRIX_MODEL]);
-
   RenderContext render_ctx = {
     .camera          = camera_init_playfield(),
     .chart_settings  = chart_settings_init(&app_configs),
-    .arc_shader = {
-      .shader = arc_shader,
-      .shouldClip_loc = shouldClip_loc,
-      .negativeBPM_loc = negativeBPM_loc,
-      .tintLow_loc = tintLow_loc,
-      .tintHigh_loc = tintHigh_loc
-    },
-    .audio_clock     = { 0 },
+    .audio_clock = { 0 },
+    .track_service = track_service_init(),
+    .notes_service = notes_service_init(GLSL_VERSION),
+    .hud_service = hud_service_init(GLSL_VERSION)
   };
-
-  PlayfieldObjs playfield_objs  = playfield_objs_init(&render_ctx, &texture_group);
 
   InitAudioDevice();
   Wave wave = LoadWave(render_ctx.chart_settings.audio_path);
@@ -83,7 +60,6 @@ int main()
 
   Music music = LoadMusicStream("");
   music.looping = false;
-  bool pause = true;
   SetMusicPan(music, 0.0f);
   SetMusicVolume(music, app_configs.music_volume);
   PlayMusicStream(music);
@@ -101,7 +77,6 @@ int main()
     if (IsFileDropped())
     {
       // Pause audio before processing
-      pause = true;
       PauseMusicStream(music);
       audio_clock_pause(&render_ctx.audio_clock);
 
@@ -146,76 +121,77 @@ int main()
 
           // Reset chart settings
           render_ctx.chart_settings = chart_settings_init(&app_configs);
+          ChartSettings *chart_settings = &render_ctx.chart_settings;
 
-          render_ctx.chart_settings.scroll_speed = app_configs.scroll_speed;
-          text_copy_bounded(render_ctx.chart_settings.chart_path, MAXPATHLEN, TextFormat("%s/%s", dir, chart_path->valuestring));
-          text_copy_bounded(render_ctx.chart_settings.audio_path, MAXPATHLEN, TextFormat("%s/%s", dir, audio_path->valuestring));
+          chart_settings->scroll_speed = app_configs.scroll_speed;
+          text_copy_bounded(chart_settings->chart_path, MAXPATHLEN, TextFormat("%s/%s", dir, chart_path->valuestring));
+          text_copy_bounded(chart_settings->audio_path, MAXPATHLEN, TextFormat("%s/%s", dir, audio_path->valuestring));
 
           cJSON *jacket_path = cJSON_GetObjectItemCaseSensitive(chart_item, "jacketPath");
           if (cJSON_IsString(jacket_path) && jacket_path->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.jacket_path, MAXPATHLEN, TextFormat("%s/%s", dir, jacket_path->valuestring));
+            text_copy_bounded(chart_settings->jacket_path, MAXPATHLEN, TextFormat("%s/%s", dir, jacket_path->valuestring));
 
           cJSON *background_path = cJSON_GetObjectItemCaseSensitive(chart_item, "backgroundPath");
           if (cJSON_IsString(background_path) && background_path->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.background_path, MAXPATHLEN, TextFormat("%s/%s", dir, background_path->valuestring));
+            text_copy_bounded(chart_settings->background_path, MAXPATHLEN, TextFormat("%s/%s", dir, background_path->valuestring));
 
           cJSON *base_bpm = cJSON_GetObjectItemCaseSensitive(chart_item, "baseBpm");
-          if (cJSON_IsNumber(base_bpm)) render_ctx.chart_settings.base_bpm = (float)base_bpm->valuedouble;
+          if (cJSON_IsNumber(base_bpm)) chart_settings->base_bpm = (float)base_bpm->valuedouble;
 
           cJSON *bpm_text = cJSON_GetObjectItemCaseSensitive(chart_item, "bpmText");
           if (cJSON_IsString(bpm_text) && bpm_text->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.bpm_text, 256, bpm_text->valuestring);
+            text_copy_bounded(chart_settings->bpm_text, 256, bpm_text->valuestring);
 
           cJSON *sync_base_bpm = cJSON_GetObjectItemCaseSensitive(chart_item, "syncBaseBpm");
-          if (cJSON_IsBool(sync_base_bpm)) render_ctx.chart_settings.sync_base_bpm = cJSON_IsTrue(sync_base_bpm);
+          if (cJSON_IsBool(sync_base_bpm)) chart_settings->sync_base_bpm = cJSON_IsTrue(sync_base_bpm);
 
           cJSON *title = cJSON_GetObjectItemCaseSensitive(chart_item, "title");
           if (cJSON_IsString(title) && title->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.title, 256, title->valuestring);
+            text_copy_bounded(chart_settings->title, 256, title->valuestring);
 
           cJSON *composer = cJSON_GetObjectItemCaseSensitive(chart_item, "composer");
           if (cJSON_IsString(composer) && composer->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.composer, 256, composer->valuestring);
+            text_copy_bounded(chart_settings->composer, 256, composer->valuestring);
 
           cJSON *alias = cJSON_GetObjectItemCaseSensitive(chart_item, "alias");
           if (cJSON_IsString(alias) && alias->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.alias, 256, alias->valuestring);
+            text_copy_bounded(chart_settings->alias, 256, alias->valuestring);
 
           cJSON *charter = cJSON_GetObjectItemCaseSensitive(chart_item, "charter");
           if (cJSON_IsString(charter) && charter->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.charter, 256, charter->valuestring);
+            text_copy_bounded(chart_settings->charter, 256, charter->valuestring);
 
           cJSON *illustrator = cJSON_GetObjectItemCaseSensitive(chart_item, "illustrator");
           if (cJSON_IsString(illustrator) && illustrator->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.illustrator, 256, illustrator->valuestring);
+            text_copy_bounded(chart_settings->illustrator, 256, illustrator->valuestring);
 
           cJSON *difficulty = cJSON_GetObjectItemCaseSensitive(chart_item, "difficulty");
           if (cJSON_IsString(difficulty) && difficulty->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.difficulty, 256, difficulty->valuestring);
+            text_copy_bounded(chart_settings->difficulty, 256, difficulty->valuestring);
 
           cJSON *chart_constant = cJSON_GetObjectItemCaseSensitive(chart_item, "chartConstant");
-          if (cJSON_IsNumber(chart_constant)) render_ctx.chart_settings.chart_constant = (float)chart_constant->valuedouble;
+          if (cJSON_IsNumber(chart_constant)) chart_settings->chart_constant = (float)chart_constant->valuedouble;
 
           cJSON *difficulty_color = cJSON_GetObjectItemCaseSensitive(chart_item, "difficultyColor");
           if (cJSON_IsString(difficulty_color) && difficulty_color->valuestring != NULL)
-            text_copy_bounded(render_ctx.chart_settings.difficulty_color, 256, difficulty_color->valuestring);
+            text_copy_bounded(chart_settings->difficulty_color, 256, difficulty_color->valuestring);
 
           cJSON *skin = cJSON_GetObjectItemCaseSensitive(chart_item, "skin");
           if (cJSON_IsObject(skin)){
             cJSON *side = cJSON_GetObjectItemCaseSensitive(skin, "side");
             if (cJSON_IsString(side) && side->valuestring != NULL)
             {
-              render_ctx.chart_settings.skin_track = skin_side_get_by_string(side->valuestring);
-              render_ctx.chart_settings.skin_side  = skin_side_get_by_string(side->valuestring);
+              chart_settings->skin_track = skin_side_get_by_string(side->valuestring);
+              chart_settings->skin_side  = skin_side_get_by_string(side->valuestring);
             }
 
             cJSON *track = cJSON_GetObjectItemCaseSensitive(skin, "track");
             if (cJSON_IsString(track) && track->valuestring != NULL)
-              render_ctx.chart_settings.skin_track = skin_side_get_by_string(track->valuestring);
+              chart_settings->skin_track = skin_side_get_by_string(track->valuestring);
 
             cJSON *single_line= cJSON_GetObjectItemCaseSensitive(skin, "singleLine");
             if (cJSON_IsString(single_line) && single_line->valuestring != NULL)
-              render_ctx.chart_settings.sl_type = single_line_get_by_string(single_line->valuestring);
+              chart_settings->sl_type = single_line_get_by_string(single_line->valuestring);
           }
 
           status = true;
@@ -227,7 +203,6 @@ int main()
         if (status)
         {
           // Stop audio entirely
-          pause = true;
           render_ctx.audio_clock.total_audio_length = 0;
           StopMusicStream(music);
           UnloadMusicStream(music);
@@ -240,56 +215,65 @@ int main()
           // Update chart reader
           if(chart_reader.initialized) chart_reader_unload(&chart_reader);
 
-          chart_reader = chart_reader_parse((char *)&render_ctx.chart_settings.chart_path, &render_ctx, &texture_group.arc);
+          chart_reader = chart_reader_parse((char *)&render_ctx.chart_settings.chart_path,
+                                            &render_ctx.chart_settings,
+                                            &render_ctx.audio_clock,
+                                            &render_ctx.notes_service.arc_tex,
+                                            &render_ctx.notes_service.arc_shader.shader);
           chart_settings_print(&render_ctx.chart_settings);
 
           // Update texture group
-          textures_unload(&texture_group);
-          texture_group = textures_init();
-          if (!TextIsEqual(render_ctx.chart_settings.jacket_path, ""))
+          ChartSettings *chart_settings = &render_ctx.chart_settings;
+          TrackService *track_service = &render_ctx.track_service;
+          NotesService *notes_service = &render_ctx.notes_service;
+          HudService *hud_service = &render_ctx.hud_service;
+          if (!TextIsEqual(chart_settings->jacket_path, ""))
           {
-            UnloadTexture(texture_group.jacket_img);
-            texture_group.jacket_img = LoadTexture(render_ctx.chart_settings.jacket_path);
-            if (!IsTextureValid(texture_group.jacket_img))
-              texture_group.jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
-            SetTextureFilter(texture_group.jacket_img, TEXTURE_FILTER_BILINEAR);
+            UnloadTexture(hud_service->jacket_img);
+            hud_service->jacket_img = LoadTexture(chart_settings->jacket_path);
+            if (!IsTextureValid(hud_service->jacket_img))
+              hud_service->jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
+            SetTextureFilter(hud_service->jacket_img, TEXTURE_FILTER_BILINEAR);
           }
-          if (!TextIsEqual(render_ctx.chart_settings.background_path, ""))
+          if (!TextIsEqual(chart_settings->background_path, ""))
           {
-            UnloadTexture(texture_group.background);
-            texture_group.background = LoadTexture(render_ctx.chart_settings.background_path);
-            if (!IsTextureValid(texture_group.background))
-              texture_group.background = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
-            SetTextureFilter(texture_group.background, TEXTURE_FILTER_BILINEAR);
+            UnloadTexture(track_service->background_tex);
+            track_service->background_tex = LoadTexture(chart_settings->background_path);
+            if (!IsTextureValid(track_service->background_tex))
+              track_service->background_tex = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
+            SetTextureFilter(track_service->background_tex, TEXTURE_FILTER_BILINEAR);
           }
 
-          UnloadTexture(texture_group.track);
-          skin_side_load_track(render_ctx.chart_settings.skin_track, &texture_group);
-          SetTextureWrap(texture_group.track, TEXTURE_WRAP_REPEAT);
+          UnloadTexture(track_service->track_tex);
+          track_service->track_tex = skin_side_get_track(chart_settings->skin_track);
+          SetTextureWrap(track_service->track_tex, TEXTURE_WRAP_REPEAT);
 
-          UnloadTexture(texture_group.hold);
-          skin_side_load_hold(render_ctx.chart_settings.skin_side, &texture_group);
-          SetTextureFilter(texture_group.hold, TEXTURE_FILTER_BILINEAR);
+          UnloadTexture(notes_service->hold_tex);
+          notes_service->hold_tex = skin_side_get_hold(chart_settings->skin_side);
+          SetTextureFilter(render_ctx.notes_service.hold_tex, TEXTURE_FILTER_BILINEAR);
 
-          UnloadTexture(texture_group.tap);
-          skin_side_load_tap(render_ctx.chart_settings.skin_side, &texture_group);
-          SetTextureFilter(texture_group.tap, TEXTURE_FILTER_BILINEAR);
+          UnloadTexture(notes_service->tap_tex);
+          notes_service->tap_tex = skin_side_get_tap(chart_settings->skin_side);
+          SetTextureFilter(notes_service->tap_tex, TEXTURE_FILTER_BILINEAR);
 
-          UnloadTexture(texture_group.arctap);
-          skin_side_load_arctap(render_ctx.chart_settings.skin_side, &texture_group);
-          SetTextureFilter(texture_group.arctap, TEXTURE_FILTER_BILINEAR);
+          UnloadTexture(notes_service->arctap_tex);
+          notes_service->arctap_tex = skin_side_get_arctap(chart_settings->skin_side);
+          SetTextureFilter(notes_service->arctap_tex, TEXTURE_FILTER_BILINEAR);
 
-          UnloadTexture(texture_group.single_line);
-          single_line_load(render_ctx.chart_settings.sl_type, &texture_group);
-          SetTextureWrap(texture_group.single_line, TEXTURE_WRAP_REPEAT);
+          UnloadTexture(track_service->single_line_tex);
+          track_service->single_line_tex = single_line_get(chart_settings->sl_type);
+          SetTextureWrap(track_service->single_line_tex, TEXTURE_WRAP_REPEAT);
 
           List hud_code_points; list_init(&hud_code_points, sizeof(int));
           for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
-          AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.title);
-          AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.composer);
-          AddStringToCodepointList(&hud_code_points, render_ctx.chart_settings.difficulty);
-          if (IsFontValid(font_services.hud_notosans_tc_reg)) UnloadFont(font_services.hud_notosans_tc_reg);
-          font_services.hud_notosans_tc_reg = GenerateSDF((char *)"resources/fonts/NotoSansTC-Regular.ttf", 45, (int *)hud_code_points.data, hud_code_points.size);
+          font_add_string_to_codepoints(&hud_code_points, chart_settings->title);
+          font_add_string_to_codepoints(&hud_code_points, chart_settings->composer);
+          font_add_string_to_codepoints(&hud_code_points, chart_settings->difficulty);
+          for (int i = 0; i < hud_service->font_chain.count; i++)
+            UnloadFont(hud_service->font_chain.fonts[i]);
+          hud_service->font_chain = font_chain_init((char *)"resources/fonts/NotoSansTC-Regular.ttf",
+                                                    (char *)"resources/fonts/NotoSans-Regular.ttf",
+                                                    45, (int *)hud_code_points.data, hud_code_points.size);
           list_free(&hud_code_points);
 
           PlayMusicStream(music);
@@ -303,13 +287,13 @@ int main()
 
     if (IsWindowResized()) recalibrate_camera(&render_ctx.camera);
 
-    if (!pause)
+    if (render_ctx.audio_clock.is_playing)
     {
       // Playfield: Track & Single Line Scrolling
       static float scroll_offset = 0.0f;
       scroll_offset += GetFrameTime() * render_ctx.chart_settings.scroll_speed;
-      renderable_update_scroll(&playfield_objs.track      , scroll_offset);
-      renderable_update_scroll(&playfield_objs.single_line, scroll_offset);
+      renderable_update_scroll(&render_ctx.track_service.track      , scroll_offset);
+      renderable_update_scroll(&render_ctx.track_service.single_line, scroll_offset);
     }
 
     if (IsMusicValid(music))
@@ -319,30 +303,26 @@ int main()
 
       if (!IsMusicStreamPlaying(music) && render_ctx.audio_clock.is_playing)
       {
-        pause = true;
         audio_clock_pause(&render_ctx.audio_clock);
       }
 
       if (IsKeyPressed(KEY_Q))
       {
         // Song reached to the end naturally (without manually pausing)
-        if (!pause && !IsMusicStreamPlaying(music))
+        if (render_ctx.audio_clock.is_playing && !IsMusicStreamPlaying(music))
         {
-          pause = false;
           StopMusicStream(music);
           PlayMusicStream(music);
           audio_clock_start(&render_ctx.audio_clock);
         }
         else
         {
-          pause = !pause;
-          if (pause) { PauseMusicStream(music) ; audio_clock_pause(&render_ctx.audio_clock) ; }
-          else       { ResumeMusicStream(music); audio_clock_resume(&render_ctx.audio_clock); }
+          if (render_ctx.audio_clock.is_playing) { PauseMusicStream(music) ; audio_clock_pause(&render_ctx.audio_clock) ; }
+          else                                   { ResumeMusicStream(music); audio_clock_resume(&render_ctx.audio_clock); }
         }
       }
       if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_Q))
       {
-        pause = true;
         StopMusicStream(music);
         PlayMusicStream(music);
         PauseMusicStream(music);
@@ -370,8 +350,7 @@ int main()
     BeginDrawing();
       ClearBackground(WHITE);
 
-      playfield_render(&render_ctx, &chart_reader, &texture_group, &playfield_objs, current_ms - render_ctx.chart_settings.audio_offset);
-      hud_services_render(&texture_group, &render_ctx.chart_settings, &font_services);
+      render_scenes(&render_ctx, &chart_reader, current_ms);
       windows_services_render(&window_group);
 
       // Debug FPS
@@ -394,10 +373,9 @@ int main()
   CloseAudioDevice();
 
   chart_reader_unload(&chart_reader);
-  playfield_objs_unload(&playfield_objs);
   textures_unload(&texture_group);
   windows_services_unload(&window_group);
-  font_services_unload(&font_services);
+  render_unload(&render_ctx);
 
   // One last config writing just in case
   app_configs_write_to_file(&app_configs, &rini_d);

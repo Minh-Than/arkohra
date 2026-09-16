@@ -5,7 +5,7 @@
 #include "color_services.h"
 #include "raylib.h"
 
-Color color_from_rgba(const unsigned char rgba[4]) { return (Color){rgba[0], rgba[1], rgba[2], rgba[3]}; }
+Color color_from_rgba(const unsigned char rgba[4]) { return (Color){rgba[0], rgba[1], rgba[2], rgba[3] ? rgba[3] : 255}; }
 
 Color color_from_hex(const char* hex)
 {

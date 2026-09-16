@@ -13,7 +13,6 @@
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
 #include "render/note_render_lists.h"
-#include "render/render_service.h"
 
 void chart_reader_print(ChartReader *chart_reader)
 {
@@ -187,7 +186,7 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
   }
 }
 
-static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_reader, Texture2D *arc_texture)
+static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_clock, ChartReader *chart_reader, Texture2D *arc_texture, Shader *arc_shader)
 {
   for(int i = 0; i < chart_reader->timing_groups.size; i++)
   {
@@ -201,7 +200,7 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
     // Beatlines
     if (tg->value == 0)
     {
-      tg->beatlines = beatline_generate(tg, render_ctx->audio_clock.total_audio_length, render_ctx->chart_settings.audio_offset,
+      tg->beatlines = beatline_generate(tg, audio_clock->total_audio_length, chart_settings->audio_offset,
                                         color_from_rgba(BEATLINE_CL), BEATLINE_THICKNESS);
       list_sort_by(&tg->beatlines, beatline_compare_fp_asc);
     }
@@ -256,7 +255,7 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
             fabsf(connected_arc->y1 - arc->y2) > 1e-6) continue;
         if (!(connected_arc->is_void ^ arc->is_void)) connected_arc->is_head = false;
       }
-      generate_segment_meshes(tg, arc, arc_texture, render_ctx);
+      generate_segment_meshes(chart_settings, tg, arc, arc_texture, arc_shader);
     };
     list_sort_by(&tg->arc_segments, arc_segment_compare_start_fp_asc);
     arc_segment_build_tree(&tg->arc_segments_tree, &tg->arc_segments, 0, tg->arc_segments.size - 1);
@@ -271,7 +270,7 @@ static void parse_post_process(RenderContext *render_ctx, ChartReader *chart_rea
   }
 }
 
-ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Texture2D *arc_texture)
+ChartReader chart_reader_parse(char *file_path, ChartSettings *chart_settings, AudioClock *audio_clock, Texture2D *arc_texture, Shader *arc_shader)
 {
   ChartReader chart_reader = { 0 };
 
@@ -286,8 +285,8 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
   chart_reader.render_lists = (NoteRenderLists){ 0 };
   render_lists_initialize(&chart_reader.render_lists);
 
-  chart_reader.low_z_clip  = z_to_floor_position(   9.0f, render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
-  chart_reader.high_z_clip = z_to_floor_position(-100.0f, render_ctx->chart_settings.base_bpm, render_ctx->chart_settings.scroll_speed);
+  chart_reader.low_z_clip  = z_to_floor_position(   9.0f, chart_settings->base_bpm, chart_settings->scroll_speed);
+  chart_reader.high_z_clip = z_to_floor_position(-100.0f, chart_settings->base_bpm, chart_settings->scroll_speed);
 
   int line_count = 0;
   char **lines = LoadTextLines(aff_data, &line_count);
@@ -302,7 +301,7 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
 
     if (is_header)
     {
-      if (parse_aff_header(line, &render_ctx->chart_settings)) is_header = false;
+      if (parse_aff_header(line, chart_settings)) is_header = false;
       continue;
     }
 
@@ -313,14 +312,14 @@ ChartReader chart_reader_parse(char *file_path, RenderContext *render_ctx, Textu
   }
   if (lines != NULL) UnloadFileText(aff_data);
 
-  parse_post_process(render_ctx, &chart_reader, arc_texture);
+  parse_post_process(chart_settings, audio_clock, &chart_reader, arc_texture, arc_shader);
   chart_reader_print(&chart_reader);
 
   chart_reader.initialized = true;
   return chart_reader;
 }
 
-static void process_note_render_lists(ChartReader *chart_reader, RenderContext *render_ctx, float current_ms, double *curr_fps, float *curr_bpms)
+void process_note_render_lists(ChartReader *chart_reader, ChartSettings *chart_settings, float current_ms, double *curr_fps, float *curr_bpms)
 {
   render_lists_clear(&chart_reader->render_lists);
 
@@ -330,7 +329,7 @@ static void process_note_render_lists(ChartReader *chart_reader, RenderContext *
 
     double curr_fp = get_floor_position(&tg->timing_events, current_ms);
     TimingEvent *curr_event = get_event_at(&tg->timing_events, current_ms);
-    float curr_bpm = curr_event != NULL ? curr_event->bpm : render_ctx->chart_settings.base_bpm;
+    float curr_bpm = curr_event != NULL ? curr_event->bpm : chart_settings->base_bpm;
     curr_fps[i]  = curr_fp;
     curr_bpms[i] = curr_bpm;
 
@@ -387,24 +386,4 @@ static void process_note_render_lists(ChartReader *chart_reader, RenderContext *
   list_sort_by(&chart_reader->render_lists.tap_render_list, tapfp_compare_fp_asc);
   list_sort_by(&chart_reader->render_lists.arc_render_list, arc_segment_const_void_compare_start_fp_asc);
   list_sort_by(&chart_reader->render_lists.arctap_render_list, arctapfp_compare_fp_asc);
-}
-
-void chart_reader_render_notes(RenderContext *render_ctx, ChartReader* chart_reader,
-                               HoldTapRenderer *hold_tap_renderer, ArcRenderer *arc_renderer, ArctapRenderer *arctap_renderer,
-                               float current_ms)
-{
-  if (!chart_reader->initialized) return;
-
-  float base_bpm     = render_ctx->chart_settings.base_bpm;
-  float scroll_speed = render_ctx->chart_settings.scroll_speed;
-  double curr_fps[chart_reader->timing_groups.size];
-  float curr_bpms[chart_reader->timing_groups.size];
-
-  process_note_render_lists(chart_reader, render_ctx, current_ms, curr_fps, curr_bpms);
-  List *tgs           = &chart_reader->timing_groups;
-  NoteRenderLists *ls = &chart_reader->render_lists;
-
-  render_holds_taps      (tgs, ls, render_ctx, hold_tap_renderer, current_ms, base_bpm, scroll_speed, curr_fps);
-  render_arcs_and_shadows(tgs, ls, render_ctx, arc_renderer     , current_ms, base_bpm, scroll_speed, curr_fps, curr_bpms);
-  render_arctaps         (tgs, ls, render_ctx, arctap_renderer  , current_ms, base_bpm, scroll_speed, curr_fps, curr_bpms);
 }

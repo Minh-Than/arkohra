@@ -1,7 +1,7 @@
 #ifndef SKIN_SIDE
 #define SKIN_SIDE
 
-#include "render/texture/texture_service.h"
+#include "raylib.h"
 typedef enum
 {
   SK_LIGHT,
@@ -18,9 +18,9 @@ typedef enum
 } SkinSide;
 
 SkinSide skin_side_get_by_string(char *str);
-void skin_side_load_track(SkinSide side, TextureGroup *texture_group);
-void skin_side_load_hold(SkinSide side, TextureGroup *texture_group);
-void skin_side_load_tap(SkinSide side, TextureGroup *texture_group);
-void skin_side_load_arctap(SkinSide side, TextureGroup *texture_group);
+Texture2D skin_side_get_track(SkinSide side);
+Texture2D skin_side_get_hold(SkinSide side);
+Texture2D skin_side_get_tap(SkinSide side);
+Texture2D skin_side_get_arctap(SkinSide side);
 void skin_side_print(SkinSide side);
 #endif  // SKIN_SIDE

@@ -10,15 +10,18 @@ SingleLineType single_line_get_by_string(char *str)
   return SL_NONE;
 }
 
-void single_line_load(SingleLineType sl_type, TextureGroup *texture_group)
+Texture2D single_line_get(SingleLineType sl_type)
 {
+  Texture2D texture;
   switch (sl_type)
   {
-    case SL_LIGHT:      texture_group->single_line = LoadTexture("resources/gameplay/SingleLine/SingleLineLight.png"); break;
-    case SL_CONFLICT:   texture_group->single_line = LoadTexture("resources/gameplay/SingleLine/SingleLineConflict.png"); break;
-    case SL_NEO:        texture_group->single_line = LoadTexture("resources/gameplay/SingleLine/SingleLineNeo.png"); break;
-    default:            texture_group->single_line = LoadTexture("resources/gameplay/SingleLine/SingleLineNone.png"); break;
+    case SL_LIGHT:      texture = LoadTexture("resources/gameplay/SingleLine/SingleLineLight.png"); break;
+    case SL_CONFLICT:   texture = LoadTexture("resources/gameplay/SingleLine/SingleLineConflict.png"); break;
+    case SL_NEO:        texture = LoadTexture("resources/gameplay/SingleLine/SingleLineNeo.png"); break;
+    default:            texture = LoadTexture("resources/gameplay/SingleLine/SingleLineNone.png"); break;
   }
+
+  return texture;
 }
 
 void single_line_print(SingleLineType sl_type)

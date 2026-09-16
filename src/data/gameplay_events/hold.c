@@ -36,9 +36,9 @@ void draw_hold(MeshRenderable *hold_r, Hold *hold, float current_ms, float base_
 MeshRenderable hold_load_mesh(Texture2D *texture)
 {
   const int VERTICES_COUNT  = 4;
-  const int TRIANGLE_COUNT  = 4;
+  const int TRIANGLE_COUNT  = 2;
   const int TEXCOORDS_COUNT = 4;
-  const int INDICES_COUNT   = 3;
+  const int INDICES_COUNT   = TRIANGLE_COUNT * 3;
 
   MeshRenderable r = { 0 };
 
@@ -47,7 +47,7 @@ MeshRenderable hold_load_mesh(Texture2D *texture)
   
   r.mesh.vertices  =          (float *)malloc(VERTICES_COUNT * 3 * sizeof(float));
   r.mesh.texcoords =          (float *)malloc(TEXCOORDS_COUNT * 2 * sizeof(float));
-  r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * 2 * sizeof(unsigned short));
+  r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * sizeof(unsigned short));
 
   float v[VERTICES_COUNT * 3] = {
     -1.08f, 0.0f, 0.0f,
@@ -61,11 +61,11 @@ MeshRenderable hold_load_mesh(Texture2D *texture)
     0.5f, 0.0f,
     0.0f, 0.0f,
   };
-  unsigned short idx[INDICES_COUNT * 2] = {0, 1, 2, 0, 2, 3};
+  unsigned short idx[INDICES_COUNT] = {0, 1, 2, 0, 2, 3};
 
   for (int i = 0; i < VERTICES_COUNT * 3 ; i++) r.mesh.vertices[i]  = v[i];
   for (int i = 0; i < TEXCOORDS_COUNT * 2; i++) r.mesh.texcoords[i] = uv[i];
-  for (int i = 0; i < INDICES_COUNT * 2  ; i++) r.mesh.indices[i]   = idx[i];
+  for (int i = 0; i < INDICES_COUNT      ; i++) r.mesh.indices[i]   = idx[i];
 
   UploadMesh(&r.mesh, false);
 
