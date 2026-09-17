@@ -20,7 +20,7 @@ void tap_print(const void *elem)
 void draw_tap(MeshRenderable *tap_r, Tap *tap, ChartSettings *chart_settings, float base_bpm, float scroll_speed, double curr_fp)
 {
   double diff_fp = tap->fp - curr_fp;
-  float z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
+  double z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
   float z_scale = Clamp(Lerp(1.8f, 5.8f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
                         1.8f, 5.8f);
   float fade_ratio = (z_pos - TAP_STOP_FADE) / (TAP_START_FADE - TAP_STOP_FADE);

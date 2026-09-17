@@ -333,8 +333,8 @@ ChartReader chart_reader_parse(char *file_path, ChartSettings *chart_settings, A
   chart_reader.render_lists = (NoteRenderLists){ 0 };
   render_lists_initialize(&chart_reader.render_lists);
 
-  chart_reader.low_z_clip  = z_to_floor_position(   9.0f, chart_settings->base_bpm, chart_settings->scroll_speed);
-  chart_reader.high_z_clip = z_to_floor_position(-100.0f, chart_settings->base_bpm, chart_settings->scroll_speed);
+  chart_reader.low_z_clip  = z_to_floor_position(   9.0, chart_settings->base_bpm, chart_settings->scroll_speed);
+  chart_reader.high_z_clip = z_to_floor_position(-100.0, chart_settings->base_bpm, chart_settings->scroll_speed);
 
   int line_count = 0;
   char **lines = LoadTextLines(aff_data, &line_count);

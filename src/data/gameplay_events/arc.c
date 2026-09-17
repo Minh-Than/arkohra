@@ -192,13 +192,13 @@ MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timin
 
     // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
     float segment_start_timing = curr_timing + arc->start_timing;
-    float z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
+    double z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
                                           chart_settings->base_bpm,
                                           chart_settings->scroll_speed);
-    float z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
+    double z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
                                           chart_settings->base_bpm,
                                           chart_settings->scroll_speed);
-    float world_z  = z_target - z_segment;
+    double world_z  = z_target - z_segment;
 
     // each x-y-z per vertex
     for (int k = 0; k < 3; k++)
@@ -315,10 +315,10 @@ MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *tim
 
     // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
     float segment_start_timing = curr_timing + arc->start_timing;
-    float z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
+    double z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
                                           chart_settings->base_bpm,
                                           chart_settings->scroll_speed);
-    float z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
+    double z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
                                           chart_settings->base_bpm,
                                           chart_settings->scroll_speed);
     float world_z  = z_target - z_segment;
@@ -471,7 +471,7 @@ void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high)
   arc_segment_build_tree(tree, list, mid + 1, high);
 }
 
-void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, float z_pos)
+void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos)
 {
   Arc *arc = arc_segment->arc;
   float fade_ratio = (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE);
@@ -494,7 +494,7 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc
   Arc *arc = arc_segment->arc;
   if (!arc->is_head) return;
   if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) return;
-  float z_pos = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
+  double z_pos = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
 
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
@@ -523,7 +523,7 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc
   DrawMesh(mesh_r->mesh, mesh_r->material, tr);
 }
 
-void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, float z_pos)
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos)
 {
   Arc *arc = arc_segment->arc;
 
@@ -548,7 +548,7 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *
   DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
 }
 
-void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, float z_pos)
+void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, double z_pos)
 {
   if (!should_draw_height_indicator(arc_segment)) return;
 

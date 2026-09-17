@@ -5,9 +5,9 @@
 #include "data/chart_timing_groups/chart_timing_group.h"
 
 float lane_to_world_x(float lane);
-double z_to_floor_position(float z, float base_bpm, float scroll_speed);
-float floor_position_to_z(double fp, float base_bpm, float scroll_speed);
-void batch_fp_to_z(double *fp_list, float *out, int count, float base_bpm, float scroll_speed);
+double z_to_floor_position(double z, float base_bpm, float scroll_speed);
+double floor_position_to_z(double fp, float base_bpm, float scroll_speed);
+void batch_fp_to_z(double *fp_list, double *out, int count, float base_bpm, float scroll_speed);
 void recalculate_floor_position(ChartTimingGroup *timing_group);
 TimingEvent *get_event_at(List *timing_events, int timing);
 double get_floor_position(List *timing_events, int timing);

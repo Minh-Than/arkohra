@@ -17,20 +17,20 @@ float lane_to_world_x(float lane)
   return (LANE_WIDTH * lane) + (-LANE_WIDTH * 2.5f);
 }
 
-double z_to_floor_position(float z, float base_bpm, float scroll_speed)
+double z_to_floor_position(double z, float base_bpm, float scroll_speed)
 {
   float final_scroll_speed = fminf(fmaxf(MINIMUM_SCROLL_SPEED, scroll_speed), MAXIMUM_SCROLL_SPEED);
-  return (double)z * base_bpm * -32 / final_scroll_speed;
+  return z * base_bpm * -32 / final_scroll_speed;
 }
 
-float floor_position_to_z(double fp, float base_bpm, float scroll_speed)
+double floor_position_to_z(double fp, float base_bpm, float scroll_speed)
 {
   float final_scroll_speed = fminf(fmaxf(MINIMUM_SCROLL_SPEED, scroll_speed), MAXIMUM_SCROLL_SPEED);
-  return (float)(fp / base_bpm / -32 * final_scroll_speed);
+  return fp / base_bpm / -32 * final_scroll_speed;
 }
 
 #if defined(__x86_64__) || defined(__i386__)
-void batch_fp_to_z(double *fp_list, float *out, int count, float base_bpm, float scroll_speed)
+void batch_fp_to_z(double *fp_list, double *out, int count, float base_bpm, float scroll_speed)
 {
   __m128d base_bpm_v     = _mm_set1_pd(base_bpm);
   __m128d constant_v     = _mm_set1_pd(-32.0);
@@ -43,13 +43,13 @@ void batch_fp_to_z(double *fp_list, float *out, int count, float base_bpm, float
     __m128d z  = _mm_div_pd(fp, base_bpm_v);
     z          = _mm_div_pd(z, constant_v);
     z          = _mm_mul_pd(z, scroll_speed_v);
-    _mm_storel_epi64((__m128i *)&out[i], _mm_castps_si128(_mm_cvtpd_ps(z)));
+    _mm_storeu_pd(&out[i], z);
   }
   for (; i < count; i++)
     out[i] = floor_position_to_z(fp_list[i], base_bpm, scroll_speed);
 }
 #elif defined(__aarch64__)
-void batch_fp_to_z(double *fp_list, float *out, int count, float base_bpm, float scroll_speed)
+void batch_fp_to_z(double *fp_list, double *out, int count, float base_bpm, float scroll_speed)
 {
   float64x2_t base_bpm_v     = vdupq_n_f64(base_bpm);
   float64x2_t constant_v     = vdupq_n_f64(-32.0);
@@ -62,13 +62,13 @@ void batch_fp_to_z(double *fp_list, float *out, int count, float base_bpm, float
     float64x2_t z  = vdivq_f64(fp, base_bpm_v);
     z              = vdivq_f64(z, constant_v);
     z              = vmulq_f64(z, scroll_speed_v);
-    vst1_f32(&out[i], vcvt_f32_f64(z));
+    vst1q_f64(&out[i], z);
   }
   for (; i < count; i++)
     out[i] = floor_position_to_z(fp_list[i], base_bpm, scroll_speed);
 }
 #else
-void batch_fp_to_z(double *fp_list, float *out, int count, float base_bpm, float scroll_speed)
+void batch_fp_to_z(double *fp_list, double *out, int count, float base_bpm, float scroll_speed)
 {
   for (int i = 0; i < count; i++)
     out[i] = floor_position_to_z(fp_list[i], base_bpm, scroll_speed);

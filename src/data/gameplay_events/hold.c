@@ -22,7 +22,7 @@ void hold_print(const void *elem)
 
 void draw_hold(MeshRenderable *hold_r, Hold *hold, float current_ms, float base_bpm, float scroll_speed, double curr_fp)
 {
-  float z_pos   = floor_position_to_z(hold->start_fp - curr_fp, base_bpm, scroll_speed);
+  double z_pos   = floor_position_to_z(hold->start_fp - curr_fp, base_bpm, scroll_speed);
   float z_scale = floor_position_to_z(hold->end_fp - hold->start_fp, base_bpm, scroll_speed);
   float alpha   = hold->start_timing < current_ms && !hold->is_active ? 0.5f : 1.0f;
   hold_r->material.maps->color = ColorAlpha(hold_r->material.maps->color, alpha);
