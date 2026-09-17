@@ -228,22 +228,24 @@ int main()
           TrackService *track_service = &render_ctx.track_service;
           NotesService *notes_service = &render_ctx.notes_service;
           HudService *hud_service = &render_ctx.hud_service;
+
+          UnloadTexture(hud_service->jacket_img);
           if (!TextIsEqual(chart_settings->jacket_path, ""))
           {
-            UnloadTexture(hud_service->jacket_img);
             hud_service->jacket_img = LoadTexture(chart_settings->jacket_path);
             if (!IsTextureValid(hud_service->jacket_img))
               hud_service->jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
-            SetTextureFilter(hud_service->jacket_img, TEXTURE_FILTER_BILINEAR);
-          }
+          } else hud_service->jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
+          SetTextureFilter(hud_service->jacket_img, TEXTURE_FILTER_BILINEAR);
+
+          UnloadTexture(track_service->background_tex);
           if (!TextIsEqual(chart_settings->background_path, ""))
           {
-            UnloadTexture(track_service->background_tex);
             track_service->background_tex = LoadTexture(chart_settings->background_path);
             if (!IsTextureValid(track_service->background_tex))
               track_service->background_tex = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
-            SetTextureFilter(track_service->background_tex, TEXTURE_FILTER_BILINEAR);
-          }
+          } else track_service->background_tex = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
+          SetTextureFilter(track_service->background_tex, TEXTURE_FILTER_BILINEAR);
 
           UnloadTexture(track_service->track_tex);
           track_service->track_tex = skin_side_get_track(chart_settings->skin_track);
