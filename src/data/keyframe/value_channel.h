@@ -5,12 +5,13 @@
 #include "data/keyframe/easings.h"
 
 typedef struct {
-  float value;
-  int timing;
+  float prev_value, next_value;
+  int start_timing, end_timing;
   EasingType easing;
 } ValueKeyframe;
 
-int value_kf_compare_timing_asc(const void *a, const void *b);
+void value_kf_print(ValueKeyframe kf);
+int value_kf_compare_start_timing_asc(const void *a, const void *b);
 
 typedef struct {
   List keyframes;
@@ -18,7 +19,8 @@ typedef struct {
 } ValueChannel;
 
 ValueChannel value_channel_init();
-void value_channel_interpolate(ValueChannel *channel, int timing);
+int value_channel_interpolate(ValueChannel *channel, int timing);
+void value_channel_print(ValueChannel *channel);
 void value_channel_unload(ValueChannel *channel);
 
 #endif // VALUE_CHANNEL_H

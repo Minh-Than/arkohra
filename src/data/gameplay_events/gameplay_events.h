@@ -16,6 +16,7 @@ typedef enum
   ARC,
   ARCTAP,
   TIMING_GROUP,
+  SCENECONTROL,
   NO_EVENT
 } RawEventType;
 

@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include "color_services.h"
 #include "constants.h"
+#include "data/gameplay_events/scenecontrol/scenecontrols.h"
+#include "data/keyframe/easings.h"
+#include "data/keyframe/value_channel.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include "chart_reader.h"
@@ -182,6 +185,32 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
         }
       }
       break;
+    case SCENECONTROL:
+      {
+        int timing;
+        char name[128];
+        float duration, value;
+        int matched = sscanf(line, "scenecontrol(%d,%127[^,],%f,%f);", &timing, name, &duration, &value);
+        if (matched == 4)
+        {
+          SCType sc_type = scenecontrol_determine_type(name);
+          switch (sc_type)
+          {
+            case SC_HIDEGROUP:
+            {
+              ValueKeyframe kf = { .next_value = value, .start_timing = timing, .easing = E_STEP_END };
+              list_push(&tg->hidegroup_channel.keyframes, &kf);
+              if (fabsf(duration) > 1e-6)
+              {
+                ValueKeyframe kf_end = { .prev_value = value, .next_value = value, .start_timing = timing, .easing = E_STEP_END };
+                list_push(&tg->hidegroup_channel.keyframes, &kf_end);
+              }
+              break;
+            }
+            default: break;
+          }
+        }
+      }
     default: break;
   }
 }
@@ -193,6 +222,25 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
     ChartTimingGroup *tg = (ChartTimingGroup *)list_get(&chart_reader->timing_groups, i);
     list_sort_by(&tg->timing_events, timing_event_compare_timing_asc);
     recalculate_floor_position(tg);
+
+    list_sort_by(&tg->hidegroup_channel.keyframes, value_kf_compare_start_timing_asc);
+    int hg_prev_value = 0;
+    for (int j = 0; j < tg->hidegroup_channel.keyframes.size; j++)
+    {
+      ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->hidegroup_channel.keyframes, j);
+      if (j == 0)
+      {
+        hg_prev_value = kf->next_value;
+        continue;
+      }
+
+      kf->prev_value = hg_prev_value;
+      hg_prev_value = kf->next_value;
+      ValueKeyframe *prev_kf = (ValueKeyframe *)list_get(&tg->hidegroup_channel.keyframes, j - 1);
+      prev_kf->end_timing = kf->start_timing;
+      
+      if (j == tg->hidegroup_channel.keyframes.size - 1) kf->end_timing = kf->start_timing + 1;
+    }
 
     list_sort_by(&tg->arcs, arc_compare_start_timing_asc);
     chart_reader_rebuild_arctaps(tg);

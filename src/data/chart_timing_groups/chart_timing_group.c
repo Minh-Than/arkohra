@@ -5,6 +5,7 @@
 #include "constants.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/gameplay_events.h"
+#include "data/keyframe/easings.h"
 #include "data/keyframe/value_channel.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
@@ -61,6 +62,9 @@ ChartTimingGroup timing_group_init()
   List beatlines; list_init(&beatlines, sizeof(BeatLine)); tg.beatlines = beatlines;
 
   tg.hidegroup_channel = value_channel_init();
+  ValueKeyframe init_hidegroup_kf = { .prev_value = 0.0f, .next_value = 0.0f, .start_timing = 0, .end_timing = 0, .easing = E_STEP_END };
+  list_push(&tg.hidegroup_channel.keyframes, &init_hidegroup_kf);
+
   return tg;
 }
 
@@ -69,11 +73,13 @@ void timing_group_info_print(ChartTimingGroup *tg)
   printf("\n\x1b[32mTiming group %d (%s):\x1b[0m\n", tg->value, tg->props.name);
   tg_props_print(&tg->props);
   printf("---------------------\n");
-  printf("- Event count:  \x1b[33m%zu\n\x1b[0m", tg->timing_events.size);
-  printf("- Tap count:    \x1b[33m%zu\n\x1b[0m", tg->taps.size);
-  printf("- Hold count:   \x1b[33m%zu\n\x1b[0m", tg->holds.size);
-  printf("- Arc count:    \x1b[33m%zu\n\x1b[0m", tg->arcs.size);
-  printf("- Arctap count: \x1b[33m%zu\n\x1b[0m", tg->arctaps.size);
+  printf("- Event count:  \x1b[33m%zu\x1b[0m\n", tg->timing_events.size);
+  printf("- Tap count:    \x1b[33m%zu\x1b[0m\n", tg->taps.size);
+  printf("- Hold count:   \x1b[33m%zu\x1b[0m\n", tg->holds.size);
+  printf("- Arc count:    \x1b[33m%zu\x1b[0m\n", tg->arcs.size);
+  printf("- Arctap count: \x1b[33m%zu\x1b[0m\n", tg->arctaps.size);
+  printf("---------------------\n");
+  printf("- Hidegroup keyframes: \x1b[33m%zu\x1b[0m\n", tg->hidegroup_channel.keyframes.size);
   printf("\n");
 }
 
