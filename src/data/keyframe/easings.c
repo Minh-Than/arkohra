@@ -17,6 +17,7 @@ float easing_get_unit(EasingType easing, float t)
 {
   switch (easing)
   {
+    default:
     case E_LINEAR:        return t;
     case E_STEP_START:    return t <= 0.0f ? 0.0f : 1.0f;
     case E_STEP_END:      return t <= 1.0f ? 0.0f : 1.0f;
@@ -79,6 +80,6 @@ float easing_interpolate(EasingType easing, int timing, int start_timing, int en
 {
   if (fabsf(from - to) < 1e-6) return from;
   if (start_timing == end_timing) return from;
-  const float unit_val = (float)(timing - from) / (float)(to - from);
-  return start_timing + (end_timing - start_timing) * easing_get_unit(easing, unit_val);
+  const float unit_val = (float)(timing - start_timing) / (float)(end_timing - start_timing);
+  return from + (to - from) * easing_get_unit(easing, unit_val);
 }

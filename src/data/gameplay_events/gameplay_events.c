@@ -6,8 +6,9 @@ RawEventType determine_type(char *line)
 {
   if(line == NULL) return NO_EVENT;
 
-  if (strstr(line, (const char*)"timinggroup(") != NULL) return TIMING_GROUP;
-  if (strstr(line, (const char*)"timing(")      != NULL) return TIMING_EVENT;
+  if (strstr(line, (const char*)"timinggroup(") != NULL)  return TIMING_GROUP;
+  if (strstr(line, (const char*)"timing(")      != NULL)  return TIMING_EVENT;
+  if (strstr(line, (const char*)"scenecontrol(") != NULL) return SCENECONTROL;
 
   char c = line[0];
   if (c == '(') return TAP;
