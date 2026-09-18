@@ -114,6 +114,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
           Tap *tap = ((TapFP *)list_get(tap_list, i))->tap;
           ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, tap->timing_group);
           if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+          if (tg->props.no_input && tap->timing - current_ms < 0) continue;
           double curr_fp = curr_fps[tap->timing_group];
           draw_tap(&notes_service->tap, tap, chart_settings, base_bpm, scroll_speed, curr_fp);
         }
@@ -140,6 +141,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arctap->timing_group);
         if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
         if (tg->props.no_shadow) continue;
+        if (tg->props.no_input && arctap->timing - current_ms < 0) continue;
         double curr_fp = curr_fps[arctap->timing_group];
         double z_pos    = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
         float fade_ratio = (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE);
@@ -225,8 +227,10 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
       for(int i = arc_list->size - 1; i >= 0; i--)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
+        struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
         if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+        if (tg->props.no_input && arc->start_timing - current_ms < 0) continue;
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
         draw_arc_head(tg, arc_segment, &notes_service->arc_shader, &notes_service->arc_head,
@@ -248,6 +252,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         ArcTap *arctap = arctap_fp->arctap;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arctap->timing_group);
         if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+        if (tg->props.no_input && arctap->timing - current_ms < 0) continue;
         double curr_fp = curr_fps[arctap->timing_group];
         double z_pos    = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
         draw_arctap(&notes_service->arctap, arctap, z_pos);
