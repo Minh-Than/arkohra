@@ -60,13 +60,17 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
 
   float base_bpm = chart_settings->base_bpm;
   float scroll_speed = chart_settings->scroll_speed;
+
+  // Precalculate tg related values for reuse
   double curr_fps[chart_reader->timing_groups.size];
   float curr_bpms[chart_reader->timing_groups.size];
+  bool hidegroup_actives[chart_reader->timing_groups.size];
   process_note_render_lists(chart_reader, chart_settings, current_ms, curr_fps, curr_bpms);
   for (int i = 0; i < timing_groups->size; i++)
   {
     ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
     tg->hidegroup_channel.current_value = value_channel_interpolate(&tg->hidegroup_channel, current_ms);
+    hidegroup_actives[i] = fabsf(tg->hidegroup_channel.current_value) > 1e-6;
   }
 
   // Beatlines
@@ -103,7 +107,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         {
           Hold *hold = *(Hold **)list_get(hold_list, i);
           ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, hold->timing_group);
-          if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+          if (hidegroup_actives[tg->value]) continue;
           double curr_fp = curr_fps[hold->timing_group];
           draw_hold(&notes_service->hold, hold, current_ms, base_bpm, scroll_speed, curr_fp);
         }
@@ -113,7 +117,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         {
           Tap *tap = ((TapFP *)list_get(tap_list, i))->tap;
           ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, tap->timing_group);
-          if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+          if (hidegroup_actives[tg->value]) continue;
           if (tg->props.no_input && tap->timing - current_ms < 0) continue;
           double curr_fp = curr_fps[tap->timing_group];
           draw_tap(&notes_service->tap, tap, chart_settings, base_bpm, scroll_speed, curr_fp);
@@ -139,7 +143,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         ArcTapFP *arctap_fp = (ArcTapFP *)list_get(arctap_list, i);
         ArcTap *arctap = arctap_fp->arctap;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arctap->timing_group);
-        if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+        if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_shadow) continue;
         if (tg->props.no_input && arctap->timing - current_ms < 0) continue;
         double curr_fp = curr_fps[arctap->timing_group];
@@ -157,7 +161,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
-        if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+        if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_shadow) continue;
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
@@ -171,7 +175,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arccap_list, i);
         struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc->timing_group);
-        if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+        if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_arccap) continue;
         if (!between_int_range_inclusive(current_ms, arc->start_timing, arc->end_timing)) continue;
         draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, ARCCAP_ALPHA, current_ms);
@@ -182,7 +186,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
-        if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+        if (hidegroup_actives[tg->value]) continue;
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
         double z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
@@ -198,7 +202,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
         struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc->timing_group);
-        if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+        if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_arccap) continue;
         if (arc->is_void) continue;
         if (!arc->is_head) continue;
@@ -229,7 +233,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
         struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
-        if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+        if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_input && arc->start_timing - current_ms < 0) continue;
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
@@ -251,7 +255,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         ArcTapFP *arctap_fp = (ArcTapFP *)list_get(arctap_list, i);
         ArcTap *arctap = arctap_fp->arctap;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arctap->timing_group);
-        if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
+        if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_input && arctap->timing - current_ms < 0) continue;
         double curr_fp = curr_fps[arctap->timing_group];
         double z_pos    = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
