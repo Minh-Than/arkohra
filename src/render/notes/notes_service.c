@@ -224,7 +224,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc->timing_group);
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_arccap) continue;
-        if (arc->prev_arc != NULL) continue;
+        if (arc->next_arc != NULL) continue;
         if (abs(arc->end_timing - arc->start_timing) < 2) continue;
         if (arc->end_timing > current_ms) continue;
 
