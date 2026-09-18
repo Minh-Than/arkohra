@@ -301,6 +301,7 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
       for (int k = start_idx; k < end_idx; k++)
       {
         struct Arc *connected_arc = (struct Arc *)list_get(&tg->arcs, k);
+        if (connected_arc == arc) continue;
         if (fabsf(connected_arc->x1 - arc->x2) > 1e-6 ||
             fabsf(connected_arc->y1 - arc->y2) > 1e-6) continue;
 

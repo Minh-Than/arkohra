@@ -542,7 +542,7 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *
   {
     float final_alpha = ARC_ALPHA;
     struct Arc* arc_frfr = arc_get_firstmost_arc(arc);
-    if (arc_frfr->start_timing - current_ms < 0) final_alpha *= 0.7f;
+    if (arc_frfr->start_timing - current_ms < 0) final_alpha *= 0.72f;
     tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color) , Clamp(fade_ratio, 0.0f, final_alpha)));
     tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, final_alpha)));
   }
