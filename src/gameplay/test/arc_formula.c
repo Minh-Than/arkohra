@@ -8,9 +8,9 @@
 
 static const float TEST_ARC_LENGTH  = 1000.0f / 14.0f;
 
-static Arc make_arc(int start_timing, int end_timing, float x1, float y1, float x2, float y2, ArcType type)
+static struct Arc make_arc(int start_timing, int end_timing, float x1, float y1, float x2, float y2, ArcType type)
 {
-  Arc arc = {0};
+  struct Arc arc = {0};
   arc.start_timing = start_timing;
   arc.end_timing   = end_timing;
   arc.x1 = x1; arc.y1 = y1;
@@ -177,7 +177,7 @@ void test_simd_fp_to_z(void)
 void test_get_world_at(void)
 {
   // arc(0,1500,-0.50,0.00,b,0.00,0.00,0,none,true)[arctap(1500)];
-  Arc arc_1 = make_arc(0, 1500, -0.50f, 0.00f, 0.00f, 0.00f, B);
+  struct Arc arc_1 = make_arc(0, 1500, -0.50f, 0.00f, 0.00f, 0.00f, B);
   ArcTap arctap_1 = {.arc = &arc_1, .timing = 1500};
   float expected_x_1 = arc_x_to_world(0.0f);
   float expected_y_1 = arc_y_to_world(0.0f);
@@ -189,7 +189,7 @@ void test_get_world_at(void)
   TEST_MSG("Arc 1 expected y: %f; produced y: %f", expected_y_1, produced_y_1);
 
   // arc(0,1688,-0.50,0.50,b,0.00,0.00,0,none,true)[arctap(1688)];
-  Arc arc_2 = make_arc(0, 1688, -0.50f, 0.00f, 0.50f, 0.00f, B);
+  struct Arc arc_2 = make_arc(0, 1688, -0.50f, 0.00f, 0.50f, 0.00f, B);
   ArcTap arctap_2 = {.arc = &arc_2, .timing = 1688};
   float expected_x_2 = arc_x_to_world(0.5f);
   float expected_y_2 = arc_y_to_world(0.0f);
@@ -201,7 +201,7 @@ void test_get_world_at(void)
   TEST_MSG("Arc 2 expected y: %f; produced y: %f", expected_y_2, produced_y_2);
 
   // arc(0,1875,-0.50,1.00,b,0.00,0.00,0,none,true)[arctap(1875)];
-  Arc arc_3 = make_arc(0, 1875, -0.50f, 0.00f, 1.00f, 0.00f, B);
+  struct Arc arc_3 = make_arc(0, 1875, -0.50f, 0.00f, 1.00f, 0.00f, B);
   ArcTap arctap_3 = {.arc = &arc_3, .timing = 1875};
   float expected_x_3 = arc_x_to_world(1.0f);
   float expected_y_3 = arc_y_to_world(0.0f);
@@ -213,7 +213,7 @@ void test_get_world_at(void)
   TEST_MSG("Arc 3 expected y: %f; produced y: %f", expected_y_3, produced_y_3);
 
   // arc(23625,23625,1.00,1.00,soso,1.00,0.00, none, true)
-  Arc arc_zd = make_arc(23625, 23625, 1.00f, 1.00f, 1.00f, 0.00f, SOSO);
+  struct Arc arc_zd = make_arc(23625, 23625, 1.00f, 1.00f, 1.00f, 0.00f, SOSO);
   // arctap at the arc's timing → world(x1, y1)
   TEST_CHECK(fabsf(arc_world_x_at(23625, &arc_zd) - arc_x_to_world(1.00f)) < 1e-6);
   TEST_CHECK(fabsf(arc_world_y_at(23625, &arc_zd) - arc_y_to_world(1.00f)) < 1e-6);

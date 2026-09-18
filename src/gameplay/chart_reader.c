@@ -39,7 +39,7 @@ static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
   // Pass 1: rebuild tg->arctaps from arc->arctaps
   for (int j = 0; j < tg->arcs.size; j++)
   {
-    Arc *arc = (Arc *)list_get(&tg->arcs, j);
+    struct Arc *arc = (struct Arc *)list_get(&tg->arcs, j);
     for (int k = 0; k < arc->arctaps.size; k++)
     {
       ArcTap *arctap = (ArcTap *)list_get(&arc->arctaps, k);
@@ -54,7 +54,7 @@ static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
   int idx = 0;
   for (int j = 0; j < tg->arcs.size; j++)
   {
-    Arc *arc = (Arc *)list_get(&tg->arcs, j);
+    struct Arc *arc = (struct Arc *)list_get(&tg->arcs, j);
     for (int k = 0; k < arc->arctaps.size; k++)
     {
       if (idx < tg->arctaps.size)
@@ -156,7 +156,7 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
         if (matched == 10)
         {
           List arctaps; list_init(&arctaps, sizeof(ArcTap));
-          Arc arc = {
+          struct Arc arc = {
             .arctaps      = arctaps,
             .x1 = x1, .y1 = y1,
             .x2 = x2, .y2 = y2,
@@ -167,7 +167,9 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
             .color        = color,
             .type         = arctype_get_by_string(arc_type),
             .is_void      = strncmp(is_void, "true", 4) == 0 ? true : false,
-            .is_head      = true
+            .is_head      = true,
+            .prev_arc     = NULL,
+            .next_arc     = NULL
           };
           strncpy(arc.sfx, sfx, sizeof(arc.sfx) - 1);
 
@@ -288,20 +290,26 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
 
     for (int j = 0; j < tg->arcs.size; j++)
     {
-      Arc *arc = (Arc *)list_get(&tg->arcs, j);
+      struct Arc *arc = (struct Arc *)list_get(&tg->arcs, j);
       arc->start_fp = get_floor_position(&tg->timing_events, arc->start_timing);
       arc->end_fp   = get_floor_position(&tg->timing_events, arc->end_timing);
 
-      Arc low_target  = { .start_timing = arc->end_timing - 1 };
-      Arc high_target = { .start_timing = arc->end_timing + 1 };
+      struct Arc low_target  = { .start_timing = arc->end_timing - 1 };
+      struct Arc high_target = { .start_timing = arc->end_timing + 1 };
       int start_idx = bisect_left(&tg->arcs, &low_target, arc_compare_start_timing_asc);
       int end_idx = bisect_right(&tg->arcs, &high_target, arc_compare_start_timing_asc);
       for (int k = start_idx; k < end_idx; k++)
       {
-        Arc *connected_arc = (Arc *)list_get(&tg->arcs, k);
+        struct Arc *connected_arc = (struct Arc *)list_get(&tg->arcs, k);
         if (fabsf(connected_arc->x1 - arc->x2) > 1e-6 ||
             fabsf(connected_arc->y1 - arc->y2) > 1e-6) continue;
-        if (!(connected_arc->is_void ^ arc->is_void)) connected_arc->is_head = false;
+
+        if (!(connected_arc->is_void ^ arc->is_void))
+        {
+          connected_arc->is_head = false;
+          arc->next_arc = connected_arc;
+          connected_arc->prev_arc = arc;
+        }
       }
       generate_segment_meshes(chart_settings, tg, arc, arc_texture, arc_shader);
     };

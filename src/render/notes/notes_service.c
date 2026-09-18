@@ -167,7 +167,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
       for (int i = 0; i < arccap_list->size; i++)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arccap_list, i);
-        Arc *arc = arc_segment->arc;
+        struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc->timing_group);
         if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
         if (tg->props.no_arccap) continue;
@@ -194,7 +194,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
       for(int i = 0; i < arc_list->size; i++)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
-        Arc *arc = arc_segment->arc;
+        struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc->timing_group);
         if (fabsf(tg->hidegroup_channel.current_value) > 1e-6 ) continue;
         if (tg->props.no_arccap) continue;

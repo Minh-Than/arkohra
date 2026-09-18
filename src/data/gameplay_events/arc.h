@@ -24,7 +24,7 @@ typedef enum
 
 ArcType arctype_get_by_string(char *str);
 
-typedef struct {
+struct Arc {
   List arctaps;
   float x1, y1, x2, y2;
   float arc_res;
@@ -34,23 +34,25 @@ typedef struct {
   ArcType type;
   bool is_selected, is_void, is_head, has_height_indicator;
   char sfx[128];
-} Arc;
+  struct Arc *prev_arc, *next_arc;
+};
 
 int arc_compare_start_timing_asc(const void *a, const void *b);
 MeshRenderable generate_arccap_mesh(Texture2D *texture);
 MeshRenderable generate_arc_height_mesh(Texture2D *texture);
 Color arc_get_color_low(int color);
 Color arc_get_color_high(int color);
+struct Arc *arc_get_firstmost_arc(struct Arc* arc);
 void arc_print(const void *elem);
 
 // ARC SEGMENT
 typedef struct {
-  Arc *arc;
+  struct Arc *arc;
   MeshRenderable mesh_r, shadow_r;
   double start_fp, end_fp;
 } ArcSegment;
 
-void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg, Arc *arc, Texture2D *texture, Shader *shader);
+void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg, struct Arc *arc, Texture2D *texture, Shader *shader);
 MeshRenderable generate_arc_head_mesh(Texture2D *texture, Shader *shader);
 int arc_segment_compare_start_fp_asc(const void *a, const void *b);
 int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b);

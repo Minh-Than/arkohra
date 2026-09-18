@@ -7,7 +7,7 @@
 
 typedef struct
 {
-  Arc   *arc;
+  struct Arc *arc;
   float width;
   int   timing, timing_group;
   double fp;

@@ -29,8 +29,8 @@ ArcType arctype_get_by_string(char *str)
 
 int arc_compare_start_timing_asc(const void *a, const void *b)
 {
-  const Arc *arc_a = (const Arc *) a;
-  const Arc *arc_b = (const Arc *) b;
+  const struct Arc *arc_a = (const struct Arc *) a;
+  const struct Arc *arc_b = (const struct Arc *) b;
   return arc_a->start_timing - arc_b->start_timing;
 }
 
@@ -106,9 +106,15 @@ Color arc_get_color_high(int color)
   else                  return color_from_rgba(ARC_GREEN_HIGH_CL);
 }
 
+struct Arc *arc_get_firstmost_arc(struct Arc* arc)
+{
+  if (arc->prev_arc == NULL) return arc;
+  return arc_get_firstmost_arc(arc->prev_arc);
+}
+
 void arc_print(const void *elem)
 {
-  const Arc *arc = (const Arc *)elem;
+  const struct Arc *arc = (const struct Arc *)elem;
   printf("arc(%d,%d,%.2f,%.2f,%d,%.2f,%.2f,%d,%s,%d)",
          arc->start_timing, arc->end_timing,
          arc->x1, arc->x2, arc->type, arc->y1, arc->y2,
@@ -128,7 +134,7 @@ void arc_print(const void *elem)
   printf(";");
 }
 
-MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timing_events, Arc *arc,
+MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timing_events, struct Arc *arc,
                                       Texture2D *texture, Shader *shader, float curr_timing, float increment)
 {
   //   2 6
@@ -158,7 +164,7 @@ MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timin
     0,1,  1.0f,1,  1.0f,0,  0,0,
   };
 
-  Arc temp_arc = {
+  struct Arc temp_arc = {
     .x1 = arc->x1, .y1 = arc->y1,
     .x2 = arc->x2, .y2 = arc->y2,
     .start_timing  = 0,
@@ -256,7 +262,7 @@ MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timin
   return r;
 }
 
-MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *timing_events, Arc *arc,
+MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *timing_events, struct Arc *arc,
                                         Shader *shader, float curr_timing, float increment)
 {
   // WARNING:
@@ -288,7 +294,7 @@ MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *tim
   for (int v = 0; v < VERTICES_COUNT * 3; v++) if (v % 3 != 2) { initial_v[v] *= arc_scale; }
 
   // NOTE: Create mesh at z=0 (in timing) to prevent texture/rendering from going apeshit
-  Arc temp_arc = {
+  struct Arc temp_arc = {
     .x1 = arc->x1, .y1 = arc->y1,
     .x2 = arc->x2, .y2 = arc->y2,
     .start_timing  = 0,
@@ -346,7 +352,7 @@ MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *tim
   return r;
 }
 
-void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg, Arc *arc, Texture2D *texture, Shader *shader)
+void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg, struct Arc *arc, Texture2D *texture, Shader *shader)
 {
   int arc_duration      = arc->end_timing - arc->start_timing;
   float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res * tg->props.arc_res);
@@ -473,7 +479,7 @@ void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high)
 
 void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos)
 {
-  Arc *arc = arc_segment->arc;
+  struct Arc *arc = arc_segment->arc;
   float fade_ratio = (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE);
   Vector4 shadow_tint = !arc->is_void ? ColorNormalize(Fade(color_from_rgba(NOTE_SHADOW_CL), Clamp(fade_ratio, 0.0f, 0.16f)))
                                       : ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
@@ -491,7 +497,7 @@ void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *a
 void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, MeshRenderable *mesh_r,
                    float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp)
 {
-  Arc *arc = arc_segment->arc;
+  struct Arc *arc = arc_segment->arc;
   if (!arc->is_head) return;
   if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) return;
   double z_pos = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
@@ -525,16 +531,20 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc
 
 void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos)
 {
-  Arc *arc = arc_segment->arc;
+  struct Arc *arc = arc_segment->arc;
 
   float fade_ratio = (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
   // Default trace tint
   Vector4 tint_low, tint_high;
   tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL));
+
   if (!arc->is_void)
   {
-    tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color) , Clamp(fade_ratio, 0.0f, ARC_ALPHA)));
-    tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, ARC_ALPHA)));
+    float final_alpha = ARC_ALPHA;
+    struct Arc* arc_frfr = arc_get_firstmost_arc(arc);
+    if (arc_frfr->start_timing - current_ms < 0) final_alpha *= 0.7f;
+    tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color) , Clamp(fade_ratio, 0.0f, final_alpha)));
+    tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, final_alpha)));
   }
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
@@ -552,7 +562,7 @@ void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, do
 {
   if (!should_draw_height_indicator(arc_segment)) return;
 
-  Arc *arc = arc_segment->arc;
+  struct Arc *arc = arc_segment->arc;
   float fade_ratio = (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
   float arc_world_x = arc_x_to_world(arc->x1);
   float arc_world_y = arc_y_to_world(arc->y1);
@@ -567,7 +577,7 @@ void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, do
 
 void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale, float alpha, float current_ms)
 {
-  Arc *arc = arc_segment->arc;
+  struct Arc *arc = arc_segment->arc;
 
   float arccap_x = arc_world_x_at(current_ms, arc);
   float arccap_y = arc_world_y_at(current_ms, arc);
@@ -580,7 +590,7 @@ void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale,
 
 bool should_draw_height_indicator(ArcSegment *arc_segment)
 {
-  Arc *arc = arc_segment->arc;
+  struct Arc *arc = arc_segment->arc;
   return !arc->is_void &&
          fabs(arc_segment->start_fp - arc->start_fp) < 1e-6 &&
          (arc->is_head || fabsf(arc->y1 - arc->y2) > 1e-6);

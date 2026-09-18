@@ -48,7 +48,7 @@ ChartTimingGroup timing_group_init()
   List t_events; list_init(&t_events, sizeof(TimingEvent)); tg.timing_events = t_events;
   List taps    ; list_init(&taps, sizeof(Tap))            ; tg.taps = taps;
   List holds   ; list_init(&holds, sizeof(Hold))          ; tg.holds = holds;
-  List arcs    ; list_init(&arcs, sizeof(Arc))            ; tg.arcs = arcs;
+  List arcs    ; list_init(&arcs, sizeof(struct Arc))     ; tg.arcs = arcs;
   List arctaps ; list_init(&arctaps, sizeof(ArcTap))      ; tg.arctaps = arctaps;
 
   List tap_fps   ; list_init(&tap_fps, sizeof(TapFP))      ; tg.tap_fps = tap_fps;
@@ -94,7 +94,7 @@ void timing_group_unload(ChartTimingGroup *tg)
 
   for (size_t i = 0; i < tg->arcs.size; i++)
   {
-    Arc *arc = (Arc *)list_get(&tg->arcs, i);
+    struct Arc *arc = (struct Arc *)list_get(&tg->arcs, i);
     list_free(&arc->arctaps);
   }
 
