@@ -277,7 +277,7 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
       for (int k = 0; k < tg->arctaps.size; k++)
       {
         ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, k);
-        if (roundf(fabsf((float)(arctap->timing - tap->timing))) < 2)
+        if (abs(arctap->timing - tap->timing) < 2)
         {
           float x = arc_world_x_at(arctap->timing, arctap->arc);
           float y = arc_world_y_at(arctap->timing, arctap->arc);

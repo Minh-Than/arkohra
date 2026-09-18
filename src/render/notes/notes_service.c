@@ -215,6 +215,23 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         float cap_scale = Clamp(Lerp(1.0f, ARCCAP_FAR_SCALE, diff_fp_z / -100.0f), 1.0f, ARCCAP_FAR_SCALE);
         draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, cap_scale, cap_alpha, current_ms);
       }
+
+      // Ending arccaps
+      for(int i = 0; i < arc_list->size; i++)
+      {
+        ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
+        struct Arc *arc = arc_segment->arc;
+        ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc->timing_group);
+        if (hidegroup_actives[tg->value]) continue;
+        if (tg->props.no_arccap) continue;
+        if (arc->prev_arc != NULL) continue;
+        if (abs(arc->end_timing - arc->start_timing) < 2) continue;
+        if (arc->end_timing > current_ms) continue;
+
+        double curr_fp  = curr_fps[tg->value];
+        float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f, fabsf(current_ms - arc->end_timing) / 120.0f), 0.0f, ARCCAP_ALPHA);
+        draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, cap_alpha, current_ms);
+      }
       EndBlendMode();
     rlPopMatrix();
     rlEnableBackfaceCulling();
