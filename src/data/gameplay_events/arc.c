@@ -108,8 +108,8 @@ Color arc_get_color_high(int color)
 
 struct Arc *arc_get_firstmost_arc(struct Arc* arc)
 {
-  if (arc->prev_arc == NULL) return arc;
-  return arc_get_firstmost_arc(arc->prev_arc);
+  while (arc->prev_arc) arc = arc->prev_arc;
+  return arc;
 }
 
 void arc_print(const void *elem)
