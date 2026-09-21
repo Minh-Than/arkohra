@@ -1,5 +1,5 @@
-#ifndef COMMAND_PALETTE_H
-#define COMMAND_PALETTE_H
+#ifndef WIN_COMMAND_PALETTE_H
+#define WIN_COMMAND_PALETTE_H
 
 #include "windows/window_inst.h"
 
@@ -20,4 +20,4 @@ typedef struct
 CmdPltData cmd_plt_init();
 void cmd_plt_draw(WindowInst* window_inst, CmdPltData *data);
 
-#endif // COMMAND_PALETTE_H
+#endif // WIN_COMMAND_PALETTE_H

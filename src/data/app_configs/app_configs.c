@@ -1,6 +1,4 @@
-#include "constants.h"
 #include "raylib.h"
-#include "raymath.h"
 #include "rlgl.h"
 #include "resource_util.h"
 #include "app_config.h"

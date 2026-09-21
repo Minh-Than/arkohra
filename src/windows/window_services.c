@@ -2,10 +2,11 @@
 #include "raylib.h"
 #include "constants.h"
 #include "window_services.h"
-#include "windows/command_palette/command_palette.h"
+#include "windows/command_palette/window.h"
+#include "windows/project_setting/window.h"
 #include "windows/window_inst.h"
 
-WindowGroup window_services_init()
+WindowGroup window_services_init(int glsl)
 {
   // Command Palette
   WindowInst command_palette    = window_inst_init(WINDOW_COMMAND_PALETTE);
@@ -13,8 +14,16 @@ WindowGroup window_services_init()
   *cmd_plt_data                 = cmd_plt_init();
   command_palette.data          = cmd_plt_data;
 
+  // Command Palette
+  WindowInst project_setting         = window_inst_init(WINDOW_PROJECT_SETTING);
+  ProjSettingData *proj_setting_data = (ProjSettingData *)malloc(sizeof(ProjSettingData));
+  *proj_setting_data                 = proj_setting_init(glsl);
+  project_setting.data               = proj_setting_data;
+  window_inst_ui_update(&project_setting, 0, 0, 528, 448);
+
   WindowGroup group = {
-    .command_palette = command_palette
+    .command_palette = command_palette,
+    .project_setting = project_setting
   };
 
   return group;
@@ -22,7 +31,7 @@ WindowGroup window_services_init()
 
 void windows_services_ui_update(WindowGroup (*window_group))
 {
-  window_inst_ui_update( &window_group->command_palette,
+  window_inst_ui_update(&window_group->command_palette,
     (GetScreenWidth() - CMD_PLT_SIZE_X) / 2, CMD_PLT_Y, CMD_PLT_SIZE_X, CMD_PLT_SIZE_Y
   );
 }
@@ -30,9 +39,14 @@ void windows_services_ui_update(WindowGroup (*window_group))
 void windows_services_render(WindowGroup (*window_group))
 {
   window_inst_draw(&window_group->command_palette);
+  window_inst_draw(&window_group->project_setting);
 }
 
 void windows_services_unload(WindowGroup (*window_group))
 {
   window_inst_unload(&window_group->command_palette);
+
+  ProjSettingData *proj_setting_data = (ProjSettingData *)window_group->project_setting.data;
+  proj_setting_unload(proj_setting_data);
+  window_inst_unload(&window_group->project_setting);
 }

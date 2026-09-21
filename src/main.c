@@ -4,13 +4,13 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 */
 
 #include "data/app_configs/app_config.h"
+
 #define RINI_IMPLEMENTATION
-#define RAYGUI_IMPLEMENTATION
+#include "raylib.h"
 #include "raygui.h"
 #include "rlgl.h"
 
 #include <stdlib.h>
-#include "raylib.h"
 #include "cJSON.h"
 #include "constants.h"
 #include "resource_util.h"
@@ -44,7 +44,9 @@ int main()
   TextureGroup texture_group    = textures_init();
   ChartReader chart_reader      = { 0 };
 
-  WindowGroup window_group      = window_services_init();
+  WindowGroup window_group      = window_services_init(GLSL_VERSION);
+printf("TEXT_SIZE=%d TEXT_SPACING=%d\n",
+       GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING));
 
   RenderContext render_ctx = {
     .camera          = camera_init_playfield(),
@@ -268,12 +270,14 @@ int main()
           SetTextureWrap(track_service->single_line_tex, TEXTURE_WRAP_REPEAT);
 
           const char *paths[] = {
-            "resources/fonts/NotoSansTC-Regular.ttf",
             "resources/fonts/NotoSans-Regular.ttf",
+            "resources/fonts/NotoSansSC-Regular.ttf",
+            "resources/fonts/NotoSansJP-Regular.ttf",
+            "resources/fonts/NotoSansKR-Regular.ttf",
             "resources/fonts/NotoSansMath-Regular.ttf",
           };
           List font_list; list_init(&font_list, sizeof(char *));
-          for (int i = 0; i < 3; i++) list_push(&font_list, &paths[i]);
+          for (int i = 0; i < 5; i++) list_push(&font_list, &paths[i]);
           List hud_code_points; list_init(&hud_code_points, sizeof(int));
           for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
           font_add_string_to_codepoints(&hud_code_points, chart_settings->title);
@@ -351,6 +355,13 @@ int main()
       window_inst_toggle(&window_group.command_palette);
     if (IsKeyPressed(KEY_ESCAPE))
       window_inst_close(&window_group.command_palette);
+
+    if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&
+        IsKeyPressed(KEY_COMMA))
+    {
+      window_inst_close(&window_group.command_palette);
+      window_inst_toggle(&window_group.project_setting);
+    }
 
     // Kohra keybind
     if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&

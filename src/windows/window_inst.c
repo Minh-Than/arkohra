@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "raygui.h"
-#include "windows/command_palette/command_palette.h"
+#include "windows/command_palette/window.h"
+#include "windows/project_setting/window.h"
 #include "window_inst.h"
 
 WindowInst window_inst_init(WindowType type)
@@ -33,8 +34,7 @@ void window_inst_open(WindowInst *window_inst)
       data->search_edit_node    = true;
       break;
     }
-    case WINDOW_GENERAL_SETTING:
-      break;
+    case WINDOW_PROJECT_SETTING: break;
   }
 }
 
@@ -47,8 +47,7 @@ void window_inst_close(WindowInst *window_inst)
       data->search_edit_node    = false;
       break;
     }
-    case WINDOW_GENERAL_SETTING:
-      break;
+    case WINDOW_PROJECT_SETTING: break;
   }
 }
 
@@ -62,10 +61,10 @@ void window_inst_draw(WindowInst *window_inst)
 {
   if (!window_inst->is_visible) return;
 
-  switch (window_inst->type) 
+  switch (window_inst->type)
   {
     case WINDOW_COMMAND_PALETTE: cmd_plt_draw(window_inst, (CmdPltData *)window_inst->data); break;
-    case WINDOW_GENERAL_SETTING: break;
+    case WINDOW_PROJECT_SETTING: proj_setting_draw(window_inst, (ProjSettingData *)window_inst->data); break;
   }
 }
 

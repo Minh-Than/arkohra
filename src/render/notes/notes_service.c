@@ -85,7 +85,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         {
           BeatLine *beatline = (BeatLine *)list_get(beatline_list, i);
           double curr_fp = curr_fps[beatline->timing_group];
-          double z_pos    = floor_position_to_z(beatline->fp - curr_fp, base_bpm, scroll_speed);
+          double z_pos   = floor_position_to_z(beatline->fp - curr_fp, base_bpm, scroll_speed);
           DrawBeatline(z_pos, Lerp(beatline->thickness, beatline->thickness * 5, z_pos / -100.0f), beatline->color);
         }
       EndBlendMode();
@@ -146,8 +146,8 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_shadow) continue;
         if (tg->props.no_input && arctap->timing - current_ms < 0) continue;
-        double curr_fp = curr_fps[arctap->timing_group];
-        double z_pos    = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
+        double curr_fp   = curr_fps[arctap->timing_group];
+        double z_pos     = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
         float fade_ratio = (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE);
         notes_service->arctap_shadow.material.maps[MATERIAL_MAP_DIFFUSE].color = Fade((Color){ 90, 90, 90, 255 }, Clamp(fade_ratio, 0.0f, 0.25f));
         Matrix tr      = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
@@ -165,7 +165,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         if (tg->props.no_shadow) continue;
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
-        double z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+        double z_pos   = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
         draw_arc_shadow(tg, arc_segment, &notes_service->arc_shader, current_ms, curr_bpm, z_pos);
       }
 
@@ -189,7 +189,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         if (hidegroup_actives[tg->value]) continue;
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
-        double z_pos    = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+        double z_pos  = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
         if (!tg->props.no_height_indicator &&
             !(!tg->props.no_clip && tg->props.no_input && arc_segment->arc->start_timing - current_ms < 0))
           draw_height_indicator(arc_segment, &notes_service->height_indicator.mesh, notes_service->height_indicator.material, z_pos);
@@ -275,7 +275,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_input && arctap->timing - current_ms < 0) continue;
         double curr_fp = curr_fps[arctap->timing_group];
-        double z_pos    = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
+        double z_pos   = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
         draw_arctap(&notes_service->arctap, arctap, z_pos);
       }
     rlPopMatrix();

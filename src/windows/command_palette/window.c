@@ -3,7 +3,7 @@
 #include "constants.h"
 #include "raygui.h"
 #include "raylib.h"
-#include "command_palette.h"
+#include "../command_palette/window.h"
 
 CmdPltData cmd_plt_init()
 {

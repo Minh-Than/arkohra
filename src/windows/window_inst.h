@@ -6,15 +6,15 @@
 typedef enum
 {
   WINDOW_COMMAND_PALETTE,
-  WINDOW_GENERAL_SETTING
+  WINDOW_PROJECT_SETTING
 } WindowType;
 
 typedef struct
 {
-  void *        data;
-  float         x, y, width, height;
-  WindowType    type;
-  bool          is_visible;
+  void *     data;
+  float      x, y, width, height;
+  WindowType type;
+  bool       is_visible;
 } WindowInst;
 
 WindowInst window_inst_init(WindowType type);

@@ -1,3 +1,4 @@
+#include <string.h>
 #include "data/custom_types/dynamic_list.h"
 #include "external/stb_truetype.h"
 #include "fonts_service.h"
@@ -26,7 +27,7 @@ Font font_generate_sdf(char *font_file_path, int base_size, int *codepoints, int
 
 // Ask the FONT FILE what it contains.
 // Only this one can see through the .notdef fallback, so it must read the TTF.
-bool font_file_has_glyph(const char *path, int cp)
+bool font_file_has_codepoint(const char *path, int cp)
 {
   int size = 0;
   unsigned char *data = LoadFileData(path, &size);
@@ -42,10 +43,35 @@ bool font_file_has_glyph(const char *path, int cp)
 }
 
 // Ask the BAKED FONT if this codepoint is in its atlas.
-bool font_has_glyph(Font f, int cp)
+bool font_has_codepoint(Font f, int cp)
 {
   int index = GetGlyphIndex(f, cp);
   return (index >= 0 && index < f.glyphCount && f.glyphs[index].value == cp);
+}
+
+bool font_list_has_codepoint(List *font_list, int cp)
+{
+  bool has = false;
+  for (int i = 0; i < font_list->size; i++)
+  {
+    Font *font = (Font *)list_get(font_list, i);
+    if (font_has_codepoint(*font, cp)) { has = true; break; }
+  }
+  return has;
+}
+
+void font_add_missing_copepoints(List *font_list, const char* text, List *out)
+{
+  for (int i = 0, n = 0; text[i] != '\0'; i += n)
+  {
+    int cp = GetCodepointNext(&text[i], &n);
+    if (cp < 32 || font_list_has_codepoint(font_list, cp)) continue;
+
+    bool queued = false;
+    for (size_t k = 0; k < out->size; k++)
+      if (*(int *)list_get(out, k) == cp) { queued = true; break; }
+    if (!queued) list_push(out, &cp);
+  }
 }
 
 bool font_is_mark_combining(int cp)
@@ -151,7 +177,7 @@ void fonts_draw_text(List *font_list, const char *text, Vector2 pos, float size,
     for (int i = 0; i < font_list->size; i++)
     {
       Font *f = (Font *)list_get(font_list, i);
-      if (font_has_glyph(*f, cp)) { use = f; break; }
+      if (font_has_codepoint(*f, cp)) { use = f; break; }
     }
 
     if (font_is_mark_combining(cp)) // If the mark chained rather than stacked (normal case)
@@ -187,7 +213,7 @@ float fonts_measure_text(List *font_list, const char *text, float size, float sp
     for (int i = 0; i < font_list->size; i++)
     {
       Font *f = (Font *)list_get(font_list, i);
-      if (font_has_glyph(*f, cp)) { use = f; break; }
+      if (font_has_codepoint(*f, cp)) { use = f; break; }
     }
 
     if (!font_is_mark_combining(cp)) // If the mark chained rather than stacked (normal case)
@@ -204,3 +230,65 @@ float fonts_measure_text(List *font_list, const char *text, float size, float sp
   }
   return width;
 }
+
+bool text_is_valid_int(const char *text)
+{
+  int i = 0, digits = 0;
+
+  if (text[0] == '+' || text[0] == '-') i = 1;
+
+  for (; text[i] != '\0'; i++)
+  {
+    if (text[i] < '0' || text[i] > '9') return false;
+    digits++;
+  }
+
+  return digits > 0;
+}
+
+int text_to_int_validated(const char *text, int fallback, int min, int max)
+{
+  if (!text_is_valid_int(text)) return fallback;
+
+  int v = strtol(text, NULL, 10);
+  if (v < min) v = min;
+  if (v > max) v = max;
+  return v;
+}
+
+bool text_is_valid_decimal(const char *text)
+{
+  int i = 0, dots = 0, digits = 0;
+
+  if (text[0] == '+' || text[0] == '-') i = 1;
+
+  for (; text[i] != '\0'; i++)
+  {
+    if (text[i] == '.') { dots++; continue; }
+    if (text[i] < '0' || text[i] > '9') return false;
+    digits++;
+  }
+
+  return (digits > 0 && dots <= 1);
+}
+
+float text_to_float_validated(const char *text, float fallback, float min, float max)
+{
+  if (!text_is_valid_decimal(text)) return fallback;
+
+  float v = strtof(text, NULL);
+  if (v < min) v = min;
+  if (v > max) v = max;
+  return v;
+}
+
+int count_decimals(const char *text)
+{
+  const char *dot = strchr(text, '.');
+  if (dot == NULL) return 1;
+  int n = 0;
+  while (dot[1 + n] >= '0' && dot[1 + n] <= '9') n++;
+  if (n == 0) n = 1;
+  return n;
+}
+
