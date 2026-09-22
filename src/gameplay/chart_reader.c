@@ -293,7 +293,7 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
         ValueKeyframe *iter_kf = (ValueKeyframe *)list_get(&tg->groupalpha_channel.keyframes, j);
         if (iter_kf->start_timing < 0) { has_negative_timing = true; break; }
       }
-      if (!has_0_timing & !has_negative_timing)
+      if (!has_0_timing && !has_negative_timing)
       {
         ValueKeyframe init_alpha_kf = { .prev_value = 255.0f, .next_value = 255.0f, .start_timing = 0, .end_timing = 0, .easing = E_LINEAR };
         list_push(&tg->groupalpha_channel.keyframes, &init_alpha_kf);
