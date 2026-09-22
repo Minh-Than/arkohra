@@ -35,16 +35,12 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 
 int main()
 {
-  rini_data rini_d           = fetch_rini_config();
-  AppConfigs app_configs     = app_configs_init(&rini_d);
-
   SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-  InitWindow(BASE_APP_WINDOW_WIDTH,
-             aspect_ratio_get_height((float)BASE_APP_WINDOW_WIDTH, app_configs.playfield_ratio),
-             "arkohra");
+  InitWindow(1440, 810, "arkohra");
   SetExitKey(KEY_NULL);
 
+  rini_data rini_d           = fetch_rini_config();
+  AppConfigs app_configs     = app_configs_init(&rini_d);
   TextureGroup texture_group = textures_init();
   ChartReader chart_reader   = { 0 };
   WindowGroup window_group   = window_services_init(GLSL_VERSION);
@@ -299,11 +295,8 @@ int main()
       }
       UnloadDroppedFiles(dropped_file);
     }
-    if (IsWindowResized())
-    {
-      SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.playfield_ratio));
-      recalibrate_camera(&render_ctx.camera);
-    }
+
+    if (IsWindowResized()) recalibrate_camera(&render_ctx.camera);
 
     // TODO: currently scrolling with constant speed, find a way to speed up/slow down based on first timing group's current bpm
     if (render_ctx.audio_clock.is_playing)

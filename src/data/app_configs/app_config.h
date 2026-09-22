@@ -6,16 +6,14 @@
 #include "rini.h"
 #include "resource_util.h"
 
-typedef enum {
-  ASPECT_16_9 = 0,
-  ASPECT_20_9 = 1,
-  ASPECT_18_9 = 2,
-  ASPECT_4_3  = 3,
-  ASPECT_3_2  = 4,
+typedef enum 
+{
+  _16_9,
+  _20_9,
+  _18_9,
+  _4_3,
+  _3_2,
 } AspectRatio;
-
-float aspect_ratio_get_height(float width, AspectRatio ratio);
-float aspect_ratio_get_width(float height, AspectRatio ratio);
 
 typedef struct
 {

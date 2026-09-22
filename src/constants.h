@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-static const unsigned int BASE_APP_WINDOW_WIDTH = 1440;
+static const unsigned int BASE_APP_WINDOW_WIDTH = 1920;
 
 static const float MINIMUM_SCROLL_SPEED  = 0.01f;
 static const float MAXIMUM_SCROLL_SPEED  = 10.0f;
