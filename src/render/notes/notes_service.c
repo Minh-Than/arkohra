@@ -77,13 +77,13 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
     groupalpha_fade[i] = tg->groupalpha_channel.current_value / 255.0f;
   }
 
+  // GROUND NOTES
   BeginMode3D(camera);
     rlDisableDepthTest();
     rlDisableBackfaceCulling();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
       BeginBlendMode(BLEND_ALPHA);
-      // GROUND NOTES
       // Beatlines
       for(int i = 0; i < beatline_list->size; i++)
       {
@@ -115,9 +115,20 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         float curr_groupalpha = groupalpha_fade[tg->value];
         draw_tap(&notes_service->tap, tap, chart_settings, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
       }
+      EndBlendMode();
+    rlPopMatrix();
+    rlEnableBackfaceCulling();
+    rlEnableDepthTest();
+  EndMode3D();
 
-      // SKY NOTES
-      rlSetClipPlanes(0.01f, 90.0f);
+  // SKY NOTES
+  rlSetClipPlanes(0.01f, 90.0f);
+  BeginMode3D(camera);
+    rlDisableDepthTest();
+    rlDisableBackfaceCulling();
+    rlPushMatrix();
+      rlScalef(1.7896f, 1.0f, 1.0f);
+      BeginBlendMode(BLEND_ALPHA);
       // Arctap shadows
       for (int i = 0; i < arctap_list->size; i++)
       {
@@ -252,12 +263,12 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         double z_pos   = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
         draw_arctap(&notes_service->arctap, arctap, z_pos, curr_groupalpha);
       }
-      rlSetClipPlanes(0.01f, 100.0f);
       EndBlendMode();
     rlPopMatrix();
     rlEnableBackfaceCulling();
     rlEnableDepthTest();
   EndMode3D();
+  rlSetClipPlanes(0.01f, 100.0f);
 }
 
 void notes_service_unload(NotesService *notes_service)
