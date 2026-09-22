@@ -246,9 +246,9 @@ void test_interpolate_values(void)
   r = easing_interpolate(E_LINEAR, -500, -1000, 0, 0.0f, 1.0f);
   TEST_CHECK(fabsf(r - 0.5f) < EPS);
 
-  /* start == end returns from. */
+  /* start == end returns to. */
   r = easing_interpolate(E_LINEAR, 0, 500, 500, 1.0f, 9.0f);
-  TEST_CHECK(r == 1.0f);
+  TEST_CHECK(r == 9.0f);
 
   /* from == to returns from, even when the unit is undefined. */
   r = easing_interpolate(E_IN_BACK, 500, 0, 1000, 5.0f, 5.0f);
