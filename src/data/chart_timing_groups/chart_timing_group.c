@@ -62,8 +62,7 @@ ChartTimingGroup timing_group_init()
   List beatlines; list_init(&beatlines, sizeof(BeatLine)); tg.beatlines = beatlines;
 
   tg.hidegroup_channel = value_channel_init();
-  ValueKeyframe init_hidegroup_kf = { .prev_value = 0.0f, .next_value = 0.0f, .start_timing = 0, .end_timing = 0, .easing = E_STEP_END };
-  list_push(&tg.hidegroup_channel.keyframes, &init_hidegroup_kf);
+  tg.groupalpha_channel = value_channel_init();
 
   return tg;
 }
@@ -79,7 +78,8 @@ void timing_group_info_print(ChartTimingGroup *tg)
   printf("- Arc count:    \x1b[33m%zu\x1b[0m\n", tg->arcs.size);
   printf("- Arctap count: \x1b[33m%zu\x1b[0m\n", tg->arctaps.size);
   printf("---------------------\n");
-  printf("- Hidegroup keyframes: \x1b[33m%zu\x1b[0m\n", tg->hidegroup_channel.keyframes.size);
+  printf("- Hidegroup keyframes : \x1b[33m%zu\x1b[0m\n", tg->hidegroup_channel.keyframes.size);
+  printf("- Groupalpha keyframes: \x1b[33m%zu\x1b[0m\n", tg->groupalpha_channel.keyframes.size);
   printf("\n");
 }
 
@@ -121,6 +121,7 @@ void timing_group_unload(ChartTimingGroup *tg)
   list_free(&tg->beatlines);
 
   value_channel_unload(&tg->hidegroup_channel);
+  value_channel_unload(&tg->groupalpha_channel);
 }
 
 static int update_tg_props(char *token, void *user)

@@ -5,10 +5,10 @@
 #include "rlgl.h"
 #include "raymath.h"
 
-void draw_arctap(MeshRenderable *arctap_r, ArcTap *arctap, double z_pos)
+void draw_arctap(MeshRenderable *arctap_r, ArcTap *arctap, double z_pos, float add_fade)
 {
   float fade_ratio = (z_pos - SKY_STOP_FADE) / (TAP_START_FADE - SKY_STOP_FADE);
-  arctap_r->material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(WHITE, Clamp(fade_ratio, 0.0f, 1.0f));
+  arctap_r->material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(WHITE, Clamp(fade_ratio, 0.0f, add_fade));
   Matrix tr = MatrixTranslate(
     arc_world_x_at(arctap->timing, arctap->arc),
     arc_world_y_at(arctap->timing, arctap->arc),
@@ -35,20 +35,20 @@ MeshRenderable arctap_load_mesh(Texture2D *texture)
   r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * sizeof(unsigned short));
 
   float v[VERTICES_COUNT * 3] = {
-    -1.19f, -0.2f, 0.0f,   1.19f, -0.2f, 0.0f,   1.19f, -0.8f, 0.0f,  -1.19f, -0.8f, 0.0f,   // front
+    -1.19f, -0.8f, 0.0f,   1.19f, -0.8f, 0.0f,   1.19f, -0.8f,-1.2f,  -1.19f, -0.8f,-1.2f,   // bottom
     -1.19f, -0.2f,-1.2f,   1.19f, -0.2f,-1.2f,   1.19f, -0.8f,-1.2f,  -1.19f, -0.8f,-1.2f,   // back
     -1.19f, -0.2f,-1.2f,  -1.19f, -0.2f, 0.0f,  -1.19f, -0.8f, 0.0f,  -1.19f, -0.8f,-1.2f,   // left
      1.19f, -0.2f,-1.2f,   1.19f, -0.2f, 0.0f,   1.19f, -0.8f, 0.0f,   1.19f, -0.8f,-1.2f,   // right
-    -1.19f, -0.8f, 0.0f,   1.19f, -0.8f, 0.0f,   1.19f, -0.8f,-1.2f,  -1.19f, -0.8f,-1.2f,   // bottom
+    -1.19f, -0.2f, 0.0f,   1.19f, -0.2f, 0.0f,   1.19f, -0.8f, 0.0f,  -1.19f, -0.8f, 0.0f,   // front
     -1.19f, -0.2f, 0.0f,   1.19f, -0.2f, 0.0f,   1.19f, -0.2f,-1.2f,  -1.19f, -0.2f,-1.2f,   // top
   };
   float n[VERTICES_COUNT * 3] = {
-     0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   // front
+     0,-1, 0,   0,-1, 0,   0,-1, 0,   0,-1, 0,   // bottom
      0, 0,-1,   0, 0,-1,   0, 0,-1,   0, 0,-1,   // back
     -1, 0, 0,  -1, 0, 0,  -1, 0, 0,  -1, 0, 0,   // left
      1, 0, 0,   1, 0, 0,   1, 0, 0,   1, 0, 0,   // right
-     0,-1, 0,   0,-1, 0,   0,-1, 0,   0,-1, 0,   // bottom
      0, 1, 0,   0, 1, 0,   0, 1, 0,   0, 1, 0,   // top
+     0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1,   // front
   };
   float uv[TEXCOORDS_COUNT * 2] = {
     0,1,  1,1,  1,0,  0,0,   // front

@@ -36,6 +36,7 @@ typedef struct {
   List timing_events;
   List beatlines;
   ValueChannel hidegroup_channel;
+  ValueChannel groupalpha_channel;
 
 } ChartTimingGroup;
 

@@ -13,7 +13,7 @@ typedef struct
   bool   is_selected, is_active;
 } Hold;
 void hold_print(const void *elem);
-void draw_hold(MeshRenderable *hold_r, Hold *hold, float current_ms, float base_bpm, float scroll_speed, double curr_fp);
+void draw_hold(MeshRenderable *hold_r, Hold *hold, float current_ms, float base_bpm, float scroll_speed, double curr_fp, float add_fade);
 MeshRenderable hold_load_mesh(Texture2D *texture);
 int hold_compare_start_fp_asc(const void *a, const void *b);
 int hold_const_void_compare_start_fp_asc(const void *a, const void *b);

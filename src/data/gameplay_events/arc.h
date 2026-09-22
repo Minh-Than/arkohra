@@ -58,11 +58,11 @@ int arc_segment_compare_start_fp_asc(const void *a, const void *b);
 int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b);
 void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high);
 
-void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos);
+void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos, float add_fade);
 void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, MeshRenderable *mesh_r,
-                   float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp);
-void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos);
-void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, double z_pos);
+                   float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp, float add_fade);
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos, float add_fade);
+void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, double z_pos, float add_fade);
 void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale, float alpha, float current_ms);
 bool should_draw_height_indicator(ArcSegment *arc_segment);
 

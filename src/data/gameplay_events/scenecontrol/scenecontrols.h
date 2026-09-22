@@ -3,6 +3,7 @@
 
 typedef enum {
   SC_HIDEGROUP,
+  SC_GROUPALPHA,
   SC_OTHERS,
   SC_NONE
 } SCType;

@@ -477,12 +477,11 @@ void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high)
   arc_segment_build_tree(tree, list, mid + 1, high);
 }
 
-void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos)
+void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos, float add_fade)
 {
   struct Arc *arc = arc_segment->arc;
-  float fade_ratio = (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE);
-  Vector4 shadow_tint = !arc->is_void ? ColorNormalize(Fade(color_from_rgba(NOTE_SHADOW_CL), Clamp(fade_ratio, 0.0f, 0.16f)))
-                                      : ColorNormalize(color_from_rgba(NOTE_SHADOW_CL));
+  float fade_ratio = curr_bpm >= 0.0f ? (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE) : 1.0f;
+  Vector4 shadow_tint = ColorNormalize(Fade(color_from_rgba(NOTE_SHADOW_CL), Clamp(fade_ratio, 0.0f, ARC_SHADOW_ALPHA * add_fade)));
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
   int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
@@ -495,7 +494,7 @@ void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *a
 }
 
 void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, MeshRenderable *mesh_r,
-                   float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp)
+                   float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp, float add_fade)
 {
   struct Arc *arc = arc_segment->arc;
   if (!arc->is_head) return;
@@ -513,11 +512,15 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc
 
   // Default trace tint
   Vector4 tint_low, tint_high;
-  tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL)); 
+  tint_low = tint_high = ColorNormalize(Fade(color_from_rgba(TRACE_CL), Clamp(fade_ratio, 0.0f, TRACE_ALPHA * add_fade)));
   if (!arc->is_void)
   {
-    tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color) , Clamp(fade_ratio, 0.0f, ARC_ALPHA)));
-    tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, ARC_ALPHA)));
+    float final_alpha = ARC_ALPHA;
+    struct Arc* arc_frfr = arc_get_firstmost_arc(arc);
+    if (arc_frfr->start_timing - current_ms <= 0) final_alpha *= 0.72f;
+    final_alpha *= add_fade;
+    tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color) , Clamp(fade_ratio, 0.0f, final_alpha)));
+    tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, final_alpha)));
   }
   SetShaderValue(arc_shader->shader, arc_shader->tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
   SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
@@ -529,26 +532,27 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc
   DrawMesh(mesh_r->mesh, mesh_r->material, tr);
 }
 
-void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos)
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos, float add_fade)
 {
   struct Arc *arc = arc_segment->arc;
 
-  float fade_ratio = (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
+  float fade_ratio = curr_bpm >= 0.0f ? (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE) : 1.0f;
   // Default trace tint
   Vector4 tint_low, tint_high;
-  tint_low = tint_high = ColorNormalize(color_from_rgba(TRACE_CL));
+  tint_low = tint_high = ColorNormalize(Fade(color_from_rgba(TRACE_CL), Clamp(fade_ratio, 0.0f, TRACE_ALPHA * add_fade)));
 
   if (!arc->is_void)
   {
     float final_alpha = ARC_ALPHA;
     struct Arc* arc_frfr = arc_get_firstmost_arc(arc);
-    if (arc_frfr->start_timing - current_ms < 0) final_alpha *= 0.72f;
+    if (arc_frfr->start_timing - current_ms <= 0) final_alpha *= 0.72f;
+    final_alpha *= add_fade;
     tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color) , Clamp(fade_ratio, 0.0f, final_alpha)));
     tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, final_alpha)));
   }
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
-  int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
+  int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms - 1 <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
   SetShaderValue(arc_shader->shader, arc_shader->shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
   SetShaderValue(arc_shader->shader, arc_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
@@ -558,7 +562,7 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *
   DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
 }
 
-void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, double z_pos)
+void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, double z_pos, float add_fade)
 {
   if (!should_draw_height_indicator(arc_segment)) return;
 
@@ -570,7 +574,7 @@ void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, do
                              MatrixTranslate(arc_world_x, arc_world_y * 0.5f, z_pos));
 
   rlDisableDepthMask();
-  mat.maps->color = Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, ARC_ALPHA));
+  mat.maps->color = Fade(arc_get_color_high(arc->color), Clamp(fade_ratio, 0.0f, ARC_ALPHA * add_fade));
   DrawMesh(*mesh, mat, MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), tr));
   rlEnableDepthMask();
 }

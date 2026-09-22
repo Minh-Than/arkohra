@@ -85,16 +85,16 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
                         0.0f, 1.0f, WHITE);
         rlPopMatrix();
 
-        float diff_spacing = 0.6f;
-        float diff_text_width = JACKET_HUD_SIZE;
-        float diff_w = fonts_measure_text(&hud_service->font_with_fallback, chart_settings->difficulty, 44.0f, diff_spacing);
-        float diff_text_scale = diff_w <= (diff_text_width - 50) ? 1.0f : (diff_text_width - 50) / diff_w;
-        float diff_text_offsetX = (diff_text_width - (diff_w * diff_text_scale)) / 2;
+        float diff_spacing = 1.0f;
+        float diff_font_size = 44.0f;
+        float diff_w = fonts_measure_text(&hud_service->font_with_fallback, chart_settings->difficulty, diff_font_size, diff_spacing);
+        float diff_text_scale = diff_w <= (JACKET_HUD_SIZE - 60) ? 1.0f : (JACKET_HUD_SIZE - 60) / diff_w;
+        float diff_text_offsetX = (JACKET_HUD_SIZE - (diff_w * diff_text_scale)) / 2;
         BeginShaderMode(hud_service->sdf_shader);
           rlPushMatrix();
-            rlTranslatef(diff_text_offsetX, 0.0f, 0.0f);
+            rlTranslatef(diff_text_offsetX, JACKET_HUD_SIZE + 4, 0.0f);
             rlScalef(diff_text_scale, 1.0f, 1.0f);
-            fonts_draw_text(&hud_service->font_with_fallback, chart_settings->difficulty, (Vector2) { 0.0f, JACKET_HUD_SIZE + 1 }, 44.0f, diff_spacing, WHITE);
+            fonts_draw_text(&hud_service->font_with_fallback, chart_settings->difficulty, Vector2Zero(), diff_font_size, diff_spacing, WHITE);
           rlPopMatrix();
         EndShaderMode();
       rlPopMatrix();

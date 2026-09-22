@@ -53,7 +53,7 @@ float easing_get_unit(EasingType easing, float t)
                                                                   : (powf(2.0f, -20.0f * t + 10.0f) * sinf((20.0f * t - 11.125f) * ((2.0f * M_PI) / 4.5))) * 0.5f + 1.0f;
     case E_IN_ELASTIC:    return t <= 0.0f ? 0.0f
                                            : t >= 1.0f ? 1.0f
-                                                       : -powf(2.0f, 10.0f * t - 10.0f) * sinf(t * 10.0f- 10.75f) * ((2 * M_PI) / 3.0f);
+                                                       : -powf(2.0f, 10.0f * t - 10.0f) * sinf((t * 10.0f- 10.75f) * ((2.0f * M_PI) / 3.0f));
     case E_OUT_CUBIC:     return 1.0f - powf(1.0f - t, 3.0f);
     case E_INOUT_CUBIC:   return t < 0.5f ? 4.0f * t * t * t
                                           : 1.0f - powf(-2.0f * t + 2.0f, 3.0f) * 0.5f;
@@ -66,7 +66,7 @@ float easing_get_unit(EasingType easing, float t)
     case E_INOUT_BOUNCE:  return t < 0.5f ? (1.0f - ease_out_bounce(1.0f - 2.0f * t)) * 0.5f
                                           : (1.0f + ease_out_bounce(2.0f * t - 1.0f)) * 0.5f;
     case E_IN_BOUNCE:     return 1.0f - ease_out_bounce(1.0f - t);
-    case E_OUT_BACK:      return 1.0f + 2.70158f * powf(t - 1.0f, 3.0f) + 1.70158 * powf(t - 1.0f, 2.0f);
+    case E_OUT_BACK:      return 1.0f + 2.70158f * powf(t - 1.0f, 3.0f) + 1.70158f * powf(t - 1.0f, 2.0f);
     case E_INOUT_BACK:    {
                             const float c2 = 1.70158f * 1.525f;
                             return t < 0.5 ? (powf(2.0f * t, 2.0f) * ((c2 + 1.0f) * 2.0f * t - c2)) * 0.5f
@@ -79,7 +79,7 @@ float easing_get_unit(EasingType easing, float t)
 float easing_interpolate(EasingType easing, int timing, int start_timing, int end_timing, float from, float to)
 {
   if (fabsf(from - to) < 1e-6) return from;
-  if (start_timing == end_timing) return from;
+  if (start_timing == end_timing) return to;
   const float unit_val = (float)(timing - start_timing) / (float)(end_timing - start_timing);
   return from + (to - from) * easing_get_unit(easing, unit_val);
 }

@@ -41,9 +41,9 @@ int value_channel_interpolate(ValueChannel *channel, int timing)
   if(kfs->data == NULL || kfs->size == 0) return 0;
 
   ValueKeyframe target_kf = { .start_timing = timing };
-  int curr_kf_idx = bisect_left(kfs, &target_kf, value_kf_compare_start_timing_asc);
-  if (curr_kf_idx >= kfs->size - 1) curr_kf_idx = kfs->size - 1;
-  if (curr_kf_idx < 0) curr_kf_idx = 0;
+  int curr_kf_idx = bisect_left(kfs, &target_kf, value_kf_compare_start_timing_asc) - 1;
+  if (curr_kf_idx < 0)                  curr_kf_idx = 0;
+  else if (curr_kf_idx > kfs->size - 1) curr_kf_idx = kfs->size - 1;
   ValueKeyframe *curr_kf = (ValueKeyframe *)list_get(kfs, curr_kf_idx);
 
   return easing_interpolate(curr_kf->easing, timing, curr_kf->start_timing, curr_kf->end_timing, curr_kf->prev_value, curr_kf->next_value);
