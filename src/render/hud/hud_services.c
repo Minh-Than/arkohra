@@ -88,11 +88,11 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
         float diff_spacing = 1.0f;
         float diff_font_size = 44.0f;
         float diff_w = fonts_measure_text(&hud_service->font_with_fallback, chart_settings->difficulty, diff_font_size, diff_spacing);
-        float diff_text_scale = diff_w <= (JACKET_HUD_SIZE - 60) ? 1.0f : (JACKET_HUD_SIZE - 60) / diff_w;
+        float diff_text_scale = diff_w <= (JACKET_HUD_SIZE - 56) ? 1.0f : (JACKET_HUD_SIZE - 56) / diff_w;
         float diff_text_offsetX = (JACKET_HUD_SIZE - (diff_w * diff_text_scale)) / 2;
         BeginShaderMode(hud_service->sdf_shader);
           rlPushMatrix();
-            rlTranslatef(diff_text_offsetX, JACKET_HUD_SIZE + 4, 0.0f);
+            rlTranslatef(diff_text_offsetX, JACKET_HUD_SIZE + 3, 0.0f);
             rlScalef(diff_text_scale, 1.0f, 1.0f);
             fonts_draw_text(&hud_service->font_with_fallback, chart_settings->difficulty, Vector2Zero(), diff_font_size, diff_spacing, WHITE);
           rlPopMatrix();

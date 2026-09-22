@@ -59,14 +59,14 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
   List *arccap_list   = &note_render_lists->arccap_render_list;
   List *arctap_list   = &note_render_lists->arctap_render_list;
 
-  float base_bpm = chart_settings->base_bpm;
+  float base_bpm     = chart_settings->base_bpm;
   float scroll_speed = chart_settings->scroll_speed;
 
   // Precalculate tg related values for reuse
-  double curr_fps[chart_reader->timing_groups.size];
-  float curr_bpms[chart_reader->timing_groups.size];
+  double        curr_fps[chart_reader->timing_groups.size];
+  float        curr_bpms[chart_reader->timing_groups.size];
   bool hidegroup_actives[chart_reader->timing_groups.size];
-  float groupalpha_fade[chart_reader->timing_groups.size];
+  float  groupalpha_fade[chart_reader->timing_groups.size];
   process_note_render_lists(chart_reader, chart_settings, current_ms, curr_fps, curr_bpms);
   for (int i = 0; i < timing_groups->size; i++)
   {
@@ -77,72 +77,47 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
     groupalpha_fade[i] = tg->groupalpha_channel.current_value / 255.0f;
   }
 
-  // Beatlines
   BeginMode3D(camera);
     rlDisableDepthTest();
     rlDisableBackfaceCulling();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
       BeginBlendMode(BLEND_ALPHA);
+      // GROUND NOTES
+      // Beatlines
+      for(int i = 0; i < beatline_list->size; i++)
+      {
+        BeatLine *beatline = (BeatLine *)list_get(beatline_list, i);
+        double curr_fp = curr_fps[beatline->timing_group];
+        double z_pos   = floor_position_to_z(beatline->fp - curr_fp, base_bpm, scroll_speed);
+        DrawBeatline(z_pos, Lerp(beatline->thickness, beatline->thickness * 5, z_pos / -100.0f), beatline->color);
+      }
 
-        for(int i = 0; i < beatline_list->size; i++)
-        {
-          BeatLine *beatline = (BeatLine *)list_get(beatline_list, i);
-          double curr_fp = curr_fps[beatline->timing_group];
-          double z_pos   = floor_position_to_z(beatline->fp - curr_fp, base_bpm, scroll_speed);
-          DrawBeatline(z_pos, Lerp(beatline->thickness, beatline->thickness * 5, z_pos / -100.0f), beatline->color);
-        }
-      EndBlendMode();
-    rlPopMatrix();
-    rlEnableBackfaceCulling();
-    rlEnableDepthTest();
-  EndMode3D();
+      // Holds
+      for(int i = hold_list->size - 1; i >= 0; i--)
+      {
+        Hold *hold = *(Hold **)list_get(hold_list, i);
+        ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, hold->timing_group);
+        if (hidegroup_actives[tg->value]) continue;
+        double curr_fp = curr_fps[tg->value];
+        float curr_groupalpha = groupalpha_fade[tg->value];
+        draw_hold(&notes_service->hold, hold, current_ms, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
+      }
 
-  // Holds + Taps
-  BeginMode3D(camera);
-    rlDisableDepthTest();
-    rlDisableBackfaceCulling();
-    rlPushMatrix();
-      rlScalef(1.7896f, 1.0f, 1.0f);
-      BeginBlendMode(BLEND_ALPHA);
+      // Taps
+      for(int i = tap_list->size - 1; i >= 0; i--)
+      {
+        Tap *tap = ((TapFP *)list_get(tap_list, i))->tap;
+        ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, tap->timing_group);
+        if (hidegroup_actives[tg->value]) continue;
+        if (tg->props.no_input && tap->timing - current_ms < 0) continue;
+        double curr_fp = curr_fps[tg->value];
+        float curr_groupalpha = groupalpha_fade[tg->value];
+        draw_tap(&notes_service->tap, tap, chart_settings, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
+      }
 
-        // Holds
-        for(int i = hold_list->size - 1; i >= 0; i--)
-        {
-          Hold *hold = *(Hold **)list_get(hold_list, i);
-          ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, hold->timing_group);
-          if (hidegroup_actives[tg->value]) continue;
-          double curr_fp = curr_fps[tg->value];
-          float curr_groupalpha = groupalpha_fade[tg->value];
-          draw_hold(&notes_service->hold, hold, current_ms, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
-        }
-
-        // Taps
-        for(int i = tap_list->size - 1; i >= 0; i--)
-        {
-          Tap *tap = ((TapFP *)list_get(tap_list, i))->tap;
-          ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, tap->timing_group);
-          if (hidegroup_actives[tg->value]) continue;
-          if (tg->props.no_input && tap->timing - current_ms < 0) continue;
-          double curr_fp = curr_fps[tg->value];
-          float curr_groupalpha = groupalpha_fade[tg->value];
-          draw_tap(&notes_service->tap, tap, chart_settings, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
-        }
-      EndBlendMode();
-    rlPopMatrix();
-    rlEnableBackfaceCulling();
-    rlEnableDepthTest();
-  EndMode3D();
-
-  // Arcs + shadows + arccaps + height_indicator
-  rlSetClipPlanes(0.01f, 90.0f);
-  BeginMode3D(camera);
-    rlDisableDepthTest();
-    rlDisableBackfaceCulling();
-    rlPushMatrix();
-      rlScalef(1.7896f, 1.0f, 1.0f);
-      BeginBlendMode(BLEND_ALPHA);
-
+      // SKY NOTES
+      rlSetClipPlanes(0.01f, 90.0f);
       // Arctap shadows
       for (int i = 0; i < arctap_list->size; i++)
       {
@@ -158,7 +133,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         float fade_ratio = (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE);
         notes_service->arctap_shadow.material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(color_from_rgba(NOTE_SHADOW_CL),
                                                                                       Clamp(fade_ratio, 0.0f, ARCTAP_SHADOW_ALPHA * curr_groupalpha));
-        Matrix tr      = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
+        Matrix tr = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
                                         MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc),
                                                         0.0f, z_pos));
         DrawMesh(notes_service->arctap_shadow.mesh, notes_service->arctap_shadow.material, tr);
@@ -248,19 +223,8 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f, fabsf(current_ms - arc->end_timing) / 120.0f), 0.0f, ARCCAP_ALPHA) * curr_groupalpha;
         draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, cap_alpha, current_ms);
       }
-      EndBlendMode();
-    rlPopMatrix();
-    rlEnableBackfaceCulling();
-    rlEnableDepthTest();
-  EndMode3D();
 
-  // Arc heads + arctaps
-  BeginMode3D(camera);
-    rlDisableDepthTest();
-    rlDisableBackfaceCulling();
-    rlPushMatrix();
-      rlScalef(1.7896f, 1.0f, 1.0f);
-
+      // Arc heads
       for(int i = arc_list->size - 1; i >= 0; i--)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
@@ -274,15 +238,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         draw_arc_head(tg, arc_segment, &notes_service->arc_shader, &notes_service->arc_head,
                       current_ms, curr_bpm, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
       }
-    rlPopMatrix();
-    rlEnableBackfaceCulling();
-    rlEnableDepthTest();
-  EndMode3D();
 
-  BeginMode3D(camera);
-    rlDisableBackfaceCulling();
-    rlPushMatrix();
-      rlScalef(1.7896f, 1.0f, 1.0f);
       // Arctaps
       for (int i = arctap_list->size - 1; i >= 0; i--)
       {
@@ -296,10 +252,12 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         double z_pos   = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
         draw_arctap(&notes_service->arctap, arctap, z_pos, curr_groupalpha);
       }
+      rlSetClipPlanes(0.01f, 100.0f);
+      EndBlendMode();
     rlPopMatrix();
     rlEnableBackfaceCulling();
+    rlEnableDepthTest();
   EndMode3D();
-  rlSetClipPlanes(0.01f, 100.0f);
 }
 
 void notes_service_unload(NotesService *notes_service)
@@ -311,6 +269,7 @@ void notes_service_unload(NotesService *notes_service)
   renderable_unload(&notes_service->height_indicator);
   renderable_unload(&notes_service->arctap);
   renderable_unload(&notes_service->arctap_shadow);
+
   UnloadTexture(notes_service->tap_tex);
   UnloadTexture(notes_service->hold_tex);
   UnloadTexture(notes_service->height_indicator_tex);
@@ -318,5 +277,6 @@ void notes_service_unload(NotesService *notes_service)
   UnloadTexture(notes_service->arccap_tex);
   UnloadTexture(notes_service->arctap_tex);
   UnloadTexture(notes_service->arctap_shadow_tex);
+
   UnloadShader(notes_service->arc_shader.shader);
 }

@@ -18,7 +18,7 @@ typedef struct
   HudService    hud_service;
 } RenderContext;
 
-void render_scenes(RenderContext *render_ctx, ChartReader *chart_reader, float current_ms);
+void render_scenes(RenderContext *render_ctx, ChartReader *chart_reader);
 void render_unload(RenderContext *render_ctx);
 
 #endif // RENDER_SERVICE_H

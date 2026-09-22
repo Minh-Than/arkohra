@@ -480,7 +480,7 @@ void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high)
 void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos, float add_fade)
 {
   struct Arc *arc = arc_segment->arc;
-  float fade_ratio = curr_bpm >= 0.0f ? (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE) : 1.0f;
+  float fade_ratio = arc->is_void ? 1.0f : (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
   Vector4 shadow_tint = ColorNormalize(Fade(color_from_rgba(NOTE_SHADOW_CL), Clamp(fade_ratio, 0.0f, ARC_SHADOW_ALPHA * add_fade)));
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
@@ -508,7 +508,7 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc
   SetShaderValue(arc_shader->shader, arc_shader->shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
   SetShaderValue(arc_shader->shader, arc_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
 
-  float fade_ratio = (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
+  float fade_ratio = arc->is_void ? 1.0f : (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
 
   // Default trace tint
   Vector4 tint_low, tint_high;
@@ -536,7 +536,7 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *
 {
   struct Arc *arc = arc_segment->arc;
 
-  float fade_ratio = curr_bpm >= 0.0f ? (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE) : 1.0f;
+  float fade_ratio = arc->is_void ? 1.0f : (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
   // Default trace tint
   Vector4 tint_low, tint_high;
   tint_low = tint_high = ColorNormalize(Fade(color_from_rgba(TRACE_CL), Clamp(fade_ratio, 0.0f, TRACE_ALPHA * add_fade)));

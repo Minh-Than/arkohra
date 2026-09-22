@@ -7,7 +7,6 @@
 #include "render/mesh_renderable.h"
 
 // NOTE: currently only along V of the UV map
-// TODO: currently scrolling with constant speed, find a way to speed up/slow down based on first timing group's current bpm
 static MeshRenderable gen_mesh_tiled(Texture2D texture, float size_x, float size_y, float scale_x, float scale_y, bool enable_scroll) {
   Mesh mesh = GenMeshPlane(size_x, size_y, 1, 1);
   float textureAspect = (float)(texture.width * scale_x) / (float)(texture.height * scale_y);

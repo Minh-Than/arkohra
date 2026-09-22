@@ -36,25 +36,22 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 int main()
 {
   SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
-  InitWindow(1280, 720, "arkohra");
+  InitWindow(1440, 810, "arkohra");
   SetExitKey(KEY_NULL);
 
-  rini_data rini_d              = fetch_rini_config();
-  AppConfigs app_configs        = app_configs_init(&rini_d);
-  TextureGroup texture_group    = textures_init();
-  ChartReader chart_reader      = { 0 };
-
-  WindowGroup window_group      = window_services_init(GLSL_VERSION);
-printf("TEXT_SIZE=%d TEXT_SPACING=%d\n",
-       GuiGetStyle(DEFAULT, TEXT_SIZE), GuiGetStyle(DEFAULT, TEXT_SPACING));
+  rini_data rini_d           = fetch_rini_config();
+  AppConfigs app_configs     = app_configs_init(&rini_d);
+  TextureGroup texture_group = textures_init();
+  ChartReader chart_reader   = { 0 };
+  WindowGroup window_group   = window_services_init(GLSL_VERSION);
 
   RenderContext render_ctx = {
-    .camera          = camera_init_playfield(),
-    .chart_settings  = chart_settings_init(&app_configs),
-    .audio_clock = { 0 },
-    .track_service = track_service_init(),
-    .notes_service = notes_service_init(GLSL_VERSION),
-    .hud_service = hud_service_init(GLSL_VERSION)
+    .camera         = camera_init_playfield(),
+    .chart_settings = chart_settings_init(&app_configs),
+    .audio_clock    = { 0 },
+    .track_service  = track_service_init(),
+    .notes_service  = notes_service_init(GLSL_VERSION),
+    .hud_service    = hud_service_init(GLSL_VERSION)
   };
 
   InitAudioDevice();
@@ -68,9 +65,6 @@ printf("TEXT_SIZE=%d TEXT_SPACING=%d\n",
   PlayMusicStream(music);
   PauseMusicStream(music);
   audio_clock_pause(&render_ctx.audio_clock);
-
-  bool has_kohra = false;
-  float current_ms = 0;
 
   SetTargetFPS(60);
   rlSetClipPlanes(0.01f, 100.0f);
@@ -304,6 +298,7 @@ printf("TEXT_SIZE=%d TEXT_SPACING=%d\n",
 
     if (IsWindowResized()) recalibrate_camera(&render_ctx.camera);
 
+    // TODO: currently scrolling with constant speed, find a way to speed up/slow down based on first timing group's current bpm
     if (render_ctx.audio_clock.is_playing)
     {
       // Playfield: Track & Single Line Scrolling
@@ -316,12 +311,9 @@ printf("TEXT_SIZE=%d TEXT_SPACING=%d\n",
     if (IsMusicValid(music))
     {
       UpdateMusicStream(music);
-      current_ms = audio_clock_get_time_ms(&render_ctx.audio_clock);
 
       if (!IsMusicStreamPlaying(music) && render_ctx.audio_clock.is_playing)
-      {
         audio_clock_pause(&render_ctx.audio_clock);
-      }
 
       if (IsKeyPressed(KEY_Q))
       {
@@ -367,20 +359,20 @@ printf("TEXT_SIZE=%d TEXT_SPACING=%d\n",
     if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&
         (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
         IsKeyPressed(KEY_K))
-      has_kohra = !has_kohra;
+      app_configs.kohra = !app_configs.kohra;
 
     windows_services_ui_update(&window_group);
 
     BeginDrawing();
       ClearBackground(WHITE);
 
-      render_scenes(&render_ctx, &chart_reader, current_ms);
+      render_scenes(&render_ctx, &chart_reader);
       windows_services_render(&window_group);
 
       // Debug FPS
       DrawFPS(5, 5);
 
-      if (has_kohra)
+      if (app_configs.kohra)
       {
         BeginMode3D(render_ctx.camera);
           DrawCubeTexture(texture_group.kohra, (Vector3){0.0f, KOHRA_SIZE, 0.0f}, KOHRA_SIZE, KOHRA_SIZE, KOHRA_SIZE, WHITE);

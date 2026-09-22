@@ -5,7 +5,6 @@
 #include "constants.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/gameplay_events.h"
-#include "data/keyframe/easings.h"
 #include "data/keyframe/value_channel.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
@@ -26,16 +25,11 @@ TGPropTypes determine_tg_prop(char *str)
 void tg_props_print(TimingGroupProps *tg_props)
 {
   printf("Arc Resolution - %.1f\n", tg_props->arc_res);
-  if (tg_props->no_input)
-    printf("- No input\n");
-  if (tg_props->no_clip)
-    printf("- No clip\n");
-  if (tg_props->no_arccap)
-    printf("- No arccap\n");
-  if (tg_props->no_shadow)
-    printf("- No shadow\n");
-  if (tg_props->no_height_indicator)
-    printf("- No height\n");
+  if (tg_props->no_input)           printf("- No input\n");
+  if (tg_props->no_clip)            printf("- No clip\n");
+  if (tg_props->no_arccap)          printf("- No arccap\n");
+  if (tg_props->no_shadow)          printf("- No shadow\n");
+  if (tg_props->no_height_indicator)printf("- No height\n");
 }
 
 ChartTimingGroup timing_group_init()
