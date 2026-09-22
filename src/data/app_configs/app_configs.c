@@ -3,6 +3,35 @@
 #include "resource_util.h"
 #include "app_config.h"
 
+static bool aspect_ratio_is_valid(AspectRatio ratio)
+{
+  return ratio >= ASPECT_16_9 && ratio <= ASPECT_3_2;
+}
+
+float aspect_ratio_get_height(float width, AspectRatio ratio)
+{
+  switch(ratio)
+  {
+    case ASPECT_16_9: return (float)width * 9.0f / 16.0f;
+    case ASPECT_20_9: return (float)width * 9.0f / 20.0f;
+    case ASPECT_18_9: return (float)width * 9.0f / 18.0f;
+    case ASPECT_4_3 : return (float)width * 3.0f / 4.0f;
+    case ASPECT_3_2 : return (float)width * 2.0f / 3.0f;
+  }
+}
+
+float aspect_ratio_get_width(float height, AspectRatio ratio)
+{
+  switch(ratio)
+  {
+    case ASPECT_16_9: return (float)height * 16.0f / 9.0f;
+    case ASPECT_20_9: return (float)height * 20.0f / 9.0f;
+    case ASPECT_18_9: return (float)height * 18.0f / 9.0f;
+    case ASPECT_4_3 : return (float)height * 4.0f / 3.0f;
+    case ASPECT_3_2 : return (float)height * 3.0f / 2.0f;
+  }
+}
+
 AppConfigs app_configs_init(rini_data *d)
 {
   if (!rini_key_exists(d, "playfield_ratio"))   rini_set_value     (d, "playfield_ratio" ,    0, "Window aspect ratio");
@@ -15,6 +44,7 @@ AppConfigs app_configs_init(rini_data *d)
 
   AppConfigs configs = { 0 };
   configs.playfield_ratio   = (AspectRatio)rini_get_value_fallback(*d, "playfield_ratio" , 0);
+  if (!aspect_ratio_is_valid(configs.playfield_ratio)) configs.playfield_ratio = ASPECT_16_9;
 
   configs.app_window_scale = rini_get_float_fallback(*d, "app_window_scale", 1.0f);
   configs.scroll_speed     = rini_get_float_fallback(*d, "scroll_speed"    , 3.0f);
