@@ -46,4 +46,12 @@ typedef struct {
 
 RguiFileInput rgui_fileinput_init(const char* value);
 
+typedef struct {
+  char list[MAXPATHLEN];
+  bool edit;
+  int option;
+} RguiSelectInput;
+
+RguiSelectInput rgui_selectinput_init(const char* list, int option);
+
 #endif // RGUI_INPUT_DATA_H

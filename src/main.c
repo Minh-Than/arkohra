@@ -47,7 +47,7 @@ int main()
 
   TextureGroup texture_group = textures_init();
   ChartReader chart_reader   = { 0 };
-  WindowGroup window_group   = window_services_init(GLSL_VERSION);
+  WindowGroup window_group   = window_services_init(GLSL_VERSION, &app_configs);
 
   RenderContext render_ctx = {
     .camera         = camera_init_playfield(),
@@ -396,6 +396,10 @@ int main()
       render_ctx.chart_settings.scroll_speed = app_configs.scroll_speed;
       SetMusicVolume(music, app_configs.music_volume);
 
+      bool is_setting_open = window_group.project_setting.is_visible;
+      window_group = window_services_init(GLSL_VERSION, &app_configs);
+      if (is_setting_open && !window_group.project_setting.is_visible) window_inst_toggle(&window_group.project_setting);
+
       // Update chart reader to apply scroll speed
       if(chart_reader.initialized) chart_reader_unload(&chart_reader);
       chart_reader = chart_reader_parse((char *)&render_ctx.chart_settings.chart_path,
@@ -411,13 +415,11 @@ int main()
         IsKeyPressed(KEY_K))
       app_configs.kohra = !app_configs.kohra;
 
-    windows_services_ui_update(&window_group);
-
     BeginDrawing();
       ClearBackground(WHITE);
 
       render_scenes(&render_ctx, &chart_reader);
-      windows_services_render(&window_group);
+      windows_services_render(&window_group, &app_configs, &render_ctx);
 
       // Debug FPS
       DrawFPS(5, 5);

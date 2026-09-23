@@ -1,7 +1,9 @@
 #ifndef WIN_PROJECT_SETTING
 #define WIN_PROJECT_SETTING
 
+#include "data/app_configs/app_config.h"
 #include "raylib.h"
+#include "render/render_service.h"
 #include "windows/rgui_input_data.h"
 #include "windows/window_inst.h"
 
@@ -10,6 +12,7 @@ typedef struct
   bool  setting_window_active;
   int   setting_options_active;
 
+  // PROJECT
   // Info
   RguiTextInput title;
   RguiTextInput composer;
@@ -35,14 +38,23 @@ typedef struct
   RguiFileInput bg_video;
 
   Rectangle scroll_rect;
-  Vector2 proj_scroll;
+  Vector2 proj_scroll, general_scroll;
+
+  // GENERAL
+  // Gameplay
+  RguiFloatInput scroll_speed;
+  RguiSelectInput aspect_ratio;
+
+  // Audio
+  RguiFloatInput music_volume;
+  RguiFloatInput effect_volume;
 
   Shader sdf_shader;
   List font_fallbacks;
 } ProjSettingData;
 
-ProjSettingData proj_setting_init(int glsl);
-void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data);
+ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs);
+void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs, RenderContext *render_ctx);
 void proj_setting_unload(ProjSettingData *proj_setting);
 void proj_setting_reload_font(ProjSettingData *proj_setting);
 

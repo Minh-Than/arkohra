@@ -57,14 +57,14 @@ void window_inst_toggle(WindowInst *window_inst)
   else window_inst_open(window_inst);
 }
 
-void window_inst_draw(WindowInst *window_inst)
+void window_inst_draw(WindowInst *window_inst, AppConfigs *app_configs, RenderContext *render_ctx)
 {
   if (!window_inst->is_visible) return;
 
   switch (window_inst->type)
   {
     case WINDOW_COMMAND_PALETTE: cmd_plt_draw(window_inst, (CmdPltData *)window_inst->data); break;
-    case WINDOW_PROJECT_SETTING: proj_setting_draw(window_inst, (ProjSettingData *)window_inst->data); break;
+    case WINDOW_PROJECT_SETTING: proj_setting_draw(window_inst, (ProjSettingData *)window_inst->data, app_configs, render_ctx); break;
   }
 }
 

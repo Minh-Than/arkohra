@@ -6,20 +6,25 @@
 #include "windows/project_setting/window.h"
 #include "windows/window_inst.h"
 
-WindowGroup window_services_init(int glsl)
+WindowGroup window_services_init(int glsl, AppConfigs *app_configs)
 {
   // Command Palette
   WindowInst command_palette    = window_inst_init(WINDOW_COMMAND_PALETTE);
   CmdPltData *cmd_plt_data      = (CmdPltData *)malloc(sizeof(CmdPltData));
   *cmd_plt_data                 = cmd_plt_init();
   command_palette.data          = cmd_plt_data;
+  window_inst_ui_update(&command_palette,
+                        (GetScreenWidth() - CMD_PLT_SIZE_X) / 2, CMD_PLT_Y, CMD_PLT_SIZE_X, CMD_PLT_SIZE_Y);
 
   // Command Palette
   WindowInst project_setting         = window_inst_init(WINDOW_PROJECT_SETTING);
   ProjSettingData *proj_setting_data = (ProjSettingData *)malloc(sizeof(ProjSettingData));
-  *proj_setting_data                 = proj_setting_init(glsl);
+  *proj_setting_data                 = proj_setting_init(glsl, app_configs);
   project_setting.data               = proj_setting_data;
-  window_inst_ui_update(&project_setting, 0, 0, 528, 448);
+
+  int width = 528; int height = 448;
+  window_inst_ui_update(&project_setting,
+                        (GetScreenWidth() - width) / 2, (GetScreenHeight() - height) / 2, width, height);
 
   WindowGroup group = {
     .command_palette = command_palette,
@@ -29,21 +34,13 @@ WindowGroup window_services_init(int glsl)
   return group;
 }
 
-// Preferably for fixed windows
-void windows_services_ui_update(WindowGroup (*window_group))
+void windows_services_render(WindowGroup *window_group, AppConfigs *app_configs, RenderContext *render_ctx)
 {
-  window_inst_ui_update(&window_group->command_palette,
-    (GetScreenWidth() - CMD_PLT_SIZE_X) / 2, CMD_PLT_Y, CMD_PLT_SIZE_X, CMD_PLT_SIZE_Y
-  );
+  window_inst_draw(&window_group->command_palette, app_configs, render_ctx);
+  window_inst_draw(&window_group->project_setting, app_configs, render_ctx);
 }
 
-void windows_services_render(WindowGroup (*window_group))
-{
-  window_inst_draw(&window_group->command_palette);
-  window_inst_draw(&window_group->project_setting);
-}
-
-void windows_services_unload(WindowGroup (*window_group))
+void windows_services_unload(WindowGroup *window_group)
 {
   window_inst_unload(&window_group->command_palette);
 

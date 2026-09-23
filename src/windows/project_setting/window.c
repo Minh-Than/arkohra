@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "data/custom_types/dynamic_list.h"
+#include "gameplay/camera/camera_service.h"
 #include "raylib.h"
 #include "raygui.h"
 #include "raymath.h"
@@ -20,10 +21,10 @@
 #define PATH_SEPERATOR "/"
 #endif
 
-ProjSettingData proj_setting_init(int glsl)
+ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
 {
   ProjSettingData data = { 0 };
-  data.proj_scroll = Vector2Zero();
+  data.proj_scroll = data.general_scroll = Vector2Zero();
   data.scroll_rect = (Rectangle){ 0, 0 };
   data.setting_options_active = 2;
 
@@ -35,6 +36,16 @@ ProjSettingData proj_setting_init(int glsl)
   data.preview_to = rgui_intinput_init("10000");
 
   data.audio = data.jacket = data.background = data.bg_video = rgui_fileinput_init("");
+
+  snprintf(data.scroll_speed.text, sizeof(data.scroll_speed.text), "%.2f", app_configs->scroll_speed);
+  data.scroll_speed = rgui_floatinput_init(data.scroll_speed.text);
+  data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->playfield_ratio);
+    printf("%s\n", data.aspect_ratio.list);
+
+  snprintf(data.music_volume.text, sizeof(data.music_volume.text), "%.2f", app_configs->music_volume);
+  data.music_volume = rgui_floatinput_init(data.music_volume.text);
+  snprintf(data.effect_volume.text, sizeof(data.effect_volume.text), "%.2f", app_configs->hit_volume);
+  data.effect_volume = rgui_floatinput_init(data.effect_volume.text);
 
   data.sdf_shader = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
   const char *paths[] = { "resources/fonts/NotoSans-Regular.ttf", };
@@ -49,7 +60,7 @@ ProjSettingData proj_setting_init(int glsl)
   return data;
 }
 
-void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
+void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs, RenderContext *render_ctx)
 {
   Rectangle win_rect = (Rectangle){ window_inst->x, window_inst->y,
                                     window_inst->width, window_inst->height };
@@ -107,11 +118,8 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
   // PROJECT
   if (data->setting_options_active == 0)
   {
-    // Information
-    static const char *labels[] = { "Title", "Composer", "Illustrator",
-                                    "Charter", "Difficulty Name", "Alias" };
-
     BeginShaderMode(data->sdf_shader);
+
     int info_panel_h = 200;
     int gameplay_panel_h = 230;
     int files_panel_h = 140;
@@ -124,15 +132,18 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
                    &data->proj_scroll, &data->scroll_rect);
 
     BeginScissorMode(data->scroll_rect.x, data->scroll_rect.y, data->scroll_rect.width, data->scroll_rect.height);
+
+    // Information
     int info_panel_x = content_x + 8    + (int)data->proj_scroll.x;
     int info_panel_y = scroll_y  + 12*1 + (int)data->proj_scroll.y;
     int info_panel_w = scroll_w  - 28;
+    int label_xs = 96;
     GuiGroupBox ((Rectangle){info_panel_x, info_panel_y, info_panel_w, info_panel_h}, "[ INFORMATION ]");
 
-    int label_xs = 96;
     int info_field_x = info_panel_x + 8;
     int info_field_y = info_panel_y + 16;
 
+    char *info_labels[] = { "Title", "Composer", "Illustrator", "Charter", "Difficulty Name", "Alias" };
     char *info_values[] = {
       data->title.text, data->composer.text,
       data->illustrator.text, data->charter.text,
@@ -151,7 +162,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
     for (int i = 0; i < 6; i++)
     {
       int row_y = info_field_y + input_field_gap * i;
-      GuiLabel((Rectangle){ info_field_x, row_y, label_xs, input_field_h }, labels[i]);
+      GuiLabel((Rectangle){ info_field_x, row_y, label_xs, input_field_h }, info_labels[i]);
 
       bool wasEditing = *info_edit[i];
       if (rgui_textinput_draw_font((Rectangle){ info_field_x + label_xs, row_y, info_panel_w - 16 - label_xs, input_field_h },
@@ -185,13 +196,12 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
                    data->base_bpm.text, RGUI_INPUT_TEXT_CAP, data->base_bpm.edit))
     {
       data->base_bpm.edit = !data->base_bpm.edit;
-      data->base_bpm.value = text_to_float_validated(data->base_bpm.text, 0.0f, -FLT_MAX, FLT_MAX);
+      data->base_bpm.value = text_to_float_validated(data->base_bpm.text, data->base_bpm.value, -FLT_MAX, FLT_MAX);
 
       int dec = fminf(12, count_decimals(data->base_bpm.text));
       snprintf(data->base_bpm.text, sizeof(data->base_bpm.text), "%.*f", dec, data->base_bpm.value);
     } else
     {
-      // --- while editing or idle: keep the float in sync ---
       data->cc.value = text_to_float_validated(data->cc.text, data->cc.value, -FLT_MAX, FLT_MAX);
     }
     GuiCheckBox((Rectangle){base_bpm_checkbox_x, gameplay_field_y + input_field_gap*0, input_field_h, input_field_h},
@@ -213,7 +223,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
                     data->chart_offset.text, RGUI_INPUT_TEXT_CAP, data->chart_offset.edit))
     {
       data->chart_offset.edit = !data->chart_offset.edit;
-      data->chart_offset.value = text_to_int_validated(data->chart_offset.text, 0, INT_MIN, INT_MAX);
+      data->chart_offset.value = text_to_int_validated(data->chart_offset.text, data->chart_offset.value, INT_MIN, INT_MAX);
       snprintf(data->chart_offset.text, sizeof(data->chart_offset.text), "%d", data->chart_offset.value);
     } else
     {
@@ -227,7 +237,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
                     data->judge_density.text, RGUI_INPUT_TEXT_CAP, data->judge_density.edit))
     {
       data->judge_density.edit = !data->judge_density.edit;
-      data->judge_density.value = text_to_int_validated(data->judge_density.text, 0, INT_MIN, INT_MAX);
+      data->judge_density.value = text_to_int_validated(data->judge_density.text, data->judge_density.value, INT_MIN, INT_MAX);
       snprintf(data->judge_density.text, sizeof(data->judge_density.text), "%d", data->judge_density.value);
     } else
     {
@@ -241,13 +251,12 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
                    data->cc.text, RGUI_INPUT_TEXT_CAP, data->cc.edit))
     {
       data->cc.edit = !data->cc.edit;
-      data->cc.value = text_to_float_validated(data->cc.text, 0.0f, -FLT_MAX, FLT_MAX);
+      data->cc.value = text_to_float_validated(data->cc.text, data->cc.value, -FLT_MAX, FLT_MAX);
 
       int dec = fminf(12, count_decimals(data->cc.text));
       snprintf(data->cc.text, sizeof(data->cc.text), "%.*f", dec, data->cc.value);
     } else
     {
-      // --- while editing or idle: keep the float in sync ---
       data->cc.value = text_to_float_validated(data->cc.text, data->cc.value, -FLT_MAX, FLT_MAX);
     }
     GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*5,
@@ -258,7 +267,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
                     data->preview_from.text, 256, data->preview_from.edit))
     {
       data->preview_from.edit = !data->preview_from.edit;
-      data->preview_from.value = text_to_int_validated(data->preview_from.text, 0, INT_MIN, INT_MAX);
+      data->preview_from.value = text_to_int_validated(data->preview_from.text, data->preview_from.value, INT_MIN, INT_MAX);
       snprintf(data->preview_from.text, sizeof(data->preview_from.text), "%d", data->preview_from.value);
     } else
     {
@@ -269,7 +278,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
                     data->preview_to.text, RGUI_INPUT_TEXT_CAP, data->preview_to.edit))
     {
       data->preview_to.edit = !data->preview_to.edit;
-      data->preview_to.value = text_to_int_validated(data->preview_to.text, 0, INT_MIN, INT_MAX);
+      data->preview_to.value = text_to_int_validated(data->preview_to.text, data->preview_to.value, INT_MIN, INT_MAX);
       snprintf(data->preview_to.text, sizeof(data->preview_to.text), "%d", data->preview_to.value);
     } else
     {
@@ -368,6 +377,115 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data)
     GuiWindowFileDialog(&data->bg_video.state);
     BeginScissorMode(data->scroll_rect.x, data->scroll_rect.y, data->scroll_rect.width, data->scroll_rect.height);
 
+    EndScissorMode();
+    EndShaderMode();
+  }
+
+  // GENERAL
+  if (data->setting_options_active == 2)
+  {
+    BeginShaderMode(data->sdf_shader);
+
+    int gameplay_panel_h = 80;
+    int audio_panel_h = 80;
+
+    int input_field_h = 24;
+    int input_field_gap = 30;
+    int total_content_h = gameplay_panel_h +audio_panel_h + 12*2 + 8;
+    GuiScrollPanel((Rectangle){content_x, scroll_y, scroll_w, scroll_h},
+                   NULL, (Rectangle){0, 0, scroll_w, total_content_h},
+                   &data->general_scroll, &data->scroll_rect);
+
+    int label_xs = 96;
+    BeginScissorMode(data->scroll_rect.x, data->scroll_rect.y, data->scroll_rect.width, data->scroll_rect.height);
+
+    // Audio
+    int audio_panel_x = content_x + 8    + (int)data->general_scroll.x;
+    int audio_panel_y = scroll_y  + 12*2 + (int)data->general_scroll.y + gameplay_panel_h;
+    int audio_panel_w = scroll_w  - 28;
+    GuiGroupBox ((Rectangle){audio_panel_x, audio_panel_y, audio_panel_w, audio_panel_h}, "[ AUDIO ]");
+
+    int audio_field_x = audio_panel_x + 8;
+    int audio_field_y = audio_panel_y + 16;
+
+    int audio_input_x = audio_field_x + label_xs;
+
+    GuiLabel((Rectangle){ audio_field_x, audio_field_y + input_field_gap*0,
+                          label_xs, input_field_h },
+             "Music Volume");
+    if (GuiTextBox((Rectangle){ audio_input_x, audio_field_y + input_field_gap*0,
+                                audio_panel_w - 16 - label_xs, input_field_h },
+                   data->music_volume.text, RGUI_INPUT_TEXT_CAP, data->music_volume.edit))
+    {
+      data->music_volume.edit = !data->music_volume.edit;
+      data->music_volume.value = text_to_float_validated(data->music_volume.text, data->music_volume.value, -FLT_MAX, FLT_MAX);
+
+      int dec = fminf(2, fmaxf(count_decimals(data->cc.text), 2));
+      snprintf(data->music_volume.text, sizeof(data->music_volume.text), "%.*f", dec, data->music_volume.value);
+    } else
+    {
+      // --- while editing or idle: keep the float in sync ---
+      data->music_volume.value = text_to_float_validated(data->music_volume.text, data->music_volume.value, -FLT_MAX, FLT_MAX);
+    }
+    GuiLabel((Rectangle){ audio_field_x, audio_field_y + input_field_gap*1,
+                          label_xs, input_field_h },
+             "Effect Volume");
+    if (GuiTextBox((Rectangle){ audio_input_x, audio_field_y + input_field_gap*1,
+                                audio_panel_w - 16 - label_xs, input_field_h },
+                   data->effect_volume.text, RGUI_INPUT_TEXT_CAP, data->effect_volume.edit))
+    {
+      data->effect_volume.edit = !data->effect_volume.edit;
+      data->effect_volume.value = text_to_float_validated(data->effect_volume.text, data->effect_volume.value, -FLT_MAX, FLT_MAX);
+
+      int dec = fminf(2, fmaxf(count_decimals(data->cc.text), 2));
+      snprintf(data->effect_volume.text, sizeof(data->effect_volume.text), "%.*f", dec, data->effect_volume.value);
+    } else
+    {
+      data->effect_volume.value = text_to_float_validated(data->effect_volume.text, data->effect_volume.value, -FLT_MAX, FLT_MAX);
+    }
+
+    // Gameplay
+    // WARNING: the dropdown area are treated in rendering the same way, meaning anything drawn after WILL BE DRAWN ON TOP OF IT
+    int gameplay_panel_x = content_x + 8    + (int)data->general_scroll.x;
+    int gameplay_panel_y = scroll_y  + 12*1 + (int)data->general_scroll.y;
+    int gameplay_panel_w = scroll_w  - 28;
+    GuiGroupBox ((Rectangle){gameplay_panel_x, gameplay_panel_y, gameplay_panel_w, gameplay_panel_h}, "[ GAMEPLAY ]");
+
+    int gameplay_field_x = gameplay_panel_x + 8;
+    int gameplay_field_y = gameplay_panel_y + 16;
+
+    int gameplay_input_x = gameplay_field_x + label_xs;
+
+    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*0,
+                          label_xs, input_field_h },
+             "Chart Speed");
+    if (GuiTextBox((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*0,
+                                gameplay_panel_w - 16 - label_xs, input_field_h },
+                   data->scroll_speed.text, RGUI_INPUT_TEXT_CAP, data->scroll_speed.edit))
+    {
+      data->scroll_speed.edit = !data->scroll_speed.edit;
+      data->scroll_speed.value = text_to_float_validated(data->scroll_speed.text, data->scroll_speed.value, -FLT_MAX, FLT_MAX);
+
+      int dec = fminf(2, fmaxf(count_decimals(data->scroll_speed.text), 2));
+      snprintf(data->scroll_speed.text, sizeof(data->scroll_speed.text), "%.*f", dec, data->scroll_speed.value);
+    } else
+    {
+      data->scroll_speed.value = text_to_float_validated(data->scroll_speed.text, data->scroll_speed.value, -FLT_MAX, FLT_MAX);
+    }
+    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*1,
+                          label_xs, input_field_h },
+             "Aspect Ratio");
+    EndScissorMode();
+    if (GuiDropdownBox((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*1,
+                                    gameplay_panel_w - 16 - label_xs, input_field_h },
+                       data->aspect_ratio.list, &data->aspect_ratio.option, data->aspect_ratio.edit))
+    {
+      data->aspect_ratio.edit = !data->aspect_ratio.edit;
+      app_configs->playfield_ratio = data->aspect_ratio.option;
+      SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs->playfield_ratio));
+      recalibrate_camera(&render_ctx->camera);
+    }
+    BeginScissorMode(data->scroll_rect.x, data->scroll_rect.y, data->scroll_rect.width, data->scroll_rect.height);
     EndScissorMode();
     EndShaderMode();
   }
