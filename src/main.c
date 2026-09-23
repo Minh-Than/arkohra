@@ -73,6 +73,8 @@ int main()
   SetTargetFPS(60);
   rlSetClipPlanes(0.01f, 100.0f);
 
+  static int prev_w = -1;
+  static int prev_h = -1;
   while (!WindowShouldClose())
   {
     if (IsFileDropped())
@@ -300,7 +302,24 @@ int main()
     }
     if (IsWindowResized())
     {
-      SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.playfield_ratio));
+      int w = GetScreenWidth();
+      int h = GetScreenHeight();
+
+      if (prev_w > 0 && prev_h > 0)
+      {
+        int dw = abs(w - prev_w);
+        int dh = abs(h - prev_h);
+
+        if (dh > 0 && dw == 0)
+          SetWindowSize((int)aspect_ratio_get_width((float)GetScreenHeight(), app_configs.playfield_ratio), GetScreenHeight());
+        else if (dw >= dh)
+          SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.playfield_ratio));
+        else 
+          SetWindowSize((int)aspect_ratio_get_width((float)GetScreenHeight(), app_configs.playfield_ratio), GetScreenHeight());
+      }
+      prev_w = GetScreenWidth();
+      prev_h = GetScreenHeight();
+
       recalibrate_camera(&render_ctx.camera);
     }
 
