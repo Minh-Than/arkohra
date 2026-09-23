@@ -21,7 +21,6 @@ typedef struct
 {
   char          ffmpeg_path[MAXPATHLEN], recent_project[MAXPATHLEN];
   float         scroll_speed, music_volume, hit_volume;
-  float         app_window_scale;
   AspectRatio   playfield_ratio;
   bool          kohra;
 } AppConfigs;

@@ -361,7 +361,7 @@ int main()
       window_inst_toggle(&window_group.project_setting);
     }
 
-    // Kohra keybind
+    // Reload config.ini
     if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&
         (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
         IsKeyPressed(KEY_R))
@@ -375,6 +375,7 @@ int main()
       SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.playfield_ratio));
       recalibrate_camera(&render_ctx.camera);
       render_ctx.chart_settings.scroll_speed = app_configs.scroll_speed;
+      SetMusicVolume(music, app_configs.music_volume);
 
       // Update chart reader to apply scroll speed
       if(chart_reader.initialized) chart_reader_unload(&chart_reader);
