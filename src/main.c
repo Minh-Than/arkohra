@@ -124,7 +124,6 @@ int main()
           render_ctx.chart_settings = chart_settings_init(&app_configs);
           ChartSettings *chart_settings = &render_ctx.chart_settings;
 
-          chart_settings->scroll_speed = app_configs.scroll_speed;
           text_copy_bounded(chart_settings->chart_path, MAXPATHLEN, TextFormat("%s/%s", dir, chart_path->valuestring));
           text_copy_bounded(chart_settings->audio_path, MAXPATHLEN, TextFormat("%s/%s", dir, audio_path->valuestring));
 
@@ -360,6 +359,30 @@ int main()
     {
       window_inst_close(&window_group.command_palette);
       window_inst_toggle(&window_group.project_setting);
+    }
+
+    // Kohra keybind
+    if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&
+        (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
+        IsKeyPressed(KEY_R))
+    {
+      // Pause audio before processing
+      PauseMusicStream(music);
+      audio_clock_pause(&render_ctx.audio_clock);
+
+      rini_d = fetch_rini_config();
+      app_configs = app_configs_init(&rini_d);
+      SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.playfield_ratio));
+      recalibrate_camera(&render_ctx.camera);
+      render_ctx.chart_settings.scroll_speed = app_configs.scroll_speed;
+
+      // Update chart reader to apply scroll speed
+      if(chart_reader.initialized) chart_reader_unload(&chart_reader);
+      chart_reader = chart_reader_parse((char *)&render_ctx.chart_settings.chart_path,
+                                        &render_ctx.chart_settings,
+                                        &render_ctx.audio_clock,
+                                        &render_ctx.notes_service.arc_tex,
+                                        &render_ctx.notes_service.arc_shader.shader);
     }
 
     // Kohra keybind

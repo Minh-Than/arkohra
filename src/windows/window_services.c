@@ -29,6 +29,7 @@ WindowGroup window_services_init(int glsl)
   return group;
 }
 
+// Preferably for fixed windows
 void windows_services_ui_update(WindowGroup (*window_group))
 {
   window_inst_ui_update(&window_group->command_palette,
