@@ -58,19 +58,20 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
     rlTranslatef(0.0f, 16.0f, 0.0f);
     DrawTexture(hud_service->info_panel, info_panel_posX, 0.0f, WHITE);
 
+    // TODO: fuck this one in particular
     // Progress bar + glow
-    rlPushMatrix();
-      rlTranslatef(info_panel_posX - 70.0f, 0.0f, 0.0f);
-      rlPushMatrix();
-        rlTranslatef(JACKET_HUD_SIZE + 18.0f, hud_service->info_panel.height * 0.49f, 0.0f);
-        float progress_glow_x = (hud_service->info_panel.width - JACKET_HUD_SIZE) * (current_ms / audio_clock->total_audio_length);
-        DrawLineEx(Vector2Zero(), (Vector2){ progress_glow_x, 0.0f }, 5.0f, WHITE);
-        DrawTextureEx(hud_service->progress_glow,
-                      (Vector2){ progress_glow_x - hud_service->progress_glow.width * 0.5f,
-                                -hud_service->progress_glow.height * 0.5f },
-                      0.0f, 1.0f, WHITE);
-      rlPopMatrix();
-    rlPopMatrix();
+    // rlPushMatrix();
+    //   rlTranslatef(info_panel_posX - 70.0f, 0.0f, 0.0f);
+    //   rlPushMatrix();
+    //     rlTranslatef(JACKET_HUD_SIZE + 18.0f, hud_service->info_panel.height * 0.49f, 0.0f);
+    //     float progress_glow_x = (hud_service->info_panel.width - JACKET_HUD_SIZE) * (current_ms / audio_clock->total_audio_length);
+    //     DrawLineEx(Vector2Zero(), (Vector2){ progress_glow_x, 0.0f }, 5.0f, WHITE);
+    //     DrawTextureEx(hud_service->progress_glow,
+    //                   (Vector2){ progress_glow_x - hud_service->progress_glow.width * 0.5f,
+    //                             -hud_service->progress_glow.height * 0.5f },
+    //                   0.0f, 1.0f, WHITE);
+    //   rlPopMatrix();
+    // rlPopMatrix();
 
     rlPushMatrix();
       rlTranslatef(info_panel_posX - 70.0f, info_panel_height * 0.25f, 0.0f);
