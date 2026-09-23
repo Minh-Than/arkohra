@@ -47,7 +47,6 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
   float info_panel_width    = hud_service->info_panel.width  * hud_dynamic_scaling;
   float info_panel_height   = hud_service->info_panel.height * hud_dynamic_scaling;
   float jacket_bg_width     = hud_service->jacket_bg.width   * hud_dynamic_scaling;
-  float jacket_bg_height    = hud_service->jacket_bg.height  * hud_dynamic_scaling;
   float info_panel_posX     = (GetScreenWidth() - info_panel_width) / hud_dynamic_scaling;
 
   // Pause button
@@ -59,10 +58,25 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
     rlTranslatef(0.0f, 16.0f, 0.0f);
     DrawTexture(hud_service->info_panel, info_panel_posX, 0.0f, WHITE);
 
-    // Jacket + Difficulty
+    // Progress bar + glow
+    rlPushMatrix();
+      rlTranslatef(info_panel_posX - 70.0f, 0.0f, 0.0f);
+      rlPushMatrix();
+        rlTranslatef(JACKET_HUD_SIZE + 18.0f, hud_service->info_panel.height * 0.49f, 0.0f);
+        float progress_glow_x = (hud_service->info_panel.width - JACKET_HUD_SIZE) * (current_ms / audio_clock->total_audio_length);
+        DrawLineEx(Vector2Zero(), (Vector2){ progress_glow_x, 0.0f }, 5.0f, WHITE);
+        DrawTextureEx(hud_service->progress_glow,
+                      (Vector2){ progress_glow_x - hud_service->progress_glow.width * 0.5f,
+                                -hud_service->progress_glow.height * 0.5f },
+                      0.0f, 1.0f, WHITE);
+      rlPopMatrix();
+    rlPopMatrix();
+
     rlPushMatrix();
       rlTranslatef(info_panel_posX - 70.0f, info_panel_height * 0.25f, 0.0f);
 
+
+      // Jacket + Difficulty
       DrawTexture(hud_service->jacket_bg, 0.0f, 0.0f, WHITE);
       rlPushMatrix();
         rlTranslatef(18.0f, 18.0f, 0.0f);
@@ -73,17 +87,6 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
                       (Vector2){ 0.0f, JACKET_HUD_SIZE }, 0.0f, JACKET_HUD_SIZE / (float)hud_service->jacket_diff.width, 
                       color_from_hex(chart_settings->difficulty_color));
 
-        // Progress bar + glow
-        rlPushMatrix();
-          rlTranslatef(JACKET_HUD_SIZE, JACKET_HUD_SIZE * 0.55f, 0.0f);
-          float progress_glow_x = (fabsf(GetScreenWidth() - info_panel_posX) - 70.0f) *
-                                                         (current_ms / audio_clock->total_audio_length);
-          DrawLineEx(Vector2Zero(), (Vector2){ progress_glow_x, 0.0f }, 5.0f, WHITE);
-          DrawTextureEx(hud_service->progress_glow,
-                        (Vector2){ progress_glow_x - hud_service->progress_glow.width * 0.5f,
-                                  -hud_service->progress_glow.height *0.5f },
-                        0.0f, 1.0f, WHITE);
-        rlPopMatrix();
 
         float diff_spacing = 1.0f;
         float diff_font_size = 44.0f;
