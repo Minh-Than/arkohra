@@ -34,7 +34,8 @@ static const float BEATLINE_THICKNESS    = 0.25f;
 static const float SKY_STOP_FADE     =  -90.0f;
 static const float TAP_STOP_FADE     = -100.0f;
 static const float SKY_START_FADE    =  -60.0f;
-static const float TAP_START_FADE    =  -70.0f;
+static const float TAP_START_FADE    =  -80.0f;
+static const float ARCTAP_START_FADE =  -70.0f;
 static const float SHADOW_START_FADE =   40.0f;
 
 static const float MINIMUM_ARC_RES    = 1.0f;
