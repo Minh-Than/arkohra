@@ -181,24 +181,6 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
         draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, ARCCAP_ALPHA * curr_groupalpha, current_ms);
       }
 
-      // Height indicators + Arcs/Traces
-      for(int i = arc_list->size - 1; i >= 0; i--)
-      {
-        ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
-        ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
-        if (hidegroup_actives[tg->value]) continue;
-        double curr_fp =  curr_fps[tg->value];
-        float curr_bpm = curr_bpms[tg->value];
-        float curr_groupalpha = groupalpha_fade[tg->value];
-        double z_pos  = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-        if (!tg->props.no_height_indicator &&
-            !(!tg->props.no_clip && tg->props.no_input && arc_segment->arc->start_timing - current_ms < 0))
-          draw_height_indicator(arc_segment, &notes_service->height_indicator.mesh, notes_service->height_indicator.material, z_pos, curr_groupalpha);
-        struct Arc *arc = arc_segment->arc;
-        if (!tg->props.no_clip && arc->is_void && arc->end_timing < current_ms) continue;
-        draw_arc_segment(tg, arc_segment, &notes_service->arc_shader, current_ms, curr_bpm, z_pos, curr_groupalpha);
-      }
-
       // Approaching arccaps
       for(int i = 0; i < arc_list->size; i++)
       {
@@ -236,6 +218,24 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
         float curr_groupalpha = groupalpha_fade[tg->value];
         float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f, fabsf(current_ms - arc->end_timing) / 120.0f), 0.0f, ARCCAP_ALPHA * curr_groupalpha);
         draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, cap_alpha, current_ms);
+      }
+
+      // Height indicators + Arcs/Traces
+      for(int i = arc_list->size - 1; i >= 0; i--)
+      {
+        ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
+        ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
+        if (hidegroup_actives[tg->value]) continue;
+        double curr_fp =  curr_fps[tg->value];
+        float curr_bpm = curr_bpms[tg->value];
+        float curr_groupalpha = groupalpha_fade[tg->value];
+        double z_pos  = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+        if (!tg->props.no_height_indicator &&
+            !(!tg->props.no_clip && tg->props.no_input && arc_segment->arc->start_timing - current_ms < 0))
+          draw_height_indicator(arc_segment, &notes_service->height_indicator.mesh, notes_service->height_indicator.material, z_pos, curr_groupalpha);
+        struct Arc *arc = arc_segment->arc;
+        if (!tg->props.no_clip && arc->is_void && arc->end_timing < current_ms) continue;
+        draw_arc_segment(tg, arc_segment, &notes_service->arc_shader, current_ms, curr_bpm, z_pos, curr_groupalpha);
       }
 
       // Arc heads
