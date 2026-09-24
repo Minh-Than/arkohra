@@ -1,11 +1,17 @@
 #ifndef WIN_PROJECT_SETTING
 #define WIN_PROJECT_SETTING
 
-#include "data/app_configs/app_config.h"
 #include "raylib.h"
+#include "data/app_configs/app_config.h"
 #include "render/render_service.h"
 #include "windows/rgui_input_data.h"
 #include "windows/window_inst.h"
+
+enum ProjTabOption {
+  SETTING_PROJECT = 0,
+  SETTING_EVENTS  = 1,
+  SETTING_GENERAL = 2,
+};
 
 typedef struct
 {

@@ -1,25 +1,11 @@
-#include <float.h>
-#include <limits.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include "data/custom_types/dynamic_list.h"
-#include "gameplay/camera/camera_service.h"
-#include "raylib.h"
 #include "raygui.h"
 #include "raymath.h"
+#include "data/custom_types/dynamic_list.h"
+#include "gameplay/camera/camera_service.h"
 #include "data/fonts/fonts_service.h"
-#include "windows/window_inst.h"
-#include "windows/rgui_input_data.h"
-#include "../project_setting/window.h"
 #include "gui_window_file_dialog.h"
-
-#ifdef _WIN32
-#define PATH_SEPERATOR "\\"
-#else
-#define PATH_SEPERATOR "/"
-#endif
+#include "../project_setting/window.h"
 
 ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
 {
@@ -31,11 +17,16 @@ ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
   data.title = data.composer = data.illustrator = data.charter = data.diff_text = data.alias  = rgui_textinput_init("");
 
   data.bpm_text = data.search_tag = rgui_textinput_init("");
-  data.base_bpm = data.cc = rgui_floatinput_init("0.0");
+  data.base_bpm = data.cc = rgui_floatinput_init("0.00000");
   data.chart_offset = data.judge_density = data.preview_from = rgui_intinput_init("0");
   data.preview_to = rgui_intinput_init("10000");
 
-  data.audio = data.jacket = data.background = data.bg_video = rgui_fileinput_init("");
+  data.audio = data.jacket = data.background = data.bg_video = rgui_fileinput_init();
+  list_push(&data.audio.extensions, ".ogg");
+  list_push(&data.jacket.extensions, ".png");   list_push(&data.background.extensions, ".png");
+  list_push(&data.jacket.extensions, ".jpeg");  list_push(&data.background.extensions, ".jpeg");
+  list_push(&data.jacket.extensions, ".jpg");   list_push(&data.background.extensions, ".jpg");
+  list_push(&data.bg_video.extensions, ".mp4");
 
   snprintf(data.scroll_speed.text, sizeof(data.scroll_speed.text), "%.2f", app_configs->scroll_speed);
   data.scroll_speed = rgui_floatinput_init(data.scroll_speed.text);
@@ -117,7 +108,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
                (Vector2){ handle.x - 2, handle.y + 8 }, GRAY);
 
   // PROJECT
-  if (data->setting_options_active == 0)
+  if (data->setting_options_active == SETTING_PROJECT)
   {
     BeginShaderMode(data->sdf_shader);
 
@@ -143,6 +134,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
 
     int info_field_x = info_panel_x + 8;
     int info_field_y = info_panel_y + 16;
+    int gameplay_input_x = info_field_x + label_xs;
 
     char *info_labels[] = { "Title", "Composer", "Illustrator", "Charter", "Difficulty Name", "Alias" };
     char *info_values[] = {
@@ -186,113 +178,62 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
     int gameplay_field_x = gameplay_panel_x + 8;
     int gameplay_field_y = gameplay_panel_y + 16;
 
-    int is_sync_sub_x = 70;
-    int gameplay_input_x = info_field_x + label_xs;
-    int base_bpm_checkbox_x = gameplay_input_x + info_panel_w - 16 - label_xs - is_sync_sub_x + 8;
-    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*0,
-                          label_xs, input_field_h },
-             "Base BPM");
-    if (GuiTextBox((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*0,
-                                info_panel_w - 16 - label_xs - is_sync_sub_x, input_field_h },
-                   data->base_bpm.text, RGUI_INPUT_TEXT_CAP, data->base_bpm.edit))
-    {
-      data->base_bpm.edit = !data->base_bpm.edit;
-      data->base_bpm.value = text_to_float_validated(data->base_bpm.text, data->base_bpm.value, -FLT_MAX, FLT_MAX);
+    Rectangle gameplay_label_rect = { gameplay_field_x, gameplay_field_y, label_xs, input_field_h };
+    Rectangle gameplay_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs, input_field_h };
 
-      int dec = fminf(12, count_decimals(data->base_bpm.text));
-      snprintf(data->base_bpm.text, sizeof(data->base_bpm.text), "%.*f", dec, data->base_bpm.value);
-    } else
-    {
-      data->cc.value = text_to_float_validated(data->cc.text, data->cc.value, -FLT_MAX, FLT_MAX);
-    }
+    int is_sync_sub_x = 70;
+    GuiLabel(gameplay_label_rect, "Base BPM");
+    rgui_floatinput_textbox(&data->base_bpm, gameplay_field_rect, 5);
+    int base_bpm_checkbox_x = gameplay_input_x + info_panel_w - 16 - label_xs - is_sync_sub_x + 8;
     GuiCheckBox((Rectangle){base_bpm_checkbox_x, gameplay_field_y + input_field_gap*0, input_field_h, input_field_h},
                 "Sync", &data->is_sync);
-    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*1,
-                          label_xs, input_field_h },
-             "BPM Text");
-    if (rgui_textinput_draw_font((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*1,
-                                info_panel_w - 16 - label_xs, input_field_h },
-                   data->bpm_text.text, RGUI_INPUT_TEXT_CAP, 20, 1.0f, data->bpm_text.edit, &data->font_fallbacks))
+
+    gameplay_label_rect.y += input_field_gap;
+    gameplay_field_rect.y += input_field_gap;
+    GuiLabel(gameplay_label_rect, "BPM Text");
+    bool bpm_text_curr_edit = !data->bpm_text.edit;
+    if (rgui_textinput_draw_font(gameplay_field_rect, data->bpm_text.text, RGUI_INPUT_TEXT_CAP,
+                                 20, 1.0f, data->bpm_text.edit, &data->font_fallbacks))
     {
       data->bpm_text.edit = !data->bpm_text.edit;
+      if (!bpm_text_curr_edit) snprintf(data->bpm_text.snapshot, RGUI_INPUT_TEXT_CAP, "%s", data->bpm_text.text);
+      else if                  (strcmp(data->bpm_text.snapshot, data->bpm_text.text) != 0) proj_setting_reload_font(data);
     }
-    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*2,
-                          label_xs, input_field_h },
-             "Chart Offset");
-    if (GuiTextBox((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*2,
-                                 info_panel_w - 16 - label_xs, input_field_h },
-                    data->chart_offset.text, RGUI_INPUT_TEXT_CAP, data->chart_offset.edit))
-    {
-      data->chart_offset.edit = !data->chart_offset.edit;
-      data->chart_offset.value = text_to_int_validated(data->chart_offset.text, data->chart_offset.value, INT_MIN, INT_MAX);
-      snprintf(data->chart_offset.text, sizeof(data->chart_offset.text), "%d", data->chart_offset.value);
-    } else
-    {
-      data->chart_offset.value = text_to_int_validated(data->chart_offset.text, data->chart_offset.value, INT_MIN, INT_MAX);
-    }
-    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*3,
-                          label_xs, input_field_h },
-             "Judge Density");
-    if (GuiTextBox((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*3,
-                                 info_panel_w - 16 - label_xs, input_field_h },
-                    data->judge_density.text, RGUI_INPUT_TEXT_CAP, data->judge_density.edit))
-    {
-      data->judge_density.edit = !data->judge_density.edit;
-      data->judge_density.value = text_to_int_validated(data->judge_density.text, data->judge_density.value, INT_MIN, INT_MAX);
-      snprintf(data->judge_density.text, sizeof(data->judge_density.text), "%d", data->judge_density.value);
-    } else
-    {
-      data->judge_density.value = text_to_int_validated(data->judge_density.text, data->judge_density.value, INT_MIN, INT_MAX);
-    }
-    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*4,
-                          label_xs, input_field_h },
-             "Chart Constant");
-    if (GuiTextBox((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*4,
-                                info_panel_w - 16 - label_xs, input_field_h },
-                   data->cc.text, RGUI_INPUT_TEXT_CAP, data->cc.edit))
-    {
-      data->cc.edit = !data->cc.edit;
-      data->cc.value = text_to_float_validated(data->cc.text, data->cc.value, -FLT_MAX, FLT_MAX);
 
-      int dec = fminf(12, count_decimals(data->cc.text));
-      snprintf(data->cc.text, sizeof(data->cc.text), "%.*f", dec, data->cc.value);
-    } else
-    {
-      data->cc.value = text_to_float_validated(data->cc.text, data->cc.value, -FLT_MAX, FLT_MAX);
-    }
-    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*5,
-                          label_xs, input_field_h },
-             "Preview Segment");
-    if (GuiTextBox((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*5,
-                                 ((float)info_panel_w / 2) - label_xs + 38, input_field_h },
-                    data->preview_from.text, 256, data->preview_from.edit))
-    {
-      data->preview_from.edit = !data->preview_from.edit;
-      data->preview_from.value = text_to_int_validated(data->preview_from.text, data->preview_from.value, INT_MIN, INT_MAX);
-      snprintf(data->preview_from.text, sizeof(data->preview_from.text), "%d", data->preview_from.value);
-    } else
-    {
-      data->preview_from.value = text_to_int_validated(data->preview_from.text, data->preview_from.value, INT_MIN, INT_MAX);
-    }
-    if (GuiTextBox((Rectangle){ gameplay_input_x + ((float)info_panel_w / 2) - label_xs + 44, gameplay_field_y + input_field_gap*5,
-                                 ((float)info_panel_w / 2) - label_xs + 36, input_field_h },
-                    data->preview_to.text, RGUI_INPUT_TEXT_CAP, data->preview_to.edit))
-    {
-      data->preview_to.edit = !data->preview_to.edit;
-      data->preview_to.value = text_to_int_validated(data->preview_to.text, data->preview_to.value, INT_MIN, INT_MAX);
-      snprintf(data->preview_to.text, sizeof(data->preview_to.text), "%d", data->preview_to.value);
-    } else
-    {
-      data->preview_to.value = text_to_int_validated(data->preview_to.text, data->preview_to.value, INT_MIN, INT_MAX);
-    }
-    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*6,
-                          label_xs, input_field_h },
-             "Search Tag");
-    if (rgui_textinput_draw_font((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*6,
-                                info_panel_w - 16 - label_xs, input_field_h },
-                   data->search_tag.text, RGUI_INPUT_TEXT_CAP, 20, 0.6f, data->search_tag.edit, &data->font_fallbacks))
+    gameplay_label_rect.y += input_field_gap;
+    gameplay_field_rect.y += input_field_gap;
+    GuiLabel(gameplay_label_rect, "Chart Offset");
+    rgui_intinput_textbox(&data->chart_offset, gameplay_field_rect);
+
+    gameplay_label_rect.y += input_field_gap;
+    gameplay_field_rect.y += input_field_gap;
+    GuiLabel(gameplay_label_rect, "Judge Density");
+    rgui_intinput_textbox(&data->judge_density, gameplay_field_rect);
+
+    gameplay_label_rect.y += input_field_gap;
+    gameplay_field_rect.y += input_field_gap;
+    GuiLabel(gameplay_label_rect, "Chart Constant");
+    rgui_floatinput_textbox(&data->cc, gameplay_field_rect, 5);
+
+    gameplay_label_rect.y += input_field_gap;
+    gameplay_field_rect.y += input_field_gap;
+    GuiLabel(gameplay_label_rect, "Preview Segment");
+    rgui_intinput_textbox(&data->preview_from,
+                          (Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*5,
+                                       ((float)info_panel_w / 2) - label_xs + 38, input_field_h });
+    rgui_intinput_textbox(&data->preview_to,
+                          (Rectangle){ gameplay_input_x + ((float)info_panel_w / 2) - label_xs + 44, gameplay_field_y + input_field_gap*5,
+                                       ((float)info_panel_w / 2) - label_xs + 36, input_field_h });
+
+    gameplay_label_rect.y += input_field_gap;
+    gameplay_field_rect.y += input_field_gap;
+    bool search_tag_curr_edit = !data->bpm_text.edit;
+    GuiLabel(gameplay_label_rect, "Search Tag");
+    if (rgui_textinput_draw_font(gameplay_field_rect, data->search_tag.text, RGUI_INPUT_TEXT_CAP, 20, 0.6f, data->search_tag.edit, &data->font_fallbacks))
     {
       data->search_tag.edit = !data->search_tag.edit;
+      if (!search_tag_curr_edit) snprintf(data->search_tag.snapshot, RGUI_INPUT_TEXT_CAP, "%s", data->search_tag.text);
+      else if                    (strcmp(data->search_tag.snapshot, data->search_tag.text) != 0) proj_setting_reload_font(data);
     }
 
     // Files
@@ -303,73 +244,28 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
 
     int files_field_x = files_panel_x + 8;
     int files_field_y = files_panel_y + 16;
-
     int files_input_x = info_field_x + label_xs;
 
-    GuiLabel((Rectangle){ files_field_x, files_field_y + input_field_gap*0,
-                          label_xs, input_field_h },
-             "Audio");
-    if(GuiButton((Rectangle){ files_input_x, files_field_y + input_field_gap*0,
-                              info_panel_w - label_xs - 16, input_field_h },
-                 GetFileName(data->audio.file)))
-    {
-      data->audio.state.windowActive = true;
-    }
-    if(data->audio.state.SelectFilePressed)
-    {
-      if(IsFileExtension(data->audio.state.fileNameText, ".ogg"))
-        strcpy(data->audio.file, TextFormat("%s%s%s", data->audio.state.dirPathText, PATH_SEPERATOR, data->audio.state.fileNameText));
-      data->audio.state.SelectFilePressed = false;
-    }
-    GuiLabel((Rectangle){ files_field_x, files_field_y + input_field_gap*1,
-                          label_xs, input_field_h },
-             "Jacket Art");
-    if(GuiButton((Rectangle){ files_input_x, files_field_y + input_field_gap*1,
-                              info_panel_w - label_xs - 16, input_field_h },
-                 GetFileName(data->jacket.file)))
-    {
-      data->jacket.state.windowActive = true;
-    }
-    if(data->jacket.state.SelectFilePressed)
-    {
-      if(IsFileExtension(data->jacket.state.fileNameText, ".png") ||
-         IsFileExtension(data->jacket.state.fileNameText, ".jpg") ||
-         IsFileExtension(data->jacket.state.fileNameText, ".jpeg"))
-        strcpy(data->jacket.file, TextFormat("%s%s%s", data->jacket.state.dirPathText, PATH_SEPERATOR, data->jacket.state.fileNameText));
-      data->jacket.state.SelectFilePressed = false;
-    }
-    GuiLabel((Rectangle){ files_field_x, files_field_y + input_field_gap*2,
-                          label_xs, input_field_h },
-             "Background");
-    if(GuiButton((Rectangle){ files_input_x, files_field_y + input_field_gap*2,
-                              info_panel_w - label_xs - 16, input_field_h },
-                 GetFileName(data->background.file)))
-    {
-      data->background.state.windowActive = true;
-    }
-    if(data->background.state.SelectFilePressed)
-    {
-      if(IsFileExtension(data->background.state.fileNameText, ".png") ||
-         IsFileExtension(data->background.state.fileNameText, ".jpg") ||
-         IsFileExtension(data->background.state.fileNameText, ".jpeg"))
-        strcpy(data->background.file, TextFormat("%s%s%s", data->background.state.dirPathText, PATH_SEPERATOR, data->background.state.fileNameText));
-      data->background.state.SelectFilePressed = false;
-    }
-    GuiLabel((Rectangle){ files_field_x, files_field_y + input_field_gap*3,
-                          label_xs, input_field_h },
-             "Video");
-    if(GuiButton((Rectangle){ files_input_x, files_field_y + input_field_gap*3,
-                              info_panel_w - label_xs - 16, input_field_h },
-                 GetFileName(data->bg_video.file)))
-    {
-      data->bg_video.state.windowActive = true;
-    }
-    if(data->bg_video.state.SelectFilePressed)
-    {
-      if(IsFileExtension(data->bg_video.state.fileNameText, ".mp4"))
-        strcpy(data->bg_video.file, TextFormat("%s%s%s", data->bg_video.state.dirPathText, PATH_SEPERATOR, data->bg_video.state.fileNameText));
-      data->bg_video.state.SelectFilePressed = false;
-    }
+    Rectangle files_label_rect = { files_field_x, files_field_y, label_xs, input_field_h };
+    Rectangle files_field_rect = { files_input_x, files_field_y, files_panel_w - 16 - label_xs, input_field_h };
+
+    GuiLabel(files_label_rect, "Audio");
+    rgui_fileinput_button(&data->audio, files_field_rect);
+
+    files_label_rect.y += input_field_gap;
+    files_field_rect.y += input_field_gap;
+    GuiLabel(files_label_rect, "Jacket Art");
+    rgui_fileinput_button(&data->jacket, files_field_rect);
+
+    files_label_rect.y += input_field_gap;
+    files_field_rect.y += input_field_gap;
+    GuiLabel(files_label_rect, "Background");
+    rgui_fileinput_button(&data->background, files_field_rect);
+
+    files_label_rect.y += input_field_gap;
+    files_field_rect.y += input_field_gap;
+    GuiLabel(files_label_rect, "Video");
+    rgui_fileinput_button(&data->bg_video, files_field_rect);
 
     EndScissorMode();
     GuiWindowFileDialog(&data->audio.state);
@@ -382,8 +278,13 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
     EndShaderMode();
   }
 
+  if (data->setting_options_active == SETTING_EVENTS)
+  {
+    GuiLabel((Rectangle){content_x, scroll_y, 50, 10}, "Balls");
+  }
+
   // GENERAL
-  if (data->setting_options_active == 2)
+  if (data->setting_options_active == SETTING_GENERAL)
   {
     BeginShaderMode(data->sdf_shader);
 
@@ -408,42 +309,18 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
 
     int audio_field_x = audio_panel_x + 8;
     int audio_field_y = audio_panel_y + 16;
-
     int audio_input_x = audio_field_x + label_xs;
 
-    GuiLabel((Rectangle){ audio_field_x, audio_field_y + input_field_gap*0,
-                          label_xs, input_field_h },
-             "Music Volume");
-    if (GuiTextBox((Rectangle){ audio_input_x, audio_field_y + input_field_gap*0,
-                                audio_panel_w - 16 - label_xs, input_field_h },
-                   data->music_volume.text, RGUI_INPUT_TEXT_CAP, data->music_volume.edit))
-    {
-      data->music_volume.edit = !data->music_volume.edit;
-      data->music_volume.value = text_to_float_validated(data->music_volume.text, data->music_volume.value, -FLT_MAX, FLT_MAX);
+    Rectangle audio_label_rect = { audio_field_x, audio_field_y, label_xs, input_field_h };
+    Rectangle audio_field_rect = { audio_input_x, audio_field_y, audio_panel_w - 16 - label_xs, input_field_h };
 
-      int dec = fminf(2, fmaxf(count_decimals(data->cc.text), 2));
-      snprintf(data->music_volume.text, sizeof(data->music_volume.text), "%.*f", dec, data->music_volume.value);
-    } else
-    {
-      // --- while editing or idle: keep the float in sync ---
-      data->music_volume.value = text_to_float_validated(data->music_volume.text, data->music_volume.value, -FLT_MAX, FLT_MAX);
-    }
-    GuiLabel((Rectangle){ audio_field_x, audio_field_y + input_field_gap*1,
-                          label_xs, input_field_h },
-             "Effect Volume");
-    if (GuiTextBox((Rectangle){ audio_input_x, audio_field_y + input_field_gap*1,
-                                audio_panel_w - 16 - label_xs, input_field_h },
-                   data->effect_volume.text, RGUI_INPUT_TEXT_CAP, data->effect_volume.edit))
-    {
-      data->effect_volume.edit = !data->effect_volume.edit;
-      data->effect_volume.value = text_to_float_validated(data->effect_volume.text, data->effect_volume.value, -FLT_MAX, FLT_MAX);
+    GuiLabel(audio_label_rect, "Music Volume");
+    rgui_floatinput_textbox(&data->music_volume, audio_field_rect, 2);
 
-      int dec = fminf(2, fmaxf(count_decimals(data->cc.text), 2));
-      snprintf(data->effect_volume.text, sizeof(data->effect_volume.text), "%.*f", dec, data->effect_volume.value);
-    } else
-    {
-      data->effect_volume.value = text_to_float_validated(data->effect_volume.text, data->effect_volume.value, -FLT_MAX, FLT_MAX);
-    }
+    audio_label_rect.y += input_field_gap;
+    audio_field_rect.y += input_field_gap;
+    GuiLabel(audio_label_rect, "Effect Volume");
+    rgui_floatinput_textbox(&data->effect_volume, audio_field_rect, 2);
 
     // Gameplay
     // WARNING: the dropdown area are treated in rendering the same way, meaning anything drawn after WILL BE DRAWN ON TOP OF IT
@@ -454,40 +331,24 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
 
     int gameplay_field_x = gameplay_panel_x + 8;
     int gameplay_field_y = gameplay_panel_y + 16;
-
     int gameplay_input_x = gameplay_field_x + label_xs;
 
-    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*0,
-                          label_xs, input_field_h },
-             "Chart Speed");
-    if (GuiTextBox((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*0,
-                                gameplay_panel_w - 16 - label_xs, input_field_h },
-                   data->scroll_speed.text, RGUI_INPUT_TEXT_CAP, data->scroll_speed.edit))
-    {
-      data->scroll_speed.edit = !data->scroll_speed.edit;
-      data->scroll_speed.value = text_to_float_validated(data->scroll_speed.text, data->scroll_speed.value, -FLT_MAX, FLT_MAX);
+    Rectangle gameplay_label_rect = { gameplay_field_x, gameplay_field_y, label_xs, input_field_h };
+    Rectangle gameplay_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs, input_field_h };
 
-      int dec = fminf(2, fmaxf(count_decimals(data->scroll_speed.text), 2));
-      snprintf(data->scroll_speed.text, sizeof(data->scroll_speed.text), "%.*f", dec, data->scroll_speed.value);
-    } else
-    {
-      data->scroll_speed.value = text_to_float_validated(data->scroll_speed.text, data->scroll_speed.value, -FLT_MAX, FLT_MAX);
-    }
-    GuiLabel((Rectangle){ gameplay_field_x, gameplay_field_y + input_field_gap*1,
-                          label_xs, input_field_h },
-             "Aspect Ratio");
+    GuiLabel(gameplay_label_rect, "Chart Speed");
+    rgui_floatinput_textbox(&data->scroll_speed, gameplay_field_rect, 2);
+
+    gameplay_label_rect.y += input_field_gap;
+    gameplay_field_rect.y += input_field_gap;
+    GuiLabel(gameplay_label_rect, "Aspect Ratio");
     EndScissorMode();
-    if (GuiDropdownBox((Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*1,
-                                    gameplay_panel_w - 16 - label_xs, input_field_h },
-                       data->aspect_ratio.list, &data->aspect_ratio.option, data->aspect_ratio.edit))
+    if (rgui_selectinput_dropdown(&data->aspect_ratio, gameplay_field_rect))
     {
-      data->aspect_ratio.edit = !data->aspect_ratio.edit;
       app_configs->playfield_ratio = data->aspect_ratio.option;
       SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs->playfield_ratio));
       recalibrate_camera(&render_ctx->camera);
     }
-    BeginScissorMode(data->scroll_rect.x, data->scroll_rect.y, data->scroll_rect.width, data->scroll_rect.height);
-    EndScissorMode();
     EndShaderMode();
   }
 }
@@ -500,6 +361,11 @@ void proj_setting_unload(ProjSettingData *proj_setting)
     UnloadFont(*font);
   }
   list_free(&proj_setting->font_fallbacks);
+
+  rgui_fileinput_unload(&proj_setting->audio);
+  rgui_fileinput_unload(&proj_setting->jacket);
+  rgui_fileinput_unload(&proj_setting->background);
+  rgui_fileinput_unload(&proj_setting->bg_video);
 }
 
 void proj_setting_reload_font(ProjSettingData *proj_setting)
@@ -562,5 +428,4 @@ void proj_setting_reload_font(ProjSettingData *proj_setting)
     list_free(&font_list);
   }
   list_free(&missing_codepoints);
-
 }
