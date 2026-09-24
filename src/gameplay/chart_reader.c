@@ -86,6 +86,20 @@ static bool parse_aff_header(char *line, ChartSettings *chart_settings)
   return end_of_header;
 }
 
+static void parse_arc_line(char *fields[], char *line)
+{
+    int n = 0;
+    char copy[256];
+    text_copy_bounded(copy, sizeof(copy), line);
+    char *p = copy + 4;
+    fields[n++] = p;
+    while ((p = strchr(p, ',')) != NULL && n < 10)
+    {
+      *p = '\0';
+      fields[n++] = ++p;
+    }
+}
+
 static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count, int *current_tg)
 {
   ChartTimingGroup *tg = (ChartTimingGroup *)list_get(&chart_reader->timing_groups, *current_tg);
@@ -147,32 +161,37 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
       }
     case ARC:
       {
-        int start_timing, end_timing;
-        float x1, y1, x2, y2;
-        char arc_type[8];
-        int color;
-        char sfx[256], is_void[8];
-        int matched = sscanf(line, "arc(%d,%d,%f,%f,%7[^,],%f,%f,%d,%255[^,],%7[^)])",
-                             &start_timing, &end_timing, &x1, &x2, arc_type, &y1, &y2, &color, sfx, is_void);
-        if (matched == 10)
+        char *fields[10];
+        int n = 0;
+        char copy[256];
+        text_copy_bounded(copy, sizeof(copy), line);
+        char *p = copy + 4;
+        fields[n++] = p;
+        while ((p = strchr(p, ',')) != NULL && n < 10)
+        {
+          *p = '\0';
+          fields[n++] = ++p;
+        }
+
+        if (n == 10)
         {
           List arctaps; list_init(&arctaps, sizeof(ArcTap));
           struct Arc arc = {
             .arctaps      = arctaps,
-            .x1 = x1, .y1 = y1,
-            .x2 = x2, .y2 = y2,
+            .x1 = (float)atof(fields[2]), .y1 = (float)atof(fields[5]),
+            .x2 = (float)atof(fields[3]), .y2 = (float)atof(fields[6]),
             .arc_res      = 1.0f,
-            .start_timing = start_timing,
-            .end_timing   = end_timing,
+            .start_timing = atoi(fields[0]),
+            .end_timing   = atoi(fields[1]),
             .timing_group = *current_tg,
-            .color        = color,
-            .type         = arctype_get_by_string(arc_type),
-            .is_void      = strncmp(is_void, "true", 4) == 0 ? true : false,
+            .color        = atoi(fields[7]),
+            .type         = arctype_get_by_string(fields[4]),
+            .is_void      = strncmp(fields[9], "true", 4) == 0 ? true : false,
             .is_head      = true,
             .prev_arc     = NULL,
             .next_arc     = NULL
           };
-          strncpy(arc.sfx, sfx, sizeof(arc.sfx) - 1);
+          text_copy_bounded(arc.sfx, sizeof(arc.sfx), fields[8]);
 
           List arctap_timings; list_init(&arctap_timings, sizeof(int));
           parse_arctaps(line, &arctap_timings);

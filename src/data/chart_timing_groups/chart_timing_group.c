@@ -127,21 +127,15 @@ static int update_tg_props(char *token, void *user)
       {
         char name[256];
         int matched = sscanf(token, "name=\"%255[^\"]\"", name);
-        if (matched == 1)
-        {
-          strncpy(tg->props.name, name, sizeof(tg->props.name) - 1);
-          tg->props.name[sizeof(tg->props.name) - 1] = '\0';
-        }
+        text_copy_bounded(tg->props.name, sizeof(tg->props.name), matched == 1 ? name : "");
         break;
       }
     case ARC_RESOLUTION:
       {
         float arc_res;
         int matched = sscanf(token, "arcresolution=%f", &arc_res);
-        if (matched == 1)
-        {
-          tg->props.arc_res = fmaxf(fminf(arc_res, MAXIMUM_ARC_RES), MINIMUM_ARC_RES);
-        }
+        if (matched != 1) break; 
+        tg->props.arc_res = fmaxf(fminf(arc_res, MAXIMUM_ARC_RES), MINIMUM_ARC_RES);
         break;
       }
     case NO_INPUT:  tg->props.no_input  = true; break;
