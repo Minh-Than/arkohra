@@ -14,7 +14,7 @@ typedef struct {
   bool initialized;
 } ChartReader;
 
-ChartReader chart_reader_parse(char *file_path, ChartSettings *chart_settings, AudioClock *audio_clock, Texture2D *arc_texture, Shader *arc_shader);
+ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_clock, Texture2D *arc_texture, Shader *arc_shader);
 void chart_reader_print(ChartReader *chart_reader);
 void chart_reader_unload(ChartReader *chart_reader);
 void process_note_render_lists(ChartReader *chart_reader, ChartSettings *chart_settings, float current_ms, double *curr_fps, float *curr_bpms);

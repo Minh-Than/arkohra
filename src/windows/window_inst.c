@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include "raygui.h"
 #include "windows/command_palette/window.h"
-#include "windows/project_setting/window.h"
 #include "window_inst.h"
 
 WindowInst window_inst_init(WindowType type)
@@ -55,17 +54,6 @@ void window_inst_toggle(WindowInst *window_inst)
 {
   if (window_inst->is_visible) window_inst_close(window_inst);
   else window_inst_open(window_inst);
-}
-
-void window_inst_draw(WindowInst *window_inst, AppConfigs *app_configs, RenderContext *render_ctx)
-{
-  if (!window_inst->is_visible) return;
-
-  switch (window_inst->type)
-  {
-    case WINDOW_COMMAND_PALETTE: cmd_plt_draw(window_inst, (CmdPltData *)window_inst->data); break;
-    case WINDOW_PROJECT_SETTING: proj_setting_draw(window_inst, (ProjSettingData *)window_inst->data, app_configs, render_ctx); break;
-  }
 }
 
 void window_inst_unload(WindowInst *window_inst)

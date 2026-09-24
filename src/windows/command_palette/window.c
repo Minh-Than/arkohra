@@ -5,16 +5,16 @@
 #include "raylib.h"
 #include "../command_palette/window.h"
 
-CmdPltData cmd_plt_init()
+CmdPltData cmd_palette_init()
 {
   CmdPltData data = { 0 };
   TextCopy(data.search_text, "");
-  data.search_edit_node = false;
   return data;
 }
 
-void cmd_plt_draw(WindowInst* window_inst, CmdPltData *data)
+void cmd_palette_draw(WindowInst* window_inst, CmdPltData *data)
 {
+  if (!window_inst->is_visible) return;
   // Main panel
   Rectangle cmd_plt_rect = (Rectangle){ window_inst->x, window_inst->y, window_inst->width, window_inst->height };
   GuiPanel(cmd_plt_rect, NULL);

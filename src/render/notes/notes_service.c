@@ -1,7 +1,9 @@
 #include "color_services.h"
 #include "constants.h"
+#include "data/chart_settings/chart_settings.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
 #include "data/keyframe/value_channel.h"
+#include "gameplay/audio_service.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "render/utils/drawing.h"
@@ -47,26 +49,27 @@ NotesService notes_service_init(int glsl)
   return service;
 }
 
-void notes_service_render(NotesService *notes_service, ChartSettings *chart_settings,
-                          Camera3D camera, ChartReader *chart_reader, float current_ms)
+void notes_service_render(NotesService *notes_service, RenderContext *render_ctx, ChartReader *chart_reader)
 {
   List *timing_groups = &chart_reader->timing_groups;
-  NoteRenderLists *note_render_lists = &chart_reader->render_lists;
-  List *beatline_list = &note_render_lists->beatline_render_list;
-  List *hold_list     = &note_render_lists->hold_render_list;
-  List *tap_list      = &note_render_lists->tap_render_list;
-  List *arc_list      = &note_render_lists->arc_render_list;
-  List *arccap_list   = &note_render_lists->arccap_render_list;
-  List *arctap_list   = &note_render_lists->arctap_render_list;
+  List *beatline_list = &chart_reader->render_lists.beatline_render_list;
+  List *hold_list     = &chart_reader->render_lists.hold_render_list;
+  List *tap_list      = &chart_reader->render_lists.tap_render_list;
+  List *arc_list      = &chart_reader->render_lists.arc_render_list;
+  List *arccap_list   = &chart_reader->render_lists.arccap_render_list;
+  List *arctap_list   = &chart_reader->render_lists.arctap_render_list;
 
+  ChartSettings *chart_settings = &render_ctx->chart_settings;
+  AudioClock *audio_clock = &render_ctx->audio_clock;
+  float current_ms = audio_clock_get_time_ms(audio_clock) - chart_settings->audio_offset;
   float base_bpm     = chart_settings->base_bpm;
   float scroll_speed = chart_settings->scroll_speed;
 
   // Precalculate tg related values for reuse
-  double        curr_fps[chart_reader->timing_groups.size];
-  float        curr_bpms[chart_reader->timing_groups.size];
-  bool hidegroup_actives[chart_reader->timing_groups.size];
-  float  groupalpha_fade[chart_reader->timing_groups.size];
+  double        curr_fps[timing_groups->size];
+  float        curr_bpms[timing_groups->size];
+  bool hidegroup_actives[timing_groups->size];
+  float  groupalpha_fade[timing_groups->size];
   process_note_render_lists(chart_reader, chart_settings, current_ms, curr_fps, curr_bpms);
   for (int i = 0; i < timing_groups->size; i++)
   {
@@ -78,7 +81,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
   }
 
   // GROUND NOTES
-  BeginMode3D(camera);
+  BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
     rlDisableBackfaceCulling();
     rlPushMatrix();
@@ -123,7 +126,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
 
   // SKY NOTES
   rlSetClipPlanes(0.01f, 90.0f);
-  BeginMode3D(camera);
+  BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
     rlDisableBackfaceCulling();
     rlPushMatrix();
@@ -212,7 +215,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
         double curr_fp  = curr_fps[tg->value];
         float curr_groupalpha = groupalpha_fade[tg->value];
         float diff_fp_z = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-        float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f    , diff_fp_z / -100.0f), 0.0f, ARCCAP_ALPHA) * curr_groupalpha;
+        float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f    , diff_fp_z / -100.0f), 0.0f, ARCCAP_ALPHA * curr_groupalpha);
         float cap_scale = Clamp(Lerp(1.0f, ARCCAP_FAR_SCALE, diff_fp_z / -100.0f), 1.0f, ARCCAP_FAR_SCALE);
         draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, cap_scale, cap_alpha, current_ms);
       }
@@ -231,7 +234,7 @@ void notes_service_render(NotesService *notes_service, ChartSettings *chart_sett
 
         double curr_fp  = curr_fps[tg->value];
         float curr_groupalpha = groupalpha_fade[tg->value];
-        float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f, fabsf(current_ms - arc->end_timing) / 120.0f), 0.0f, ARCCAP_ALPHA) * curr_groupalpha;
+        float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f, fabsf(current_ms - arc->end_timing) / 120.0f), 0.0f, ARCCAP_ALPHA * curr_groupalpha);
         draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, cap_alpha, current_ms);
       }
 

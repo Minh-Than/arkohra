@@ -1,8 +1,6 @@
 #ifndef WINDOW_INST_H
 #define WINDOW_INST_H
 
-#include "data/app_configs/app_config.h"
-#include "render/render_service.h"
 #include <stdbool.h>
 
 typedef enum
@@ -24,7 +22,6 @@ void window_inst_ui_update(WindowInst *window_inst, int x, int y, int width, int
 void window_inst_open(WindowInst *window_inst);
 void window_inst_close(WindowInst *window_inst);
 void window_inst_toggle(WindowInst *window_inst);
-void window_inst_draw(WindowInst *window_inst, AppConfigs *app_configs, RenderContext *render_ctx);
 void window_inst_unload(WindowInst *window_inst);
 
 #endif // WINDOW_INST_H

@@ -3,7 +3,6 @@
 
 #include "data/chart_settings/chart_settings.h"
 #include "data/custom_types/dynamic_list.h"
-#include "gameplay/audio_service.h"
 #include "raylib.h"
 
 typedef struct {
@@ -14,7 +13,7 @@ typedef struct {
 } HudService;
 
 HudService hud_service_init(int glsl);
-void hud_services_render(HudService *hud_service, ChartSettings *chart_settings, AudioClock *audio_clock, float current_ms);
+void hud_services_render(HudService *hud_service, ChartSettings *chart_settings);
 void hud_service_unload(HudService *hud_service);
 
 #endif // HUD_SERVICES_H

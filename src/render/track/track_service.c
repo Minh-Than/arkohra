@@ -154,14 +154,14 @@ TrackService track_service_init()
   return service;
 }
 
-void track_service_render_base_track(TrackService *track_service, ChartSettings *chart_settings, Camera3D camera)
+void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx)
 {
   // Background
   float bg_scale = (float)GetScreenWidth() / (float)track_service->background_tex.width;
   DrawTextureEx(track_service->background_tex, (Vector2){0.0f, Lerp(-180.0f, 0.0f, get_aspect_ratio_adjustment()) * bg_scale}, 0.0f, bg_scale, WHITE);
 
   // Track-related
-  BeginMode3D(camera);
+  BeginMode3D(render_ctx->camera);
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
 
@@ -172,7 +172,7 @@ void track_service_render_base_track(TrackService *track_service, ChartSettings 
       rlEnableDepthTest();
     rlPopMatrix();
 
-    if (chart_settings->sl_type != SL_NONE)
+    if (render_ctx->chart_settings.sl_type != SL_NONE)
     {
       BeginBlendMode(BLEND_ALPHA);
         rlDisableBackfaceCulling();
@@ -185,10 +185,10 @@ void track_service_render_base_track(TrackService *track_service, ChartSettings 
   EndMode3D();
 }
 
-void track_service_render_sky_input(TrackService *track_service, Camera3D camera)
+void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx)
 {
   // Sky input line - label
-  BeginMode3D(camera);
+  BeginMode3D(render_ctx->camera);
     rlDisableDepthTest();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);

@@ -404,11 +404,11 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
   }
 }
 
-ChartReader chart_reader_parse(char *file_path, ChartSettings *chart_settings, AudioClock *audio_clock, Texture2D *arc_texture, Shader *arc_shader)
+ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_clock, Texture2D *arc_texture, Shader *arc_shader)
 {
   ChartReader chart_reader = { 0 };
 
-  char *aff_data = LoadFileText(file_path);
+  char *aff_data = LoadFileText(chart_settings->chart_path);
   if (aff_data == NULL) return chart_reader;
 
   List tgs; list_init(&tgs, sizeof(ChartTimingGroup));

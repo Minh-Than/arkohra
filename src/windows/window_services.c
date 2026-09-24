@@ -9,10 +9,10 @@
 WindowGroup window_services_init(int glsl, AppConfigs *app_configs)
 {
   // Command Palette
-  WindowInst command_palette    = window_inst_init(WINDOW_COMMAND_PALETTE);
-  CmdPltData *cmd_plt_data      = (CmdPltData *)malloc(sizeof(CmdPltData));
-  *cmd_plt_data                 = cmd_plt_init();
-  command_palette.data          = cmd_plt_data;
+  WindowInst command_palette   = window_inst_init(WINDOW_COMMAND_PALETTE);
+  CmdPltData *cmd_palette_data = (CmdPltData *)malloc(sizeof(CmdPltData));
+  *cmd_palette_data            = cmd_palette_init();
+  command_palette.data         = cmd_palette_data;
   window_inst_ui_update(&command_palette,
                         (GetScreenWidth() - CMD_PLT_SIZE_X) / 2, CMD_PLT_Y, CMD_PLT_SIZE_X, CMD_PLT_SIZE_Y);
 
@@ -36,8 +36,9 @@ WindowGroup window_services_init(int glsl, AppConfigs *app_configs)
 
 void windows_services_render(WindowGroup *window_group, AppConfigs *app_configs, RenderContext *render_ctx)
 {
-  window_inst_draw(&window_group->command_palette, app_configs, render_ctx);
-  window_inst_draw(&window_group->project_setting, app_configs, render_ctx);
+  cmd_palette_draw (&window_group->command_palette, (CmdPltData *)window_group->command_palette.data);
+  proj_setting_draw(&window_group->project_setting, (ProjSettingData *)window_group->project_setting.data,
+                    app_configs, render_ctx);
 }
 
 void windows_services_unload(WindowGroup *window_group)

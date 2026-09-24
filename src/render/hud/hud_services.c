@@ -38,7 +38,7 @@ HudService hud_service_init(int glsl)
   return service;
 }
 
-void hud_services_render(HudService *hud_service, ChartSettings *chart_settings, AudioClock *audio_clock, float current_ms)
+void hud_services_render(HudService *hud_service, ChartSettings *chart_settings)
 {
   // TODO: move these shits away from calculating each frame
   float width_ratio         = (float)GetScreenWidth()  / 1280;
