@@ -31,7 +31,6 @@ ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
   snprintf(data.scroll_speed.text, sizeof(data.scroll_speed.text), "%.2f", app_configs->scroll_speed);
   data.scroll_speed = rgui_floatinput_init(data.scroll_speed.text);
   data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->playfield_ratio);
-    printf("%s\n", data.aspect_ratio.list);
 
   snprintf(data.music_volume.text, sizeof(data.music_volume.text), "%.2f", app_configs->music_volume);
   data.music_volume = rgui_floatinput_init(data.music_volume.text);

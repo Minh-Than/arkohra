@@ -3,17 +3,14 @@ Cloned from quickstart `https://github.com/raylib-extras/raylib-quickstart` by J
 To view a copy of this license, visit https://creativecommons.org/publicdomain/zero/1.0/
 */
 
-#include "data/app_configs/app_config.h"
-
-#define RINI_IMPLEMENTATION
+#include <stdlib.h>
 #include "raylib.h"
 #include "raygui.h"
 #include "rlgl.h"
-
-#include <stdlib.h>
 #include "cJSON.h"
 #include "constants.h"
 #include "resource_util.h"
+#include "data/app_configs/app_config.h"
 #include "data/chart_settings/chart_settings.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/fonts/fonts_service.h"
