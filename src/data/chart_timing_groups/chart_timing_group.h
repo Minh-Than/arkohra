@@ -38,6 +38,7 @@ typedef struct {
   List beatlines;
   ValueChannel hidegroup_channel;
   ValueChannel groupalpha_channel;
+  ValueChannel enwidencamera_channel;
 
 } ChartTimingGroup;
 

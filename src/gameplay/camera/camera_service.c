@@ -1,12 +1,13 @@
 #include <math.h>
 #include <stdio.h>
 #include "camera_service.h"
+#include "raylib.h"
 #include "raymath.h"
 #include "../src/constants.h"
 
 Camera3D camera_init_playfield()
 {
-  Camera3D camera = (Camera3D){
+  Camera3D camera = {
     .position   = (Vector3){ 0.0f, CAMERA_Y, CAMERA_Z },
     .target     = Vector3Zero(),                            // Camera looking at point
     .up         = (Vector3){ 0.0f, 1.0f, 0.0f },            // Camera up vector (rotation towards target)
@@ -70,4 +71,25 @@ Vector3 project_to_camera_view(Camera3D camera, float distance, float offsetX, f
     result          = Vector3Add(result         , Vector3Scale(up, offsetY));
 
     return result;
+}
+
+static int camera_is_16_9(Camera *camera)
+{
+  return (1.77777779f - (1.0f * GetScreenWidth() / GetScreenHeight()) < 0.1f) ? 1 : 0;
+}
+
+Camera3D get_enwidened_camera(Camera3D camera, ValueChannel *enwidencamera_channel, float current_ms)
+{
+  Camera3D enwidened_camera = camera;
+  Vector3 base_look_at = { 0, -5.5f, -20.0f };
+  float z_pos = (camera_is_16_9(&camera) * 1.5f) + 3;
+  float interpolation = value_channel_interpolate(enwidencamera_channel, current_ms);
+  Vector3 enwiden_look_at = Vector3Scale((Vector3){ camera.position.x,
+                                                    camera.position.y,
+                                                    camera.position.z},
+                                          interpolation / 2);
+  enwidened_camera.position.y += interpolation * 4.5f;
+  enwidened_camera.position.z += interpolation * z_pos;
+  enwidened_camera.target = Vector3Add(base_look_at, enwiden_look_at);
+  return enwidened_camera;
 }

@@ -3,6 +3,7 @@
 #include "rlgl.h"
 #include "constants.h"
 #include "track_service.h"
+#include "data/keyframe/value_channel.h"
 #include "gameplay/camera/camera_service.h"
 #include "render/mesh_renderable.h"
 
@@ -119,7 +120,7 @@ TrackService track_service_init()
 
   RenderTexture2D sliced_sky_label = {0};
   {
-    float pixels_per_unit = 150.0f;
+    float pixels_per_unit = 200.0f;
 
     int render_tex_width  = (int)(SKY_LABEL_SIZE_X * pixels_per_unit / SKY_LABEL_SIZE_Y);
     int render_tex_height = (int)pixels_per_unit;
@@ -154,14 +155,19 @@ TrackService track_service_init()
   return service;
 }
 
-void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx)
+void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel)
 {
   // Background
   float bg_scale = (float)GetScreenWidth() / (float)track_service->background_tex.width;
   DrawTextureEx(track_service->background_tex, (Vector2){0.0f, Lerp(-180.0f, 0.0f, get_aspect_ratio_adjustment()) * bg_scale}, 0.0f, bg_scale, WHITE);
 
+  float current_ms = audio_clock_get_time_ms(&render_ctx->audio_clock) - render_ctx->chart_settings.audio_offset;
+  float interpolation = value_channel_interpolate(camera_channel, current_ms);
+  float singleDeltaX = 5;
+
   // Track-related
-  BeginMode3D(render_ctx->camera);
+  Camera3D final_camera = get_enwidened_camera(render_ctx->camera, camera_channel, current_ms);
+  BeginMode3D(final_camera);
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
 
@@ -177,7 +183,14 @@ void track_service_render_base_track(TrackService *track_service, RenderContext 
       BeginBlendMode(BLEND_ALPHA);
         rlDisableBackfaceCulling();
         rlDisableDepthMask();
-        renderable_draw(&track_service->single_line);
+        rlPushMatrix();
+          rlTranslatef(-interpolation * singleDeltaX, 0.0f, 0.0f);
+          DrawMesh(track_service->single_line.mesh, track_service->single_line.material, track_service->single_line.transforms[0]);
+        rlPopMatrix();
+        rlPushMatrix();
+          rlTranslatef(interpolation * singleDeltaX, 0.0f, 0.0f);
+          DrawMesh(track_service->single_line.mesh, track_service->single_line.material, track_service->single_line.transforms[1]);
+        rlPopMatrix();
         rlEnableDepthMask();
         rlEnableBackfaceCulling();
       EndBlendMode();
@@ -185,16 +198,21 @@ void track_service_render_base_track(TrackService *track_service, RenderContext 
   EndMode3D();
 }
 
-void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx)
+void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel)
 {
+  float current_ms = audio_clock_get_time_ms(&render_ctx->audio_clock) - render_ctx->chart_settings.audio_offset;
+  float interpolation = value_channel_interpolate(camera_channel, current_ms);
+  float skyDeltaY = 2.745f;
+
   // Sky input line - label
-  BeginMode3D(render_ctx->camera);
+  Camera3D final_camera = get_enwidened_camera(render_ctx->camera, camera_channel, current_ms);
+  BeginMode3D(final_camera);
     rlDisableDepthTest();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
 
       rlPushMatrix();
-        rlTranslatef(0.0f, 5.5f, 0.0f);
+        rlTranslatef(0.0f, 5.5f + interpolation * skyDeltaY, 0.0f);
         renderable_draw(&track_service->sky_input_line);
 
         rlDisableBackfaceCulling();

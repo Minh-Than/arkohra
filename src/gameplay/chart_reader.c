@@ -234,6 +234,14 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
               list_push(&tg->groupalpha_channel.keyframes, &constant_kf);
               break;
             }
+            case SC_ENWIDENCAMERA:
+            {
+              ValueKeyframe kf = { .start_timing = timing, .end_timing = timing + (int)duration, .next_value = value, .easing = E_LINEAR };
+              list_push(&tg->enwidencamera_channel.keyframes, &kf);
+              ValueKeyframe constant_kf = { .start_timing = timing + (int)duration, .prev_value = value, .next_value = value, .easing = E_LINEAR };
+              list_push(&tg->enwidencamera_channel.keyframes, &constant_kf);
+              break;
+            }
             default: break;
           }
         }
@@ -274,15 +282,18 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
         ValueKeyframe init_alpha_kf = { .prev_value = 0.0f, .next_value = 0.0f, .start_timing = 0, .end_timing = 0, .easing = E_STEP_END };
         list_push(&tg->hidegroup_channel.keyframes, &init_alpha_kf);
       }
-      int hg_prev_value = 0;
+      int prev_value = 0;
       list_sort_by(&tg->hidegroup_channel.keyframes, value_kf_compare_start_timing_asc);
       for (int j = 0; j < tg->hidegroup_channel.keyframes.size; j++)
       {
         ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->hidegroup_channel.keyframes, j);
-        if (j == 0) { hg_prev_value = kf->next_value; continue; }
+        if (j == 0) { prev_value = kf->next_value; continue; }
 
-        kf->prev_value = hg_prev_value;
-        hg_prev_value = kf->next_value;
+        // assign previous value
+        kf->prev_value = prev_value;
+        prev_value = kf->next_value;
+
+        // aasign end timing
         if(j < tg->hidegroup_channel.keyframes.size - 1)
         {
           ValueKeyframe *next_kf = (ValueKeyframe *)list_get(&tg->hidegroup_channel.keyframes, j + 1);
@@ -294,40 +305,20 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
     }
 
     // Groupalpha
-    if (tg->groupalpha_channel.keyframes.size == 0)
     {
-      ValueKeyframe init_alpha_kf = { .prev_value = 255.0f, .next_value = 255.0f, .start_timing = 0, .end_timing = 0, .easing = E_LINEAR };
-      list_push(&tg->groupalpha_channel.keyframes, &init_alpha_kf);
-    } else
-    {
-      bool has_0_timing = false;
-      bool has_negative_timing = false;
-      for (int j = 0; j < tg->groupalpha_channel.keyframes.size; j++)
-      {
-        ValueKeyframe *iter_kf = (ValueKeyframe *)list_get(&tg->groupalpha_channel.keyframes, j);
-        if (iter_kf->start_timing == 0) { has_0_timing = true; break; }
-      }
-      for (int j = 0; j < tg->groupalpha_channel.keyframes.size; j++)
-      {
-        ValueKeyframe *iter_kf = (ValueKeyframe *)list_get(&tg->groupalpha_channel.keyframes, j);
-        if (iter_kf->start_timing < 0) { has_negative_timing = true; break; }
-      }
-      if (!has_0_timing && !has_negative_timing)
-      {
-        ValueKeyframe init_alpha_kf = { .prev_value = 255.0f, .next_value = 255.0f, .start_timing = 0, .end_timing = 0, .easing = E_LINEAR };
-        list_push(&tg->groupalpha_channel.keyframes, &init_alpha_kf);
-      }
-
-      int ga_prev_value = 0;
+      int prev_value = 0;
       list_sort_by(&tg->groupalpha_channel.keyframes, value_kf_compare_start_timing_asc);
       for (int j = 0; j < tg->groupalpha_channel.keyframes.size; j++)
       {
         ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->groupalpha_channel.keyframes, j);
-        if (j == 0) { ga_prev_value = kf->prev_value = kf->next_value; continue; }
+        if (j == 0 && tg->groupalpha_channel.keyframes.size > 1) {
+          ValueKeyframe *next_kf = (ValueKeyframe *)list_get(&tg->groupalpha_channel.keyframes, j + 1);
+          prev_value = kf->prev_value = kf->next_value = next_kf->prev_value; continue;
+        }
 
         // assign previous value
-        kf->prev_value = ga_prev_value;
-        ga_prev_value = kf->next_value;
+        kf->prev_value = prev_value;
+        prev_value = kf->next_value;
 
         // aasign end timing
         if(j < tg->groupalpha_channel.keyframes.size - 1)
@@ -337,6 +328,33 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
         }
 
         if (j == tg->groupalpha_channel.keyframes.size - 1) kf->end_timing = kf->start_timing;
+      }
+    }
+
+    // Enwidencamera
+    {
+      int prev_value = 0;
+      list_sort_by(&tg->enwidencamera_channel.keyframes, value_kf_compare_start_timing_asc);
+      for (int j = 0; j < tg->enwidencamera_channel.keyframes.size; j++)
+      {
+        ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j);
+        if (j == 0 && tg->enwidencamera_channel.keyframes.size > 1) {
+          ValueKeyframe *next_kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j + 1);
+          prev_value = kf->prev_value = kf->next_value = next_kf->prev_value; continue;
+        }
+
+        // assign previous value
+        kf->prev_value = prev_value;
+        prev_value = kf->next_value;
+
+        // aasign end timing
+        if(j < tg->enwidencamera_channel.keyframes.size - 1)
+        {
+          ValueKeyframe *next_kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j + 1);
+          kf->end_timing = next_kf->start_timing;
+        }
+
+        if (j == tg->enwidencamera_channel.keyframes.size - 1) kf->end_timing = kf->start_timing;
       }
     }
 
@@ -384,6 +402,7 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
     }
     list_sort_by(&tg->tap_fps, tapfp_compare_fp_asc);
 
+    // Arcs
     for (int j = 0; j < tg->arcs.size; j++)
     {
       struct Arc *arc = (struct Arc *)list_get(&tg->arcs, j);
@@ -413,6 +432,7 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
     list_sort_by(&tg->arc_segments, arc_segment_compare_start_fp_asc);
     arc_segment_build_tree(&tg->arc_segments_tree, &tg->arc_segments, 0, tg->arc_segments.size - 1);
 
+    // Arctaps
     for (int j = 0; j < tg->arctaps.size; j++)
     {
       ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, j);
@@ -436,7 +456,7 @@ ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_
   chart_reader.timing_groups = tgs;
 
   chart_reader.render_lists = (NoteRenderLists){ 0 };
-  render_lists_initialize(&chart_reader.render_lists);
+  render_lists_init(&chart_reader.render_lists);
 
   chart_reader.low_z_clip  = z_to_floor_position(   9.0, chart_settings->base_bpm, chart_settings->scroll_speed);
   chart_reader.high_z_clip = z_to_floor_position(-100.0, chart_settings->base_bpm, chart_settings->scroll_speed);
@@ -485,6 +505,12 @@ void process_note_render_lists(ChartReader *chart_reader, ChartSettings *chart_s
     float curr_bpm = curr_event != NULL ? curr_event->bpm : chart_settings->base_bpm;
     curr_fps[i]  = curr_fp;
     curr_bpms[i] = curr_bpm;
+
+    for (int j = 0; j < tg->enwidencamera_channel.keyframes.size; j++)
+    {
+      ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j);
+      list_push(&chart_reader->render_lists.enwidencamera_channel.keyframes, kf);
+    }
 
     // Beatlines
     BeatLine beatline_low_z_fp  = { .fp = curr_fp + chart_reader->low_z_clip };
@@ -539,4 +565,6 @@ void process_note_render_lists(ChartReader *chart_reader, ChartSettings *chart_s
   list_sort_by(&chart_reader->render_lists.tap_render_list, tapfp_compare_fp_asc);
   list_sort_by(&chart_reader->render_lists.arc_render_list, arc_segment_const_void_compare_start_fp_asc);
   list_sort_by(&chart_reader->render_lists.arctap_render_list, arctapfp_compare_fp_asc);
+
+  list_sort_by(&chart_reader->render_lists.enwidencamera_channel.keyframes, value_kf_compare_start_timing_asc);
 }

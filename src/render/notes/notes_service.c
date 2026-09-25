@@ -1,17 +1,18 @@
-#include "color_services.h"
-#include "constants.h"
-#include "data/chart_settings/chart_settings.h"
-#include "data/chart_timing_groups/chart_timing_group.h"
-#include "data/gameplay_events/tap.h"
-#include "data/keyframe/value_channel.h"
-#include "gameplay/audio_service.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "render/utils/drawing.h"
 #include "rlgl.h"
+#include "constants.h"
+#include "color_services.h"
 #include "notes_service.h"
+#include "data/chart_settings/chart_settings.h"
+#include "data/chart_timing_groups/chart_timing_group.h"
 #include "data/gameplay_events/gameplay_events.h"
+#include "data/keyframe/value_channel.h"
+#include "gameplay/audio_service.h"
 #include "gameplay/arc_formula.h"
+#include "gameplay/camera/camera_service.h"
+#include "render/note_render_lists.h"
+#include "render/utils/drawing.h"
 
 NotesService notes_service_init(int glsl)
 {
@@ -53,12 +54,13 @@ NotesService notes_service_init(int glsl)
 void notes_service_render(NotesService *notes_service, RenderContext *render_ctx, ChartReader *chart_reader)
 {
   List *timing_groups = &chart_reader->timing_groups;
-  List *beatline_list = &chart_reader->render_lists.beatline_render_list;
-  List *hold_list     = &chart_reader->render_lists.hold_render_list;
-  List *tap_list      = &chart_reader->render_lists.tap_render_list;
-  List *arc_list      = &chart_reader->render_lists.arc_render_list;
-  List *arccap_list   = &chart_reader->render_lists.arccap_render_list;
-  List *arctap_list   = &chart_reader->render_lists.arctap_render_list;
+  NoteRenderLists *render_lists  = &chart_reader->render_lists;
+  List *beatline_list = &render_lists->beatline_render_list;
+  List *hold_list     = &render_lists->hold_render_list;
+  List *tap_list      = &render_lists->tap_render_list;
+  List *arc_list      = &render_lists->arc_render_list;
+  List *arccap_list   = &render_lists->arccap_render_list;
+  List *arctap_list   = &render_lists->arctap_render_list;
 
   ChartSettings *chart_settings = &render_ctx->chart_settings;
   AudioClock *audio_clock = &render_ctx->audio_clock;
@@ -82,7 +84,8 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
   }
 
   // GROUND NOTES
-  BeginMode3D(render_ctx->camera);
+  Camera3D final_camera = get_enwidened_camera(render_ctx->camera, &render_lists->enwidencamera_channel, current_ms);
+  BeginMode3D(final_camera);
     rlDisableDepthTest();
     rlDisableBackfaceCulling();
     rlPushMatrix();
@@ -129,7 +132,7 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
 
   // SKY NOTES
   rlSetClipPlanes(0.01f, 90.0f);
-  BeginMode3D(render_ctx->camera);
+  BeginMode3D(final_camera);
     rlDisableDepthTest();
     rlDisableBackfaceCulling();
     rlPushMatrix();

@@ -19,7 +19,7 @@ typedef struct {
 } ValueChannel;
 
 ValueChannel value_channel_init();
-int value_channel_interpolate(ValueChannel *channel, int timing);
+float value_channel_interpolate(ValueChannel *channel, int timing);
 void value_channel_print(ValueChannel *channel);
 void value_channel_unload(ValueChannel *channel);
 

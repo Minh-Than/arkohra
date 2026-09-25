@@ -19,7 +19,7 @@ int value_kf_compare_start_timing_asc(const void *a, const void *b)
 ValueChannel value_channel_init()
 {
   List keyframes; list_init(&keyframes, sizeof(ValueKeyframe));
-  ValueChannel channel = { .keyframes = keyframes, .current_value = 0.0f };
+  ValueChannel channel = { .keyframes = keyframes };
   return channel;
 }
 
@@ -33,7 +33,7 @@ void value_channel_print(ValueChannel *channel)
 }
 
 // Keyframes list HAS to be sorted
-int value_channel_interpolate(ValueChannel *channel, int timing)
+float value_channel_interpolate(ValueChannel *channel, int timing)
 {
   if (channel == NULL) return 0; // Ideally this gatecheck should never happen as this will be called during hot load
 

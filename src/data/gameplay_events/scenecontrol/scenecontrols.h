@@ -4,6 +4,7 @@
 typedef enum {
   SC_HIDEGROUP,
   SC_GROUPALPHA,
+  SC_ENWIDENCAMERA,
   SC_OTHERS,
   SC_NONE
 } SCType;

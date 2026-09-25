@@ -5,6 +5,7 @@
 #include "constants.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/gameplay_events.h"
+#include "data/keyframe/easings.h"
 #include "data/keyframe/value_channel.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
@@ -58,7 +59,18 @@ ChartTimingGroup timing_group_init()
   List beatlines; list_init(&beatlines, sizeof(BeatLine)); tg.beatlines = beatlines;
 
   tg.hidegroup_channel = value_channel_init();
+
   tg.groupalpha_channel = value_channel_init();
+  ValueKeyframe groupalpha_init_kf = { .prev_value = 255.0f, .next_value = 255.0f,
+                                       .start_timing = -9999999, .end_timing = -9999999,
+                                       .easing = E_LINEAR };
+  list_push(&tg.groupalpha_channel.keyframes, &groupalpha_init_kf);
+
+  tg.enwidencamera_channel = value_channel_init();
+  ValueKeyframe enwidencamera_init_kf = { .prev_value = 0.0f, .next_value = 0.0f,
+                                       .start_timing = -9999999, .end_timing = -9999999,
+                                       .easing = E_LINEAR };
+  list_push(&tg.enwidencamera_channel.keyframes, &enwidencamera_init_kf);
 
   return tg;
 }
@@ -74,8 +86,9 @@ void timing_group_info_print(ChartTimingGroup *tg)
   printf("- Arc count:    \x1b[33m%zu\x1b[0m\n", tg->arcs.size);
   printf("- Arctap count: \x1b[33m%zu\x1b[0m\n", tg->arctaps.size);
   printf("---------------------\n");
-  printf("- Hidegroup keyframes : \x1b[33m%zu\x1b[0m\n", tg->hidegroup_channel.keyframes.size);
-  printf("- Groupalpha keyframes: \x1b[33m%zu\x1b[0m\n", tg->groupalpha_channel.keyframes.size);
+  printf("- Hidegroup     keyframes: \x1b[33m%zu\x1b[0m\n", tg->hidegroup_channel.keyframes.size);
+  printf("- Groupalpha    keyframes: \x1b[33m%zu\x1b[0m\n", tg->groupalpha_channel.keyframes.size);
+  printf("- Enwidencamera keyframes: \x1b[33m%zu\x1b[0m\n", tg->enwidencamera_channel.keyframes.size);
   printf("\n");
 }
 
@@ -118,6 +131,7 @@ void timing_group_unload(ChartTimingGroup *tg)
 
   value_channel_unload(&tg->hidegroup_channel);
   value_channel_unload(&tg->groupalpha_channel);
+  value_channel_unload(&tg->enwidencamera_channel);
 }
 
 static int update_tg_props(char *token, void *user)
