@@ -19,6 +19,7 @@ TGPropTypes determine_tg_prop(char *str)
   if (strstr(str, (const char*)"noarccap") != NULL) return NO_ARCCAP;
   if (strstr(str, (const char*)"noshadow") != NULL) return NO_SHADOW;
   if (strstr(str, (const char*)"noheightindicator") != NULL) return NO_HEIGHT_INDICATOR;
+  if (strstr(str, (const char*)"noconnection") != NULL) return NO_CONNECTION;
   return NO_TG_PROP;
 }
 
@@ -30,6 +31,7 @@ void tg_props_print(TimingGroupProps *tg_props)
   if (tg_props->no_arccap)          printf("- No arccap\n");
   if (tg_props->no_shadow)          printf("- No shadow\n");
   if (tg_props->no_height_indicator)printf("- No height\n");
+  if (tg_props->no_connection)      printf("- No connection\n");
 }
 
 ChartTimingGroup timing_group_init()
@@ -143,6 +145,7 @@ static int update_tg_props(char *token, void *user)
     case NO_ARCCAP: tg->props.no_arccap = true; break;
     case NO_SHADOW: tg->props.no_shadow = true; break;
     case NO_HEIGHT_INDICATOR: tg->props.no_height_indicator = true; break;
+    case NO_CONNECTION: tg->props.no_connection = true; break;
     case NO_TG_PROP:
     default:
       break;

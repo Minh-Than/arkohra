@@ -2,6 +2,7 @@
 #include "constants.h"
 #include "data/chart_settings/chart_settings.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
+#include "data/gameplay_events/tap.h"
 #include "data/keyframe/value_channel.h"
 #include "gameplay/audio_service.h"
 #include "raylib.h"
@@ -116,7 +117,9 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
         if (tg->props.no_input && tap->timing - current_ms < 0) continue;
         double curr_fp = curr_fps[tg->value];
         float curr_groupalpha = groupalpha_fade[tg->value];
-        draw_tap(&notes_service->tap, tap, chart_settings, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
+        draw_tap(&notes_service->tap, tap, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
+        if (tg->props.no_connection) continue;
+        draw_tap_connection(tap, chart_settings, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
       }
       EndBlendMode();
     rlPopMatrix();

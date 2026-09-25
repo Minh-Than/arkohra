@@ -17,7 +17,7 @@ void tap_print(const void *elem)
   printf("(%d,%.2f)", tap->timing, tap->lane);
 }
 
-void draw_tap(MeshRenderable *tap_r, Tap *tap, ChartSettings *chart_settings, float base_bpm, float scroll_speed, double curr_fp, float add_fade)
+void draw_tap(MeshRenderable *tap_r, Tap *tap, float base_bpm, float scroll_speed, double curr_fp, float add_fade)
 {
   double diff_fp = tap->fp - curr_fp;
   double z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
@@ -30,7 +30,12 @@ void draw_tap(MeshRenderable *tap_r, Tap *tap, ChartSettings *chart_settings, fl
                                             MatrixTranslate(lane_to_world_x(tap->lane), 0.0f, z_pos)));
 
   DrawMesh(tap_r->mesh, tap_r->material, tr);
+}
 
+void draw_tap_connection(Tap *tap, ChartSettings *chart_settings, float base_bpm, float scroll_speed, double curr_fp, float add_fade)
+{
+  double z_pos   = floor_position_to_z(tap->fp - curr_fp, base_bpm, scroll_speed);
+  float fade_ratio = (z_pos - TAP_STOP_FADE) / (TAP_START_FADE - TAP_STOP_FADE);
   for (int k = 0; k < tap->connector_x.size; k++)
   {
     float x = *(float *)list_get(&tap->connector_x, k);
