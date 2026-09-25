@@ -311,10 +311,7 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
       for (int j = 0; j < tg->groupalpha_channel.keyframes.size; j++)
       {
         ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->groupalpha_channel.keyframes, j);
-        if (j == 0 && tg->groupalpha_channel.keyframes.size > 1) {
-          ValueKeyframe *next_kf = (ValueKeyframe *)list_get(&tg->groupalpha_channel.keyframes, j + 1);
-          prev_value = kf->prev_value = kf->next_value = next_kf->prev_value; continue;
-        }
+        if (j == 0 && tg->groupalpha_channel.keyframes.size > 1) continue;
 
         // assign previous value
         kf->prev_value = prev_value;
@@ -338,10 +335,7 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
       for (int j = 0; j < tg->enwidencamera_channel.keyframes.size; j++)
       {
         ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j);
-        if (j == 0 && tg->enwidencamera_channel.keyframes.size > 1) {
-          ValueKeyframe *next_kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j + 1);
-          prev_value = kf->prev_value = kf->next_value = next_kf->prev_value; continue;
-        }
+        if (j == 0 && tg->enwidencamera_channel.keyframes.size > 1) continue;
 
         // assign previous value
         kf->prev_value = prev_value;
