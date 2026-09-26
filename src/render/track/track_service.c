@@ -238,8 +238,8 @@ void track_service_apply_chart(TrackService *track_service, ChartSettings *chart
   {
     track_service->background_tex = LoadTexture(chart_settings->background_path);
     if (!IsTextureValid(track_service->background_tex))
-      track_service->background_tex = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
-  } else track_service->background_tex = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
+      track_service->background_tex = LoadTexture(DEFAULT_BACKGROUND_PATH);
+  } else track_service->background_tex = LoadTexture(DEFAULT_BACKGROUND_PATH);
   SetTextureFilter(track_service->background_tex, TEXTURE_FILTER_BILINEAR);
 
   UnloadTexture(track_service->track_tex);

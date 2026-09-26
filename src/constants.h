@@ -3,6 +3,8 @@
 
 static const unsigned int BASE_APP_WINDOW_WIDTH = 1440;
 
+static const char* DEFAULT_BACKGROUND_PATH = "resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg";
+
 static const float MINIMUM_SCROLL_SPEED  = 0.01f;
 static const float MAXIMUM_SCROLL_SPEED  = 10.0f;
 
