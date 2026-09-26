@@ -217,6 +217,7 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_arccap) continue;
         if (arc->next_arc != NULL) continue;
+        if (fabs(arc_segment->end_fp - arc->end_fp) > 1e-6) continue;
         if (abs(arc->end_timing - arc->start_timing) < 2) continue;
         if (arc->end_timing > current_ms) continue;
 
