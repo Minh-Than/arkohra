@@ -2,12 +2,12 @@
 #define ARC_H
 
 #include <string.h>
+#include "raylib.h"
 #include "data/chart_settings/chart_settings.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
-#include "data/gameplay_events/arc_shader.h"
-#include "raylib.h"
-#include "render/mesh_renderable.h"
 #include "data/custom_types/custom_types.h"
+#include "data/gameplay_events/arc_shader.h"
+#include "render/mesh_renderable.h"
 
 // ARC
 typedef enum
@@ -50,6 +50,7 @@ typedef struct {
   struct Arc *arc;
   MeshRenderable mesh_r, shadow_r;
   double start_fp, end_fp;
+  float start_timing, end_timing;
 } ArcSegment;
 
 void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg, struct Arc *arc, Texture2D *texture, Shader *shader);

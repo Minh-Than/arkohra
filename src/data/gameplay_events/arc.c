@@ -360,6 +360,7 @@ void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg
   segment_count         = (int)fmax(segment_count, 1);
 
   List *timing_events = &tg->timing_events;
+  float segment_timing = arc->start_timing;
   float curr_timing = 0.0f;
   for (int i = 0; i < segment_count; i++)
   {
@@ -370,6 +371,9 @@ void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg
     ArcSegment arc_segment = { .arc = arc, .start_fp = start_fp, .end_fp = end_fp };
     arc_segment.mesh_r   = generate_arc_body_mesh  (chart_settings, timing_events, arc, texture, shader, curr_timing, increment);
     arc_segment.shadow_r = generate_arc_shadow_mesh(chart_settings, timing_events, arc, shader, curr_timing, increment);
+    arc_segment.start_timing = segment_timing;
+    segment_timing += increment;
+    arc_segment.end_timing = segment_timing;
     list_push(&tg->arc_segments, &arc_segment);
 
     curr_timing += increment;
@@ -582,13 +586,22 @@ void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, do
 void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale, float alpha, float current_ms)
 {
   struct Arc *arc = arc_segment->arc;
-
-  float arccap_x = arc_world_x_at(current_ms, arc);
-  float arccap_y = arc_world_y_at(current_ms, arc);
   float arccap_scale = arc->is_void ? ARCCAP_TRACE_SCALE : ARCCAP_ARC_SCALE;
   arccap_scale *= scale;
+
+  float arccap_start_x = arc_world_x_at(arc_segment->start_timing, arc);
+  float arccap_end_x   = arc_world_x_at(arc_segment->end_timing, arc);
+  float arccap_start_y = arc_world_y_at(arc_segment->start_timing, arc);
+  float arccap_end_y   = arc_world_y_at(arc_segment->end_timing, arc);
+  float lerp = (current_ms - arc_segment->start_timing) / (arc_segment->end_timing - arc_segment->start_timing);
+  float lerp_x = Clamp(Lerp(arccap_start_x, arccap_end_x, lerp),
+                       fminf(arccap_start_x, arccap_end_x),
+                       fmaxf(arccap_start_x, arccap_end_x));
+  float lerp_y = Clamp(Lerp(arccap_start_y, arccap_end_y, lerp),
+                       fminf(arccap_start_y, arccap_end_y),
+                       fmaxf(arccap_start_y, arccap_end_y));
   mat.maps->color = ColorAlpha(mat.maps->color, alpha);
-  Matrix tr = MatrixMultiply(MatrixScale(arccap_scale, arccap_scale, 1.0f), MatrixTranslate(arccap_x, arccap_y, 0.0f));
+  Matrix tr = MatrixMultiply(MatrixScale(arccap_scale, arccap_scale, 1.0f), MatrixTranslate(lerp_x, lerp_y, 0.0f));
   DrawMesh(*mesh, mat, tr);
 }
 
