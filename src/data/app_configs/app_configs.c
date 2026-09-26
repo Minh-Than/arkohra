@@ -40,6 +40,7 @@ AppConfigs app_configs_init(rini_data *d)
   if (!rini_key_exists(d, "hit_volume"))        rini_set_float     (d, "hit_volume"      , 0.2f, "Notes' sound effect volume (0.0 - 1.0)");
   if (!rini_key_exists(d, "ffmpeg_path"))       rini_set_value_text(d, "ffmpeg_path"     ,   "", "FFMPEG Executable Path");
   if (!rini_key_exists(d, "recent_project"))    rini_set_value_text(d, "recent_project"  ,   "", "Most recent chart path");
+  if (!rini_key_exists(d, "colorblind"))        rini_set_value     (d, "colorblind"      ,    0, "Is colorblind");
 
   AppConfigs configs = { 0 };
   configs.playfield_ratio   = (AspectRatio)rini_get_value_fallback(*d, "playfield_ratio" , 0);
@@ -50,6 +51,7 @@ AppConfigs app_configs_init(rini_data *d)
   configs.hit_volume       = rini_get_float_fallback(*d, "hit_volume"      , 0.2f);
   TextCopy(configs.ffmpeg_path   , rini_get_value_text_fallback(*d, "ffmpeg_path"   , ""));
   TextCopy(configs.recent_project, rini_get_value_text_fallback(*d, "recent_project", ""));
+  configs.colorblind = (bool)rini_get_value_fallback(*d, "colorblind" , 0);
 
   app_configs_write_to_file(&configs, d);
   return configs;
@@ -63,6 +65,7 @@ void app_configs_write_to_file(AppConfigs *app_configs, rini_data *d)
   rini_set_float     (d, "hit_volume"      , app_configs->hit_volume      , rini_get_value_description(*d, "hit_volume"));
   rini_set_value_text(d, "ffmpeg_path"     , app_configs->ffmpeg_path     , rini_get_value_description(*d, "ffmpeg_path"));
   rini_set_value_text(d, "recent_project"  , app_configs->recent_project  , rini_get_value_description(*d, "recent_project"));
+  rini_set_value     (d, "colorblind"      , (int)app_configs->colorblind , rini_get_value_description(*d, "colorblind"));
 
   char app_dir [MAXPATHLEN];
   char ini_path[MAXPATHLEN];

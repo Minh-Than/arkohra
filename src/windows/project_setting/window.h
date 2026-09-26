@@ -50,6 +50,7 @@ typedef struct
   // Gameplay
   RguiFloatInput scroll_speed;
   RguiSelectInput aspect_ratio;
+  bool colorblind;
 
   // Audio
   RguiFloatInput music_volume;

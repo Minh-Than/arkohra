@@ -75,6 +75,10 @@ static const unsigned char ARC_GREEN_LOW_CL[4]  = { 40 , 200, 30  };
 static const unsigned char ARC_GREEN_HIGH_CL[4] = { 35 , 255, 108 };
 static const unsigned char TRACE_CL[4]          = { 145, 120, 170 };
 static const unsigned char NOTE_SHADOW_CL[4]    = { 90 , 90 , 90  };
+static const unsigned char ARC_BLUE_BLIND_LOW_CL[4]  = { 37 , 139, 235 };
+static const unsigned char ARC_BLUE_BLIND_HIGH_CL[4] = { 12 , 167, 217 };
+static const unsigned char ARC_PINK_BLIND_LOW_CL[4]  = { 255, 203, 0 };
+static const unsigned char ARC_PINK_BLIND_HIGH_CL[4] = { 255, 245, 0 };
 
 static const unsigned short int CMD_PLT_Y          = 150;
 static const unsigned short int CMD_PLT_SIZE_X     = 450;

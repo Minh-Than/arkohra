@@ -22,7 +22,7 @@ typedef struct
   char          ffmpeg_path[MAXPATHLEN], recent_project[MAXPATHLEN];
   float         scroll_speed, music_volume, hit_volume;
   AspectRatio   playfield_ratio;
-  bool          kohra;
+  bool          kohra, colorblind;
 } AppConfigs;
 
 AppConfigs app_configs_init(rini_data *d);

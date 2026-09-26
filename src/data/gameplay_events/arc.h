@@ -2,6 +2,7 @@
 #define ARC_H
 
 #include <string.h>
+#include <stdbool.h>
 #include "raylib.h"
 #include "data/chart_settings/chart_settings.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
@@ -40,8 +41,8 @@ struct Arc {
 int arc_compare_start_timing_asc(const void *a, const void *b);
 MeshRenderable generate_arccap_mesh(Texture2D *texture);
 MeshRenderable generate_arc_height_mesh(Texture2D *texture);
-Color arc_get_color_low(int color);
-Color arc_get_color_high(int color);
+Color arc_get_color_low(int color, bool is_color_blind);
+Color arc_get_color_high(int color, bool is_color_blind);
 struct Arc *arc_get_firstmost_arc(struct Arc* arc);
 void arc_print(const void *elem);
 
@@ -61,9 +62,9 @@ void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high);
 
 void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos, float add_fade);
 void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, MeshRenderable *mesh_r,
-                   float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp, float add_fade);
-void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos, float add_fade);
-void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, double z_pos, float add_fade);
+                   float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp, float add_fade, bool colorblind);
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos, float add_fade, bool colorblind);
+void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, double z_pos, float add_fade, bool colorblind);
 void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale, float alpha, float current_ms);
 bool should_draw_height_indicator(ArcSegment *arc_segment);
 

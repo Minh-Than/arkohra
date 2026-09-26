@@ -51,7 +51,7 @@ NotesService notes_service_init(int glsl)
   return service;
 }
 
-void notes_service_render(NotesService *notes_service, TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader)
+void notes_service_render(NotesService *notes_service, TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader, bool colorblind)
 {
   List *timing_groups = &chart_reader->timing_groups;
   NoteRenderLists *render_lists  = &chart_reader->render_lists;
@@ -248,10 +248,10 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         double z_pos  = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
         if (!tg->props.no_height_indicator &&
             !(!tg->props.no_clip && tg->props.no_input && arc_segment->arc->start_timing - current_ms < 0))
-          draw_height_indicator(arc_segment, &notes_service->height_indicator.mesh, notes_service->height_indicator.material, z_pos, curr_groupalpha);
+          draw_height_indicator(arc_segment, &notes_service->height_indicator.mesh, notes_service->height_indicator.material, z_pos, curr_groupalpha, colorblind);
         struct Arc *arc = arc_segment->arc;
         if (!tg->props.no_clip && arc->is_void && arc->end_timing < current_ms) continue;
-        draw_arc_segment(tg, arc_segment, &notes_service->arc_shader, current_ms, curr_bpm, z_pos, curr_groupalpha);
+        draw_arc_segment(tg, arc_segment, &notes_service->arc_shader, current_ms, curr_bpm, z_pos, curr_groupalpha, colorblind);
       }
 
       // Arc heads
@@ -266,7 +266,7 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         float curr_bpm = curr_bpms[tg->value];
         float curr_groupalpha = groupalpha_fade[tg->value];
         draw_arc_head(tg, arc_segment, &notes_service->arc_shader, &notes_service->arc_head,
-                      current_ms, curr_bpm, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
+                      current_ms, curr_bpm, base_bpm, scroll_speed, curr_fp, curr_groupalpha, colorblind);
       }
 
       // Arctaps

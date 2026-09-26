@@ -1,5 +1,6 @@
 #include <string.h>
 #include "raygui.h"
+#include "raylib.h"
 #include "raymath.h"
 #include "data/custom_types/dynamic_list.h"
 #include "gameplay/camera/camera_service.h"
@@ -287,7 +288,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
   {
     BeginShaderMode(data->sdf_shader);
 
-    int gameplay_panel_h = 80;
+    int gameplay_panel_h = 110;
     int audio_panel_h = 80;
 
     int input_field_h = 24;
@@ -338,8 +339,16 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
     GuiLabel(gameplay_label_rect, "Chart Speed");
     rgui_floatinput_textbox(&data->scroll_speed, gameplay_field_rect, 2);
 
-    gameplay_label_rect.y += input_field_gap;
-    gameplay_field_rect.y += input_field_gap;
+    gameplay_label_rect.y += input_field_gap*2;
+    gameplay_field_rect.y += input_field_gap*2;
+    if(GuiCheckBox((Rectangle){ gameplay_field_x, gameplay_label_rect.y, input_field_h, input_field_h},
+                "Use Colorblind Arc Colors", &data->colorblind))
+    {
+      app_configs->colorblind = data->colorblind;
+    }
+
+    gameplay_label_rect.y -= input_field_gap;
+    gameplay_field_rect.y -= input_field_gap;
     GuiLabel(gameplay_label_rect, "Aspect Ratio");
     EndScissorMode();
     if (rgui_selectinput_dropdown(&data->aspect_ratio, gameplay_field_rect))
