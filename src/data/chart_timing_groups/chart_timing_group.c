@@ -59,6 +59,10 @@ ChartTimingGroup timing_group_init()
   List beatlines; list_init(&beatlines, sizeof(BeatLine)); tg.beatlines = beatlines;
 
   tg.hidegroup_channel = value_channel_init();
+  ValueKeyframe hidegroup_init_kf = { .prev_value = 0.0f, .next_value = 0.0f,
+                                       .start_timing = -9999999, .end_timing = -9999999,
+                                       .easing = E_STEP_END };
+  list_push(&tg.hidegroup_channel.keyframes, &hidegroup_init_kf);
 
   tg.groupalpha_channel = value_channel_init();
   ValueKeyframe groupalpha_init_kf = { .prev_value = 255.0f, .next_value = 255.0f,
@@ -89,6 +93,7 @@ void timing_group_info_print(ChartTimingGroup *tg)
   printf("- Hidegroup     keyframes: \x1b[33m%zu\x1b[0m\n", tg->hidegroup_channel.keyframes.size);
   printf("- Groupalpha    keyframes: \x1b[33m%zu\x1b[0m\n", tg->groupalpha_channel.keyframes.size);
   printf("- Enwidencamera keyframes: \x1b[33m%zu\x1b[0m\n", tg->enwidencamera_channel.keyframes.size);
+  value_channel_print(&tg->groupalpha_channel);
   printf("\n");
 }
 

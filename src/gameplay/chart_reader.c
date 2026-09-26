@@ -222,24 +222,18 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
             {
               ValueKeyframe kf = { .start_timing = timing, .end_timing = timing, .next_value = value, .easing = E_STEP_END };
               list_push(&tg->hidegroup_channel.keyframes, &kf);
-              ValueKeyframe constant_kf = { .start_timing = timing, .prev_value = value, .next_value = value, .easing = E_STEP_END };
-              list_push(&tg->hidegroup_channel.keyframes, &constant_kf);
               break;
             }
             case SC_GROUPALPHA:
             {
               ValueKeyframe kf = { .start_timing = timing, .end_timing = timing + (int)duration, .next_value = value, .easing = E_LINEAR };
               list_push(&tg->groupalpha_channel.keyframes, &kf);
-              ValueKeyframe constant_kf = { .start_timing = timing + (int)duration, .prev_value = value, .next_value = value, .easing = E_LINEAR };
-              list_push(&tg->groupalpha_channel.keyframes, &constant_kf);
               break;
             }
             case SC_ENWIDENCAMERA:
             {
               ValueKeyframe kf = { .start_timing = timing, .end_timing = timing + (int)duration, .next_value = value, .easing = E_LINEAR };
               list_push(&tg->enwidencamera_channel.keyframes, &kf);
-              ValueKeyframe constant_kf = { .start_timing = timing + (int)duration, .prev_value = value, .next_value = value, .easing = E_LINEAR };
-              list_push(&tg->enwidencamera_channel.keyframes, &constant_kf);
               break;
             }
             default: break;
@@ -259,48 +253,15 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
     recalculate_floor_position(tg);
 
     // Hidegroup
-    if (tg->hidegroup_channel.keyframes.size == 0)
     {
-      ValueKeyframe init_alpha_kf = { .prev_value = 0.0f, .next_value = 0.0f, .start_timing = 0, .end_timing = 0, .easing = E_STEP_END };
-      list_push(&tg->hidegroup_channel.keyframes, &init_alpha_kf);
-    } else
-    {
-      bool has_0_timing = false;
-      bool has_negative_timing = false;
-      for (int j = 0; j < tg->hidegroup_channel.keyframes.size; j++)
-      {
-        ValueKeyframe *iter_kf = (ValueKeyframe *)list_get(&tg->hidegroup_channel.keyframes, j);
-        if (iter_kf->start_timing == 0) { has_0_timing = true; break; }
-      }
-      for (int j = 0; j < tg->hidegroup_channel.keyframes.size; j++)
-      {
-        ValueKeyframe *iter_kf = (ValueKeyframe *)list_get(&tg->hidegroup_channel.keyframes, j);
-        if (iter_kf->start_timing < 0) { has_negative_timing = true; break; }
-      }
-      if (!has_0_timing && !has_negative_timing)
-      {
-        ValueKeyframe init_alpha_kf = { .prev_value = 0.0f, .next_value = 0.0f, .start_timing = 0, .end_timing = 0, .easing = E_STEP_END };
-        list_push(&tg->hidegroup_channel.keyframes, &init_alpha_kf);
-      }
       int prev_value = 0;
       list_sort_by(&tg->hidegroup_channel.keyframes, value_kf_compare_start_timing_asc);
       for (int j = 0; j < tg->hidegroup_channel.keyframes.size; j++)
       {
         ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->hidegroup_channel.keyframes, j);
         if (j == 0) { prev_value = kf->next_value; continue; }
-
-        // assign previous value
         kf->prev_value = prev_value;
         prev_value = kf->next_value;
-
-        // aasign end timing
-        if(j < tg->hidegroup_channel.keyframes.size - 1)
-        {
-          ValueKeyframe *next_kf = (ValueKeyframe *)list_get(&tg->hidegroup_channel.keyframes, j + 1);
-          kf->end_timing = next_kf->start_timing;
-        }
-
-        if (j == tg->hidegroup_channel.keyframes.size - 1) kf->end_timing = kf->start_timing;
       }
     }
 
@@ -312,19 +273,8 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
       {
         ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->groupalpha_channel.keyframes, j);
         if (j == 0 && tg->groupalpha_channel.keyframes.size > 1) continue;
-
-        // assign previous value
         kf->prev_value = prev_value;
         prev_value = kf->next_value;
-
-        // aasign end timing
-        if(j < tg->groupalpha_channel.keyframes.size - 1)
-        {
-          ValueKeyframe *next_kf = (ValueKeyframe *)list_get(&tg->groupalpha_channel.keyframes, j + 1);
-          kf->end_timing = next_kf->start_timing;
-        }
-
-        if (j == tg->groupalpha_channel.keyframes.size - 1) kf->end_timing = kf->start_timing;
       }
     }
 
@@ -336,19 +286,8 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
       {
         ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j);
         if (j == 0 && tg->enwidencamera_channel.keyframes.size > 1) continue;
-
-        // assign previous value
         kf->prev_value = prev_value;
         prev_value = kf->next_value;
-
-        // aasign end timing
-        if(j < tg->enwidencamera_channel.keyframes.size - 1)
-        {
-          ValueKeyframe *next_kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j + 1);
-          kf->end_timing = next_kf->start_timing;
-        }
-
-        if (j == tg->enwidencamera_channel.keyframes.size - 1) kf->end_timing = kf->start_timing;
       }
     }
 

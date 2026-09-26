@@ -232,7 +232,7 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
 
         double curr_fp  = curr_fps[tg->value];
         float curr_groupalpha = groupalpha_fade[tg->value];
-        float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f, fabsf(current_ms - arc->end_timing) / 120.0f), 0.0f, ARCCAP_ALPHA * curr_groupalpha);
+        float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f, fabsf(current_ms - arc->end_timing) / 120.0f), 0.0f, ARCCAP_ALPHA * 0.7f * curr_groupalpha);
         draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, cap_alpha, current_ms);
       }
 
