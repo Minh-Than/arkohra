@@ -40,7 +40,7 @@ int main()
   // Now a special case a kohra
   TextureGroup texture_group = textures_init();
   ChartReader  chart_reader  = { 0 };
-  TrackService track_service = track_service_init();
+  TrackService track_service = track_service_init(GLSL_VERSION);
   NotesService notes_service = notes_service_init(GLSL_VERSION);
   HudService   hud_service   = hud_service_init(GLSL_VERSION);
   WindowGroup  window_group  = window_services_init(GLSL_VERSION, &app_configs);
@@ -116,16 +116,6 @@ int main()
     camera_handle_main_window_resize(&render_ctx.camera, app_configs.playfield_ratio);
     window_services_handle_inputs(&window_group);
 
-    // TODO: currently scrolling with constant speed, find a way to speed up/slow down based on first timing group's current bpm
-    if (render_ctx.audio_clock.is_playing)
-    {
-      // Playfield: Track & Single Line Scrolling
-      static float scroll_offset = 0.0f;
-      scroll_offset += GetFrameTime() * render_ctx.chart_settings.scroll_speed;
-      renderable_update_scroll(&track_service.track      , scroll_offset);
-      renderable_update_scroll(&track_service.single_line, scroll_offset);
-    }
-
     if (IsMusicValid(music))
     {
       UpdateMusicStream(music);
@@ -188,7 +178,7 @@ int main()
       // Order:
       // Base track -> Notes -> Sky Input/Label -> HUD -> Windows
       track_service_render_base_track(&track_service, &render_ctx, &chart_reader.render_lists.enwidencamera_channel);
-      if (chart_reader.initialized) notes_service_render(&notes_service, &render_ctx, &chart_reader);
+      if (chart_reader.initialized) notes_service_render(&notes_service, &track_service, &render_ctx, &chart_reader);
       track_service_render_sky_input(&track_service, &render_ctx, &chart_reader.render_lists.enwidencamera_channel);
       hud_services_render(&hud_service, &render_ctx.chart_settings);
       windows_services_render(&window_group, &app_configs, &render_ctx);

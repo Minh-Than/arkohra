@@ -51,7 +51,7 @@ NotesService notes_service_init(int glsl)
   return service;
 }
 
-void notes_service_render(NotesService *notes_service, RenderContext *render_ctx, ChartReader *chart_reader)
+void notes_service_render(NotesService *notes_service, TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader)
 {
   List *timing_groups = &chart_reader->timing_groups;
   NoteRenderLists *render_lists  = &chart_reader->render_lists;
@@ -81,6 +81,15 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
     hidegroup_actives[i] = fabsf(tg->hidegroup_channel.current_value) > 1e-6;
     tg->groupalpha_channel.current_value = value_channel_interpolate(&tg->groupalpha_channel, current_ms);
     groupalpha_fade[i] = tg->groupalpha_channel.current_value / 255.0f;
+  }
+
+  if (render_ctx->audio_clock.is_playing)
+  {
+    // Playfield: Track & Single Line Scrolling
+    static float scroll_offset = 0.0f;
+    float scroll_constant = curr_bpms[0] / base_bpm;
+    scroll_offset += GetFrameTime() * render_ctx->chart_settings.scroll_speed * scroll_constant;
+    SetShaderValue(track_service->scroll_offset_shader, track_service->scrollOffset_loc, &scroll_offset, SHADER_UNIFORM_FLOAT);
   }
 
   // GROUND NOTES

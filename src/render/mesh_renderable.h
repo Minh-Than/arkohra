@@ -13,7 +13,6 @@ typedef struct
   float *initial_texcoords;
 } MeshRenderable;
 
-void renderable_update_scroll(MeshRenderable *r, float scroll_offset);
 void renderable_set_transforms(MeshRenderable *renderable, Matrix *transforms, int count);
 void renderable_draw(MeshRenderable *r);
 void renderable_unload(MeshRenderable *r);

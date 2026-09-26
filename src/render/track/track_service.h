@@ -9,9 +9,11 @@
 typedef struct {
   Texture2D background_tex, track_tex, lane_div_tex, critical_line_tex, sky_input_line_tex, sky_label_tex, single_line_tex;
   MeshRenderable track, lane_div, critical_line, sky_input_line, sky_label, single_line;
+  Shader scroll_offset_shader;
+  int scrollOffset_loc;
 } TrackService;
 
-TrackService track_service_init();
+TrackService track_service_init(int glsl);
 void set_mesh_transforms(MeshRenderable *renderable, Matrix *transforms, int count);
 void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel);
 void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel);

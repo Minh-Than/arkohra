@@ -30,7 +30,7 @@ static MeshRenderable gen_mesh_tiled(Texture2D texture, float size_x, float size
   return (MeshRenderable){ .mesh = mesh, .material = material, .initial_texcoords = initial_texcoords };
 }
 
-TrackService track_service_init()
+TrackService track_service_init(int glsl)
 {
   TrackService service = {0};
 
@@ -50,6 +50,12 @@ TrackService track_service_init()
 
   // --- Track (1 instance, tiled, scrolling) ---
   service.track = gen_mesh_tiled(service.track_tex, TRACK_SIZE_X, TRACK_SIZE_Y, 1.0f, 2.0f, true);
+  service.scroll_offset_shader = LoadShader(
+      TextFormat("resources/shaders/glsl%i/scroll_shader.vs", glsl),
+      TextFormat("resources/shaders/glsl%i/scroll_shader.fs", glsl)
+  );
+  service.scrollOffset_loc = GetShaderLocation(service.scroll_offset_shader, "scrollOffset");
+  service.track.material.shader = service.scroll_offset_shader;
   renderable_set_transforms(&service.track, (Matrix[]){MatrixIdentity()}, 1);
 
   // --- Lane dividers (3 instances, same mesh/material) ---
@@ -88,6 +94,7 @@ TrackService track_service_init()
 
   // --- Single line (2 instances - mirrored, tiled, scrolling) ---
   service.single_line = gen_mesh_tiled(service.single_line_tex, SINGLE_LINE_SIZE_X, SINGLE_LINE_SIZE_Y, 1.0f, 1.0f, true);
+  service.single_line.material.shader = service.scroll_offset_shader;
   Matrix single_line_rotate = MatrixMultiply(
       MatrixRotateX(90 * DEG2RAD),
       MatrixMultiply(MatrixMultiply(MatrixRotateZ(-90.0f * DEG2RAD),
@@ -259,4 +266,7 @@ void track_service_unload(TrackService *track_service)
   UnloadTexture(track_service->sky_input_line_tex);
   UnloadTexture(track_service->sky_label_tex);
   UnloadTexture(track_service->single_line_tex);
+
+  if (IsShaderValid(track_service->scroll_offset_shader))
+    UnloadShader(track_service->scroll_offset_shader);
 }
