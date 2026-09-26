@@ -224,6 +224,26 @@ void track_service_render_sky_input(TrackService *track_service, RenderContext *
   EndMode3D();
 }
 
+void track_service_apply_chart(TrackService *track_service, ChartSettings *chart_settings)
+{
+  UnloadTexture(track_service->background_tex);
+  if (!TextIsEqual(chart_settings->background_path, ""))
+  {
+    track_service->background_tex = LoadTexture(chart_settings->background_path);
+    if (!IsTextureValid(track_service->background_tex))
+      track_service->background_tex = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
+  } else track_service->background_tex = LoadTexture("resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg");
+  SetTextureFilter(track_service->background_tex, TEXTURE_FILTER_BILINEAR);
+
+  UnloadTexture(track_service->track_tex);
+  track_service->track_tex = skin_side_get_track(chart_settings->skin_track);
+  SetTextureWrap(track_service->track_tex, TEXTURE_WRAP_REPEAT);
+
+  UnloadTexture(track_service->single_line_tex);
+  track_service->single_line_tex = single_line_get(chart_settings->sl_type);
+  SetTextureWrap(track_service->single_line_tex, TEXTURE_WRAP_REPEAT);
+}
+
 void track_service_unload(TrackService *track_service)
 {
   renderable_unload(&track_service->track);

@@ -15,6 +15,7 @@ TrackService track_service_init();
 void set_mesh_transforms(MeshRenderable *renderable, Matrix *transforms, int count);
 void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel);
 void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel);
+void track_service_apply_chart(TrackService *track_service, ChartSettings *chart_settings);
 void track_service_unload(TrackService *track_service);
 
 #endif // TRACK_SERVICE_H

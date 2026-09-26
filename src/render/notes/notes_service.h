@@ -15,6 +15,7 @@ typedef struct {
 
 NotesService notes_service_init(int glsl);
 void notes_service_render(NotesService *notes_service, RenderContext *render_ctx, ChartReader *chart_reader);
+void notes_service_apply_chart(NotesService *notes_service, ChartSettings *chart_settings);
 void notes_service_unload(NotesService *notes_service);
 
 #endif // NOTES_SERVICE_H

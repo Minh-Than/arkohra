@@ -13,6 +13,7 @@ typedef struct
 
 WindowGroup window_services_init(int glsl, AppConfigs *app_configs);
 void windows_services_render(WindowGroup *window_group, AppConfigs *app_configs, RenderContext *render_ctx);
+void window_services_handle_inputs(WindowGroup *window_group);
 void windows_services_unload(WindowGroup *window_group);
 
 #endif // WINDOW_SERVICES_H

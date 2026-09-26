@@ -136,6 +136,42 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings)
   rlPopMatrix();
 }
 
+void hud_service_apply_chart(HudService *hud_service, ChartSettings *chart_settings)
+{
+  UnloadTexture(hud_service->jacket_img);
+  if (!TextIsEqual(chart_settings->jacket_path, ""))
+  {
+    hud_service->jacket_img = LoadTexture(chart_settings->jacket_path);
+    if (!IsTextureValid(hud_service->jacket_img))
+      hud_service->jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
+  } else hud_service->jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
+          SetTextureFilter(hud_service->jacket_img, TEXTURE_FILTER_BILINEAR);
+
+  const char *paths[] = {
+    "resources/fonts/NotoSans-Regular.ttf",
+    "resources/fonts/NotoSansSC-Regular.ttf",
+    "resources/fonts/NotoSansJP-Regular.ttf",
+    "resources/fonts/NotoSansKR-Regular.ttf",
+    "resources/fonts/NotoSansMath-Regular.ttf",
+  };
+  List font_list; list_init(&font_list, sizeof(char *));
+  for (int i = 0; i < 5; i++) list_push(&font_list, &paths[i]);
+  List hud_code_points; list_init(&hud_code_points, sizeof(int));
+  for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
+  font_add_string_to_codepoints(&hud_code_points, chart_settings->title);
+  font_add_string_to_codepoints(&hud_code_points, chart_settings->composer);
+  font_add_string_to_codepoints(&hud_code_points, chart_settings->difficulty);
+  for (int i = 0; i < hud_service->font_with_fallback.size; i++)
+  {
+    Font *font = (Font *)list_get(&hud_service->font_with_fallback, i);
+    UnloadFont(*font);
+  }
+  list_clear(&hud_service->font_with_fallback);
+  hud_service->font_with_fallback = fonts_init(&font_list, 45, (int *)hud_code_points.data, hud_code_points.size);
+  list_free(&hud_code_points);
+  list_free(&font_list);
+}
+
 void hud_service_unload(HudService *hud_service)
 {
   UnloadFont(hud_service->saira_regular);

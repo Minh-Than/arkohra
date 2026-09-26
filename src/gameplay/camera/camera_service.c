@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "camera_service.h"
+#include "data/app_configs/app_config.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "../src/constants.h"
@@ -58,6 +59,34 @@ void recalibrate_camera(Camera3D *camera)
   Vector3 forward       = unity_quarternion_to_forward((Vector3){ Lerp(CAMERA_ROT_X, CAMERA_ROT_X_TABLET, aspect_adjustment), 180.0f, 0.0f });
   camera->target        = Vector3Add(camera->position, Vector3Scale(forward, 10.0f));
   camera->fovy          = Lerp(50.0f, 65.0f, aspect_adjustment);
+}
+
+void camera_handle_main_window_resize(Camera3D *camera, float playfield_ratio)
+{
+  static int prev_w = -1;
+  static int prev_h = -1;
+
+  if (!IsWindowResized()) return;
+
+  int w = GetScreenWidth();
+  int h = GetScreenHeight();
+
+  if (prev_w > 0 && prev_h > 0)
+  {
+    int dw = abs(w - prev_w);
+    int dh = abs(h - prev_h);
+
+    if (dh > 0 && dw == 0)
+      SetWindowSize((int)aspect_ratio_get_width((float)GetScreenHeight(), playfield_ratio), GetScreenHeight());
+    else if (dw >= dh)
+      SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), playfield_ratio));
+    else 
+      SetWindowSize((int)aspect_ratio_get_width((float)GetScreenHeight(), playfield_ratio), GetScreenHeight());
+  }
+  prev_w = GetScreenWidth();
+  prev_h = GetScreenHeight();
+
+  recalibrate_camera(camera);
 }
 
 Vector3 project_to_camera_view(Camera3D camera, float distance, float offsetX, float offsetY)

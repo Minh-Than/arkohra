@@ -41,6 +41,23 @@ void windows_services_render(WindowGroup *window_group, AppConfigs *app_configs,
                     app_configs, render_ctx);
 }
 
+void window_services_handle_inputs(WindowGroup *window_group)
+{
+  if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&
+      (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
+      IsKeyPressed(KEY_P))
+    window_inst_toggle(&window_group->command_palette);
+  if (IsKeyPressed(KEY_ESCAPE))
+    window_inst_close(&window_group->command_palette);
+
+  if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&
+      IsKeyPressed(KEY_COMMA))
+  {
+    window_inst_close(&window_group->command_palette);
+    window_inst_toggle(&window_group->project_setting);
+  }
+}
+
 void windows_services_unload(WindowGroup *window_group)
 {
   window_inst_unload(&window_group->command_palette);

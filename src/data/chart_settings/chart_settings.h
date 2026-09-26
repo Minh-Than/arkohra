@@ -31,6 +31,7 @@ typedef struct {
 } ChartSettings;
 
 ChartSettings chart_settings_init(AppConfigs *app_configs);
+bool chart_settings_load_from_project(ChartSettings *chart_settings, AppConfigs *app_configs, const char *project_file_path);
 void chart_settings_print(ChartSettings *chart_settings);
 
 #endif // CHART_SETTINGS_H

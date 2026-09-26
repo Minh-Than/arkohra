@@ -280,6 +280,21 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
   rlSetClipPlanes(0.01f, 100.0f);
 }
 
+void notes_service_apply_chart(NotesService *notes_service, ChartSettings *chart_settings)
+{
+  UnloadTexture(notes_service->hold_tex);
+  notes_service->hold_tex = skin_side_get_hold(chart_settings->skin_side);
+  SetTextureFilter(notes_service->hold_tex, TEXTURE_FILTER_BILINEAR);
+
+  UnloadTexture(notes_service->tap_tex);
+  notes_service->tap_tex = skin_side_get_tap(chart_settings->skin_side);
+  SetTextureFilter(notes_service->tap_tex, TEXTURE_FILTER_BILINEAR);
+
+  UnloadTexture(notes_service->arctap_tex);
+  notes_service->arctap_tex = skin_side_get_arctap(chart_settings->skin_side);
+  SetTextureFilter(notes_service->arctap_tex, TEXTURE_FILTER_BILINEAR);
+}
+
 void notes_service_unload(NotesService *notes_service)
 {
   renderable_unload(&notes_service->tap);
