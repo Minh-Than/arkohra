@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <math.h>
 #include "data/app_configs/app_config.h"
 #include "raylib.h"
@@ -42,7 +41,6 @@ HudService hud_service_init(int glsl)
 
 void hud_services_render(HudService *hud_service, ChartSettings *chart_settings, AppConfigs *app_configs, RenderContext *render_ctx)
 {
-  // TODO: move these shits away from calculating each frame
   float width_ratio         = (float)GetScreenWidth()  / BASE_APP_WINDOW_WIDTH;
   float height_ratio        = (float)GetScreenHeight() / aspect_ratio_get_height(BASE_APP_WINDOW_WIDTH, app_configs->playfield_ratio);
   float hud_dynamic_scaling = Clamp(fminf(width_ratio, height_ratio * 1.8f), 0.7f, 1.4f) * INFO_PANEL_SCALE;
@@ -152,8 +150,8 @@ void hud_service_apply_chart(HudService *hud_service, ChartSettings *chart_setti
   {
     hud_service->jacket_img = LoadTexture(chart_settings->jacket_path);
     if (!IsTextureValid(hud_service->jacket_img))
-      hud_service->jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
-  } else hud_service->jacket_img = LoadTexture("resources/gameplay/DefaultJacket.png");
+      hud_service->jacket_img = LoadTexture(DEFAULT_JACKET_PATH);
+  } else hud_service->jacket_img = LoadTexture(DEFAULT_JACKET_PATH);
           SetTextureFilter(hud_service->jacket_img, TEXTURE_FILTER_BILINEAR);
 
   const char *paths[] = {
