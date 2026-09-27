@@ -1,9 +1,11 @@
 #ifndef HUD_SERVICES_H
 #define HUD_SERVICES_H
 
+#include "data/app_configs/app_config.h"
 #include "data/chart_settings/chart_settings.h"
 #include "data/custom_types/dynamic_list.h"
 #include "raylib.h"
+#include "render/render_service.h"
 
 typedef struct {
   Shader sdf_shader;
@@ -13,7 +15,7 @@ typedef struct {
 } HudService;
 
 HudService hud_service_init(int glsl);
-void hud_services_render(HudService *hud_service, ChartSettings *chart_settings);
+void hud_services_render(HudService *hud_service, ChartSettings *chart_settings, AppConfigs *app_configs, RenderContext *render_ctx);
 void hud_service_apply_chart(HudService *hud_service, ChartSettings *chart_settings);
 void hud_service_unload(HudService *hud_service);
 

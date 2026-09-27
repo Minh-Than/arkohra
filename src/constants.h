@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-static const unsigned int BASE_APP_WINDOW_WIDTH = 1440;
+static const unsigned int BASE_APP_WINDOW_WIDTH = 1280;
 
 static const char* DEFAULT_BACKGROUND_PATH = "resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg";
 

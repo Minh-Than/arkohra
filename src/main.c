@@ -52,8 +52,6 @@ int main()
   };
 
   InitAudioDevice();
-  Wave wave = LoadWave(render_ctx.chart_settings.audio_path);
-  float wave_time_ms = ((float)wave.frameCount * 1000) / (float)(wave.sampleRate);
 
   Music music = LoadMusicStream("");
   music.looping = false;
@@ -180,7 +178,7 @@ int main()
       track_service_render_base_track(&track_service, &render_ctx, &chart_reader.render_lists.enwidencamera_channel);
       if (chart_reader.initialized) notes_service_render(&notes_service, &track_service, &render_ctx, &chart_reader, app_configs.colorblind);
       track_service_render_sky_input(&track_service, &render_ctx, &chart_reader.render_lists.enwidencamera_channel);
-      hud_services_render(&hud_service, &render_ctx.chart_settings);
+      hud_services_render(&hud_service, &render_ctx.chart_settings, &app_configs, &render_ctx);
       windows_services_render(&window_group, &app_configs, &render_ctx);
 
       // Debug FPS
@@ -201,7 +199,6 @@ int main()
 
   // Unload stuffs
   UnloadMusicStream(music);
-  UnloadWave(wave);
   CloseAudioDevice();
 
   chart_reader_unload(&chart_reader);

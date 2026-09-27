@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <math.h>
+#include "data/app_configs/app_config.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
@@ -38,16 +40,24 @@ HudService hud_service_init(int glsl)
   return service;
 }
 
-void hud_services_render(HudService *hud_service, ChartSettings *chart_settings)
+void hud_services_render(HudService *hud_service, ChartSettings *chart_settings, AppConfigs *app_configs, RenderContext *render_ctx)
 {
   // TODO: move these shits away from calculating each frame
-  float width_ratio         = (float)GetScreenWidth()  / 1280;
-  float height_ratio        = (float)GetScreenHeight() / 720;
-  float hud_dynamic_scaling = Clamp(fminf(width_ratio, height_ratio * 1.8f), 0.8f, 1.4f) * INFO_PANEL_SCALE;
+  float width_ratio         = (float)GetScreenWidth()  / BASE_APP_WINDOW_WIDTH;
+  float height_ratio        = (float)GetScreenHeight() / aspect_ratio_get_height(BASE_APP_WINDOW_WIDTH, app_configs->playfield_ratio);
+  float hud_dynamic_scaling = Clamp(fminf(width_ratio, height_ratio * 1.8f), 0.7f, 1.4f) * INFO_PANEL_SCALE;
   float info_panel_width    = hud_service->info_panel.width  * hud_dynamic_scaling;
   float info_panel_height   = hud_service->info_panel.height * hud_dynamic_scaling;
   float jacket_bg_width     = hud_service->jacket_bg.width   * hud_dynamic_scaling;
   float info_panel_posX     = (GetScreenWidth() - info_panel_width) / hud_dynamic_scaling;
+  float denominator = (float)(render_ctx->audio_clock.total_audio_length) + (chart_settings->audio_offset < 0.0f ? chart_settings->audio_offset
+                                                                                                                 : 0.0f);
+  float audio_ratio = 0.0f;
+  if (fabsf(denominator) > 1e-6)
+  {
+    audio_ratio = (float)(audio_clock_get_time_ms(&render_ctx->audio_clock) - chart_settings->audio_offset) / denominator;
+    audio_ratio = Clamp(audio_ratio, 0.0f, 1.0f);
+  }
 
   // Pause button
   DrawTexture(hud_service->pause_button, -118, 23, WHITE);
@@ -58,26 +68,25 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings)
     rlTranslatef(0.0f, 16.0f, 0.0f);
     DrawTexture(hud_service->info_panel, info_panel_posX, 0.0f, WHITE);
 
-    // TODO: fuck this one in particular
     // Progress bar + glow
-    // rlPushMatrix();
-    //   rlTranslatef(info_panel_posX - 70.0f, 0.0f, 0.0f);
-    //   rlPushMatrix();
-    //     rlTranslatef(JACKET_HUD_SIZE + 18.0f, hud_service->info_panel.height * 0.49f, 0.0f);
-    //     float progress_glow_x = (hud_service->info_panel.width - JACKET_HUD_SIZE) * (current_ms / audio_clock->total_audio_length);
-    //     DrawLineEx(Vector2Zero(), (Vector2){ progress_glow_x, 0.0f }, 5.0f, WHITE);
-    //     DrawTextureEx(hud_service->progress_glow,
-    //                   (Vector2){ progress_glow_x - hud_service->progress_glow.width * 0.5f,
-    //                             -hud_service->progress_glow.height * 0.5f },
-    //                   0.0f, 1.0f, WHITE);
-    //   rlPopMatrix();
-    // rlPopMatrix();
+    rlPushMatrix();
+      rlTranslatef(info_panel_posX - 70.0f, 0.0f, 0.0f);
+      rlPushMatrix();
+        rlTranslatef(JACKET_HUD_SIZE + 18.0f, hud_service->info_panel.height * 0.49f, 0.0f);
+        float bar_start_x = JACKET_HUD_SIZE + 18.0f;
+        float bar_end_x   = 70.0f + hud_service->info_panel.width;
+        float progress_glow_x = Lerp(0.0f, bar_end_x - bar_start_x, audio_ratio);
+        DrawLineEx(Vector2Zero(), (Vector2){ progress_glow_x, 0.0f }, 5.0f, WHITE);
+        DrawTextureEx(hud_service->progress_glow,
+                      (Vector2){ progress_glow_x - hud_service->progress_glow.width * 0.5f,
+                                -hud_service->progress_glow.height * 0.5f },
+                      0.0f, 1.0f, WHITE);
+      rlPopMatrix();
+    rlPopMatrix();
 
+    // Jacket + Difficulty
     rlPushMatrix();
       rlTranslatef(info_panel_posX - 70.0f, info_panel_height * 0.25f, 0.0f);
-
-
-      // Jacket + Difficulty
       DrawTexture(hud_service->jacket_bg, 0.0f, 0.0f, WHITE);
       rlPushMatrix();
         rlTranslatef(18.0f, 18.0f, 0.0f);
