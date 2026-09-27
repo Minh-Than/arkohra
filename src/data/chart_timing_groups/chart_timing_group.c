@@ -17,6 +17,7 @@ TGPropTypes determine_tg_prop(char *str)
   if (strstr(str, (const char*)"noinput" ) != NULL ||
       strstr(str, (const char*)"noinoput") != NULL) return NO_INPUT;
   if (strstr(str, (const char*)"noclip"  ) != NULL) return NO_CLIP;
+  if (strstr(str, (const char*)"nohead"  ) != NULL) return NO_HEAD;
   if (strstr(str, (const char*)"noarccap") != NULL) return NO_ARCCAP;
   if (strstr(str, (const char*)"noshadow") != NULL) return NO_SHADOW;
   if (strstr(str, (const char*)"noheightindicator") != NULL) return NO_HEIGHT_INDICATOR;
@@ -161,6 +162,7 @@ static int update_tg_props(char *token, void *user)
       }
     case NO_INPUT:  tg->props.no_input  = true; break;
     case NO_CLIP:   tg->props.no_clip   = true; break;
+    case NO_HEAD:   tg->props.no_head   = true; break;
     case NO_ARCCAP: tg->props.no_arccap = true; break;
     case NO_SHADOW: tg->props.no_shadow = true; break;
     case NO_HEIGHT_INDICATOR: tg->props.no_height_indicator = true; break;

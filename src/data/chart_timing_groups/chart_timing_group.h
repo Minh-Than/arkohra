@@ -10,6 +10,7 @@ typedef enum {
   ARC_RESOLUTION,
   NO_INPUT,
   NO_CLIP,
+  NO_HEAD,
   NO_ARCCAP,
   NO_SHADOW,
   NO_HEIGHT_INDICATOR,
@@ -22,7 +23,7 @@ TGPropTypes determine_tg_prop(char *str);
 typedef struct {
   char name[256];
   float arc_res;
-  bool no_input, no_clip, no_arccap, no_shadow, no_height_indicator, no_connection;
+  bool no_input, no_clip, no_head, no_arccap, no_shadow, no_height_indicator, no_connection;
 } TimingGroupProps;
 
 void tg_props_print(TimingGroupProps *tg_props);

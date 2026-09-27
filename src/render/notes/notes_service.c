@@ -261,6 +261,7 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
         if (hidegroup_actives[tg->value]) continue;
+        if (tg->props.no_head) continue;
         if (tg->props.no_input && arc->start_timing - current_ms < 0) continue;
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
