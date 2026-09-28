@@ -56,7 +56,7 @@ static bool parse_aff_header(char *line, ChartSettings *chart_settings)
 {
   bool end_of_header = strcmp(line, "-") == 0;
 
-  if (strstr(line, (const char*)"AudioOffset") != NULL)
+  if (strstr(line, "AudioOffset") != NULL)
   {
     if(strncmp(line, "AudioOffset:", 12) == 0)
     {

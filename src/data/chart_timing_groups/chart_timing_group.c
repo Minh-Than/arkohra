@@ -12,16 +12,16 @@
 
 TGPropTypes determine_tg_prop(char *str)
 {
-  if (strstr(str, (const char*)"name=") != NULL) return TG_NAME;
-  if (strstr(str, (const char*)"arcresolution=") != NULL) return ARC_RESOLUTION;
-  if (strstr(str, (const char*)"noinput" ) != NULL ||
-      strstr(str, (const char*)"noinoput") != NULL) return NO_INPUT;
-  if (strstr(str, (const char*)"noclip"  ) != NULL) return NO_CLIP;
-  if (strstr(str, (const char*)"nohead"  ) != NULL) return NO_HEAD;
-  if (strstr(str, (const char*)"noarccap") != NULL) return NO_ARCCAP;
-  if (strstr(str, (const char*)"noshadow") != NULL) return NO_SHADOW;
-  if (strstr(str, (const char*)"noheightindicator") != NULL) return NO_HEIGHT_INDICATOR;
-  if (strstr(str, (const char*)"noconnection") != NULL) return NO_CONNECTION;
+  if (strstr(str, "name=") != NULL) return TG_NAME;
+  if (strstr(str, "arcresolution=") != NULL) return ARC_RESOLUTION;
+  if (strstr(str, "noinput" ) != NULL ||
+      strstr(str, "noinoput") != NULL) return NO_INPUT;
+  if (strstr(str, "noclip"  ) != NULL) return NO_CLIP;
+  if (strstr(str, "nohead"  ) != NULL) return NO_HEAD;
+  if (strstr(str, "noarccap") != NULL) return NO_ARCCAP;
+  if (strstr(str, "noshadow") != NULL) return NO_SHADOW;
+  if (strstr(str, "noheightindicator") != NULL) return NO_HEIGHT_INDICATOR;
+  if (strstr(str, "noconnection") != NULL) return NO_CONNECTION;
   return NO_TG_PROP;
 }
 

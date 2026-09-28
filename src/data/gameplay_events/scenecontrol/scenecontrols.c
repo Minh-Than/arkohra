@@ -5,10 +5,10 @@
 
 SCType scenecontrol_determine_type(char *str_name)
 {
-  if (strstr(str_name, (const char*)"hidegroup") != NULL)     return SC_HIDEGROUP;
-  if (strstr(str_name, (const char*)"groupalpha") != NULL)    return SC_GROUPALPHA;
-  if (strstr(str_name, (const char*)"enwidencamera") != NULL) return SC_ENWIDENCAMERA;
-  if (strstr(str_name, (const char*)"enwidenlanes") != NULL)  return SC_ENWIDENLANES;
+  if (strstr(str_name, "hidegroup") != NULL)     return SC_HIDEGROUP;
+  if (strstr(str_name, "groupalpha") != NULL)    return SC_GROUPALPHA;
+  if (strstr(str_name, "enwidencamera") != NULL) return SC_ENWIDENCAMERA;
+  if (strstr(str_name, "enwidenlanes") != NULL)  return SC_ENWIDENLANES;
   return SC_NONE;
 }
 
