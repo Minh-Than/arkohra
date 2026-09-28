@@ -3,6 +3,7 @@
 #include "value_channel.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/keyframe/easings.h"
+#include "raymath.h"
 
 void value_kf_print(ValueKeyframe kf)
 {
@@ -46,7 +47,9 @@ float value_channel_interpolate(ValueChannel *channel, int timing)
   else if (curr_kf_idx > kfs->size - 1) curr_kf_idx = kfs->size - 1;
   ValueKeyframe *curr_kf = (ValueKeyframe *)list_get(kfs, curr_kf_idx);
 
-  return easing_interpolate(curr_kf->easing, timing, curr_kf->start_timing, curr_kf->end_timing, curr_kf->prev_value, curr_kf->next_value);
+  return Clamp(easing_interpolate(curr_kf->easing, timing, curr_kf->start_timing, curr_kf->end_timing, curr_kf->prev_value, curr_kf->next_value),
+               fminf(curr_kf->prev_value, curr_kf->next_value),
+               fmaxf(curr_kf->prev_value, curr_kf->next_value));
 }
 
 void value_channel_unload(ValueChannel *channel)
