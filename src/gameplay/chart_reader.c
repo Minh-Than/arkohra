@@ -7,7 +7,6 @@
 #include "constants.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/scenecontrol/scenecontrols.h"
-#include "data/keyframe/easings.h"
 #include "data/keyframe/value_channel.h"
 #include "raylib.h"
 #include "rlgl.h"
@@ -17,21 +16,6 @@
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
 #include "render/note_render_lists.h"
-
-void chart_reader_print(ChartReader *chart_reader)
-{
-  for (int i = 0; i < chart_reader->timing_groups.size; i++)
-    timing_group_info_print((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
-}
-
-void chart_reader_unload(ChartReader *chart_reader)
-{
-  chart_reader->initialized = false;
-  render_lists_unload(&chart_reader->render_lists);
-  for (int i = 0; i < chart_reader->timing_groups.size; i++)
-    timing_group_unload((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
-  list_free(&chart_reader->timing_groups);
-}
 
 static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
 {
@@ -86,160 +70,18 @@ static bool parse_aff_header(char *line, ChartSettings *chart_settings)
   return end_of_header;
 }
 
-static void parse_arc_line(char *fields[], char *line)
-{
-    int n = 0;
-    char copy[256];
-    text_copy_bounded(copy, sizeof(copy), line);
-    char *p = copy + 4;
-    fields[n++] = p;
-    while ((p = strchr(p, ',')) != NULL && n < 10)
-    {
-      *p = '\0';
-      fields[n++] = ++p;
-    }
-}
-
 static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count, int *current_tg)
 {
   ChartTimingGroup *tg = (ChartTimingGroup *)list_get(&chart_reader->timing_groups, *current_tg);
   RawEventType type = determine_type(line);
   switch (type)
   {
-    case TIMING_GROUP:
-      {
-        *tg_count += 1;
-        *current_tg = *tg_count - 1;
-        ChartTimingGroup init_tg = timing_group_init();
-        init_tg.value = *current_tg;
-        parse_tg_props(line, &init_tg);
-        list_push(&chart_reader->timing_groups, &init_tg);
-        break;
-      }
-    case TIMING_EVENT:
-      {
-        int timing;
-        float bpm, divisor;
-        int matched = sscanf(line, "timing(%d,%f,%f);", &timing, &bpm, &divisor);
-        if (matched == 3)
-        {
-          TimingEvent t_event = { .fp = 0, .bpm = bpm, .divisor = divisor, .timing = timing, .timing_group = *current_tg };
-          list_push(&tg->timing_events, &t_event);
-        }
-        break;
-      }
-    case TAP:
-      {
-        int timing;
-        float lane;
-        int matched = sscanf(line, "(%d,%f);", &timing, &lane);
-        if (matched == 2)
-        {
-          List connector_x; list_init(&connector_x, sizeof(float));
-          List connector_y; list_init(&connector_y, sizeof(float));
-          Tap tap = (Tap) { .connector_x = connector_x, .connector_y = connector_y, .lane = lane, .timing = timing, .timing_group = *current_tg };
-          list_push(&tg->taps, &tap);
-        }
-        break;
-      }
-    case HOLD:
-      {
-        int start_timing, end_timing;
-        float lane;
-        int matched = sscanf(line, "hold(%d,%d,%f);", &start_timing, &end_timing, &lane);
-        if (matched == 3)
-        {
-          Hold hold = {
-            .lane = lane,
-            .start_timing = start_timing,
-            .end_timing   = end_timing,
-            .timing_group = *current_tg,
-          };
-          list_push(&tg->holds, &hold);
-        }
-        break;
-      }
-    case ARC:
-      {
-        char *fields[10];
-        int n = 0;
-        char copy[256];
-        text_copy_bounded(copy, sizeof(copy), line);
-        char *p = copy + 4;
-        fields[n++] = p;
-        while ((p = strchr(p, ',')) != NULL && n < 10)
-        {
-          *p = '\0';
-          fields[n++] = ++p;
-        }
-
-        if (n == 10)
-        {
-          List arctaps; list_init(&arctaps, sizeof(ArcTap));
-          struct Arc arc = {
-            .arctaps      = arctaps,
-            .x1 = (float)atof(fields[2]), .y1 = (float)atof(fields[5]),
-            .x2 = (float)atof(fields[3]), .y2 = (float)atof(fields[6]),
-            .arc_res      = 1.0f,
-            .start_timing = atoi(fields[0]),
-            .end_timing   = atoi(fields[1]),
-            .timing_group = *current_tg,
-            .color        = atoi(fields[7]),
-            .type         = arctype_get_by_string(fields[4]),
-            .is_void      = strncmp(fields[9], "true", 4) == 0 ? true : false,
-            .is_head      = true,
-            .prev_arc     = NULL,
-            .next_arc     = NULL
-          };
-          text_copy_bounded(arc.sfx, sizeof(arc.sfx), fields[8]);
-
-          List arctap_timings; list_init(&arctap_timings, sizeof(int));
-          parse_arctaps(line, &arctap_timings);
-          for (int i = 0; i < arctap_timings.size; i++)
-          {
-            int *timing = (int *)list_get(&arctap_timings, i);
-            ArcTap arctap = { .arc = NULL, .width = 1.0f, .timing = *timing, .timing_group = *current_tg };
-            list_push(&arc.arctaps, &arctap);
-          }
-          list_free(&arctap_timings);
-
-          list_push(&tg->arcs, &arc);
-        }
-      }
-      break;
-    case SCENECONTROL:
-      {
-        int timing;
-        char name[128];
-        float duration, value;
-        int matched = sscanf(line, "scenecontrol(%d,%127[^,],%f,%f);", &timing, name, &duration, &value);
-        if (matched == 4)
-        {
-          SCType sc_type = scenecontrol_determine_type(name);
-          switch (sc_type)
-          {
-            case SC_HIDEGROUP:
-            {
-              ValueKeyframe kf = { .start_timing = timing, .end_timing = timing, .next_value = value, .easing = E_STEP_END };
-              list_push(&tg->hidegroup_channel.keyframes, &kf);
-              break;
-            }
-            case SC_GROUPALPHA:
-            {
-              ValueKeyframe kf = { .start_timing = timing, .end_timing = timing + (int)duration, .next_value = value, .easing = E_LINEAR };
-              list_push(&tg->groupalpha_channel.keyframes, &kf);
-              break;
-            }
-            case SC_ENWIDENCAMERA:
-            {
-              ValueKeyframe kf = { .start_timing = timing, .end_timing = timing + (int)duration, .next_value = value, .easing = E_LINEAR };
-              list_push(&tg->enwidencamera_channel.keyframes, &kf);
-              break;
-            }
-            default: break;
-          }
-        }
-      }
+    case TIMING_GROUP: timing_group_parse_aff(&chart_reader->timing_groups, line, tg_count, current_tg); break;
+    case TIMING_EVENT: timing_event_parse_aff(&tg->timing_events, line, current_tg);                     break;
+    case TAP:          tap_parse_aff(&tg->taps, line, current_tg);                                       break;
+    case HOLD:         hold_parse_aff(&tg->holds, line, current_tg);                                     break;
+    case ARC:          arc_parse_aff(&tg->arcs, line, current_tg);                                       break;
+    case SCENECONTROL: scenecontrol_parse_aff(tg, line);                                                 break;
     default: break;
   }
 }
@@ -286,6 +128,19 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
       {
         ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j);
         if (j == 0 && tg->enwidencamera_channel.keyframes.size > 1) continue;
+        kf->prev_value = prev_value;
+        prev_value = kf->next_value;
+      }
+    }
+
+    // Enwidenlanes
+    {
+      int prev_value = 0;
+      list_sort_by(&tg->enwidenlanes_channel.keyframes, value_kf_compare_start_timing_asc);
+      for (int j = 0; j < tg->enwidenlanes_channel.keyframes.size; j++)
+      {
+        ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidenlanes_channel.keyframes, j);
+        if (j == 0 && tg->enwidenlanes_channel.keyframes.size > 1) continue;
         kf->prev_value = prev_value;
         prev_value = kf->next_value;
       }
@@ -414,8 +269,8 @@ ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_
     if(strcmp(line, "};")  == 0) { current_tg = 0; continue; }
 
     parse_aff_lines(line, &chart_reader, &tg_count, &current_tg);
-
   }
+
   if (lines != NULL) UnloadFileText(aff_data);
 
   parse_post_process(chart_settings, audio_clock, &chart_reader, arc_texture, arc_shader);
@@ -425,79 +280,17 @@ ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_
   return chart_reader;
 }
 
-void process_note_render_lists(ChartReader *chart_reader, ChartSettings *chart_settings, float current_ms, double *curr_fps, float *curr_bpms)
+void chart_reader_print(ChartReader *chart_reader)
 {
-  render_lists_clear(&chart_reader->render_lists);
+  for (int i = 0; i < chart_reader->timing_groups.size; i++)
+    timing_group_info_print((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
+}
 
-  List *timing_groups = &chart_reader->timing_groups;
-  for (int i = 0; i < timing_groups->size; i++) {
-    ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
-
-    double curr_fp = get_floor_position(&tg->timing_events, current_ms);
-    TimingEvent *curr_event = get_event_at(&tg->timing_events, current_ms);
-    float curr_bpm = curr_event != NULL ? curr_event->bpm : chart_settings->base_bpm;
-    curr_fps[i]  = curr_fp;
-    curr_bpms[i] = curr_bpm;
-
-    for (int j = 0; j < tg->enwidencamera_channel.keyframes.size; j++)
-    {
-      ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j);
-      list_push(&chart_reader->render_lists.enwidencamera_channel.keyframes, kf);
-    }
-
-    // Beatlines
-    BeatLine beatline_low_z_fp  = { .fp = curr_fp + chart_reader->low_z_clip };
-    BeatLine beatline_high_z_fp = { .fp = curr_fp + chart_reader->high_z_clip };
-    int beatline_start_index = bisect_left(&tg->beatlines, &beatline_low_z_fp , beatline_compare_fp_asc);
-    int beatline_end_index   = bisect_left(&tg->beatlines, &beatline_high_z_fp, beatline_compare_fp_asc);
-    for (int j = beatline_start_index; j < beatline_end_index; j++)
-    {
-      BeatLine *beatline = (BeatLine *)list_get(&tg->beatlines, j);
-      list_push(&chart_reader->render_lists.beatline_render_list, beatline);
-    }
-
-    // Holds
-    double curr_itv_arr[] = { curr_fp + chart_reader->low_z_clip, curr_fp + chart_reader->high_z_clip };
-    Interval curr_interval = { .low = &curr_itv_arr[0], .high = &curr_itv_arr[1] };
-    itv_tree_get_overlaps(&tg->holds_tree, &chart_reader->render_lists.hold_render_list, curr_interval);
-
-    // Taps
-    TapFP tap_low_z_fp  = { .fp = curr_fp + chart_reader->low_z_clip };
-    TapFP tap_high_z_fp = { .fp = curr_fp + chart_reader->high_z_clip };
-    int tap_start_index = bisect_left(&tg->tap_fps, &tap_low_z_fp , tapfp_compare_fp_asc);
-    int tap_end_index   = bisect_left(&tg->tap_fps, &tap_high_z_fp, tapfp_compare_fp_asc);
-    for (int j = tap_start_index; j < tap_end_index; j++)
-    {
-      TapFP *tap_fp = (TapFP *)list_get(&tg->tap_fps, j);
-      list_push(&chart_reader->render_lists.tap_render_list, tap_fp);
-    }
-
-    // Arcs
-    double curr_arc_itv_arr[]  = { curr_fp + chart_reader->low_z_clip, curr_fp + chart_reader->high_z_clip };
-    Interval curr_arc_interval = { .low = &curr_arc_itv_arr[0], .high = &curr_arc_itv_arr[1] };
-    itv_tree_get_overlaps(&tg->arc_segments_tree, &chart_reader->render_lists.arc_render_list, curr_arc_interval);
-
-    // Following arccaps
-    Interval arccap_interval = { .low = &curr_fp, .high = &curr_fp };
-    itv_tree_get_overlaps(&tg->arc_segments_tree, &chart_reader->render_lists.arccap_render_list, arccap_interval);
-
-    // Arctaps
-    ArcTapFP arctap_low_fp  = { .fp = curr_fp + chart_reader->low_z_clip };
-    ArcTapFP arctap_high_fp = { .fp = curr_fp + chart_reader->high_z_clip };
-    int arctap_start_index = bisect_left(&tg->arctap_fps, &arctap_low_fp , arctapfp_compare_fp_asc);
-    int arctap_end_index   = bisect_left(&tg->arctap_fps, &arctap_high_fp, arctapfp_compare_fp_asc);
-    for (int j = arctap_start_index; j < arctap_end_index; j++)
-    {
-      ArcTapFP *arctap_fp = (ArcTapFP *)list_get(&tg->arctap_fps, j);
-      list_push(&chart_reader->render_lists.arctap_render_list, arctap_fp);
-    }
-  }
-
-  list_sort_by(&chart_reader->render_lists.beatline_render_list, beatline_compare_fp_asc);
-  list_sort_by(&chart_reader->render_lists.hold_render_list, arc_segment_const_void_compare_start_fp_asc);
-  list_sort_by(&chart_reader->render_lists.tap_render_list, tapfp_compare_fp_asc);
-  list_sort_by(&chart_reader->render_lists.arc_render_list, arc_segment_const_void_compare_start_fp_asc);
-  list_sort_by(&chart_reader->render_lists.arctap_render_list, arctapfp_compare_fp_asc);
-
-  list_sort_by(&chart_reader->render_lists.enwidencamera_channel.keyframes, value_kf_compare_start_timing_asc);
+void chart_reader_unload(ChartReader *chart_reader)
+{
+  chart_reader->initialized = false;
+  render_lists_unload(&chart_reader->render_lists);
+  for (int i = 0; i < chart_reader->timing_groups.size; i++)
+    timing_group_unload((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));
+  list_free(&chart_reader->timing_groups);
 }

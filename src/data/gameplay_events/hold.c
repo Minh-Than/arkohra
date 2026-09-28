@@ -87,6 +87,23 @@ int hold_compare_start_fp_asc(const void *a, const void *b)
   return 0;
 }
 
+void hold_parse_aff(List *holds, const char* line, int *current_tg)
+{
+  int start_timing, end_timing;
+  float lane;
+  int matched = sscanf(line, "hold(%d,%d,%f);", &start_timing, &end_timing, &lane);
+  if (matched == 3)
+  {
+    Hold hold = {
+      .lane = lane,
+      .start_timing = start_timing,
+      .end_timing   = end_timing,
+      .timing_group = *current_tg,
+    };
+    list_push(holds, &hold);
+  }
+}
+
 int hold_const_void_compare_start_fp_asc(const void *a, const void *b)
 {
   const Hold *hold_a = *(const Hold *const *) a;

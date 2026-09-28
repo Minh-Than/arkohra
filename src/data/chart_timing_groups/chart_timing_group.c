@@ -77,7 +77,23 @@ ChartTimingGroup timing_group_init()
                                        .easing = E_LINEAR };
   list_push(&tg.enwidencamera_channel.keyframes, &enwidencamera_init_kf);
 
+  tg.enwidencamera_channel = value_channel_init();
+  ValueKeyframe enwidenlanes_init_kf = { .prev_value = 0.0f, .next_value = 0.0f,
+                                       .start_timing = -9999999, .end_timing = -9999999,
+                                       .easing = E_LINEAR };
+  list_push(&tg.enwidenlanes_channel.keyframes,  &enwidenlanes_init_kf);
+
   return tg;
+}
+
+void timing_group_parse_aff(List *timing_groups, const char* line, int *tg_count, int *current_tg)
+{
+  *tg_count += 1;
+  *current_tg = *tg_count - 1;
+  ChartTimingGroup init_tg = timing_group_init();
+  init_tg.value = *current_tg;
+  parse_tg_props(line, &init_tg);
+  list_push(timing_groups, &init_tg);
 }
 
 void timing_group_info_print(ChartTimingGroup *tg)
@@ -138,6 +154,7 @@ void timing_group_unload(ChartTimingGroup *tg)
   value_channel_unload(&tg->hidegroup_channel);
   value_channel_unload(&tg->groupalpha_channel);
   value_channel_unload(&tg->enwidencamera_channel);
+  value_channel_unload(&tg->enwidenlanes_channel);
 }
 
 static int update_tg_props(char *token, void *user)

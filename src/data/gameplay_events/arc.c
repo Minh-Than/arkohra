@@ -112,6 +112,54 @@ struct Arc *arc_get_firstmost_arc(struct Arc* arc)
   return arc;
 }
 
+void arc_parse_aff(List *arcs, const char* line, int *current_tg)
+{
+  char *fields[10];
+  int n = 0;
+  char copy[256];
+  text_copy_bounded(copy, sizeof(copy), line);
+  char *p = copy + 4;
+  fields[n++] = p;
+  while ((p = strchr(p, ',')) != NULL && n < 10)
+  {
+    *p = '\0';
+    fields[n++] = ++p;
+  }
+
+  if (n == 10)
+  {
+    List arctaps; list_init(&arctaps, sizeof(ArcTap));
+    struct Arc arc = {
+      .arctaps      = arctaps,
+      .x1 = (float)atof(fields[2]), .y1 = (float)atof(fields[5]),
+      .x2 = (float)atof(fields[3]), .y2 = (float)atof(fields[6]),
+      .arc_res      = 1.0f,
+      .start_timing = atoi(fields[0]),
+      .end_timing   = atoi(fields[1]),
+      .timing_group = *current_tg,
+      .color        = atoi(fields[7]),
+      .type         = arctype_get_by_string(fields[4]),
+      .is_void      = strncmp(fields[9], "true", 4) == 0 ? true : false,
+      .is_head      = true,
+      .prev_arc     = NULL,
+      .next_arc     = NULL
+    };
+    text_copy_bounded(arc.sfx, sizeof(arc.sfx), fields[8]);
+
+    List arctap_timings; list_init(&arctap_timings, sizeof(int));
+    parse_arctaps(line, &arctap_timings);
+    for (int i = 0; i < arctap_timings.size; i++)
+    {
+      int *timing = (int *)list_get(&arctap_timings, i);
+      ArcTap arctap = { .arc = NULL, .width = 1.0f, .timing = *timing, .timing_group = *current_tg };
+      list_push(&arc.arctaps, &arctap);
+    }
+    list_free(&arctap_timings);
+
+    list_push(arcs, &arc);
+  }
+}
+
 void arc_print(const void *elem)
 {
   const struct Arc *arc = (const struct Arc *)elem;

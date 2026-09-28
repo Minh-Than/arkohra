@@ -40,11 +40,13 @@ typedef struct {
   ValueChannel hidegroup_channel;
   ValueChannel groupalpha_channel;
   ValueChannel enwidencamera_channel;
+  ValueChannel enwidenlanes_channel;
 
 } ChartTimingGroup;
 
 ChartTimingGroup timing_group_init();
 void timing_group_info_print(ChartTimingGroup *tg);
+void timing_group_parse_aff(List *timing_groups, const char* line, int *tg_count, int *current_tg);
 void timing_group_unload(ChartTimingGroup *chart_tg);
 void parse_tg_props(const char *line, ChartTimingGroup *tg);
 

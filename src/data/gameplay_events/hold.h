@@ -15,6 +15,7 @@ typedef struct
 void hold_print(const void *elem);
 void draw_hold(MeshRenderable *hold_r, Hold *hold, float current_ms, float base_bpm, float scroll_speed, double curr_fp, float add_fade);
 MeshRenderable hold_load_mesh(Texture2D *texture);
+void hold_parse_aff(List *holds, const char* line, int *current_tg);
 int hold_compare_start_fp_asc(const void *a, const void *b);
 int hold_const_void_compare_start_fp_asc(const void *a, const void *b);
 void hold_build_tree(ItvTree *tree, List *list, int low, int high);

@@ -73,7 +73,8 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
   float        curr_bpms[timing_groups->size];
   bool hidegroup_actives[timing_groups->size];
   float  groupalpha_fade[timing_groups->size];
-  process_note_render_lists(chart_reader, chart_settings, current_ms, curr_fps, curr_bpms);
+  render_lists_process(render_lists, timing_groups, chart_settings, current_ms, curr_fps, curr_bpms,
+                       chart_reader->low_z_clip, chart_reader->high_z_clip);
   for (int i = 0; i < timing_groups->size; i++)
   {
     ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);

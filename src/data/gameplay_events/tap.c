@@ -92,6 +92,20 @@ MeshRenderable tap_load_mesh(Texture2D *texture)
   return r;
 }
 
+void tap_parse_aff(List *taps, const char* line, int *current_tg)
+{
+  int timing;
+  float lane;
+  int matched = sscanf(line, "(%d,%f);", &timing, &lane);
+  if (matched == 2)
+  {
+    List connector_x; list_init(&connector_x, sizeof(float));
+    List connector_y; list_init(&connector_y, sizeof(float));
+    Tap tap = (Tap) { .connector_x = connector_x, .connector_y = connector_y, .lane = lane, .timing = timing, .timing_group = *current_tg };
+    list_push(taps, &tap);
+  }
+}
+
 int tapfp_compare_fp_asc(const void *a, const void *b)
 {
   const TapFP *tap_a = (const TapFP *) a;

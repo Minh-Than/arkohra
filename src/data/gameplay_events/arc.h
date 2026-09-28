@@ -44,6 +44,7 @@ MeshRenderable generate_arc_height_mesh(Texture2D *texture);
 Color arc_get_color_low(int color, bool is_color_blind);
 Color arc_get_color_high(int color, bool is_color_blind);
 struct Arc *arc_get_firstmost_arc(struct Arc* arc);
+void arc_parse_aff(List *arcs, const char* line, int *current_tg);
 void arc_print(const void *elem);
 
 // ARC SEGMENT

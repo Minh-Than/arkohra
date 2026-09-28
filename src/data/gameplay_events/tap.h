@@ -18,6 +18,7 @@ void tap_print(const void *elem);
 void draw_tap(MeshRenderable *tap_r, Tap *tap, float base_bpm, float scroll_speed, double curr_fp, float add_fade);
 void draw_tap_connection(Tap *tap, ChartSettings *chart_settings, float base_bpm, float scroll_speed, double curr_fp, float add_fade);
 MeshRenderable tap_load_mesh(Texture2D *texture);
+void tap_parse_aff(List *taps, const char* line, int *current_tg);
 
 typedef struct {
   Tap   *tap;
