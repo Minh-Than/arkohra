@@ -86,6 +86,19 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
   }
 }
 
+static void post_process_channel(ValueChannel *channel)
+{
+  int prev_value = 0;
+  list_sort_by(&channel->keyframes, value_kf_compare_start_timing_asc);
+  for (int j = 0; j < channel->keyframes.size; j++)
+  {
+    ValueKeyframe *kf = (ValueKeyframe *)list_get(&channel->keyframes, j);
+    if (j == 0) { prev_value = kf->next_value; continue; }
+    kf->prev_value = prev_value;
+    prev_value = kf->next_value;
+  }
+}
+
 static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_clock, ChartReader *chart_reader, Texture2D *arc_texture, Shader *arc_shader)
 {
   for(int i = 0; i < chart_reader->timing_groups.size; i++)
@@ -94,57 +107,10 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
     list_sort_by(&tg->timing_events, timing_event_compare_timing_asc);
     recalculate_floor_position(tg);
 
-    // Hidegroup
-    {
-      int prev_value = 0;
-      list_sort_by(&tg->hidegroup_channel.keyframes, value_kf_compare_start_timing_asc);
-      for (int j = 0; j < tg->hidegroup_channel.keyframes.size; j++)
-      {
-        ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->hidegroup_channel.keyframes, j);
-        if (j == 0) { prev_value = kf->next_value; continue; }
-        kf->prev_value = prev_value;
-        prev_value = kf->next_value;
-      }
-    }
-
-    // Groupalpha
-    {
-      int prev_value = 0;
-      list_sort_by(&tg->groupalpha_channel.keyframes, value_kf_compare_start_timing_asc);
-      for (int j = 0; j < tg->groupalpha_channel.keyframes.size; j++)
-      {
-        ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->groupalpha_channel.keyframes, j);
-        if (j == 0 && tg->groupalpha_channel.keyframes.size > 1) continue;
-        kf->prev_value = prev_value;
-        prev_value = kf->next_value;
-      }
-    }
-
-    // Enwidencamera
-    {
-      int prev_value = 0;
-      list_sort_by(&tg->enwidencamera_channel.keyframes, value_kf_compare_start_timing_asc);
-      for (int j = 0; j < tg->enwidencamera_channel.keyframes.size; j++)
-      {
-        ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j);
-        if (j == 0 && tg->enwidencamera_channel.keyframes.size > 1) continue;
-        kf->prev_value = prev_value;
-        prev_value = kf->next_value;
-      }
-    }
-
-    // Enwidenlanes
-    {
-      int prev_value = 0;
-      list_sort_by(&tg->enwidenlanes_channel.keyframes, value_kf_compare_start_timing_asc);
-      for (int j = 0; j < tg->enwidenlanes_channel.keyframes.size; j++)
-      {
-        ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidenlanes_channel.keyframes, j);
-        if (j == 0 && tg->enwidenlanes_channel.keyframes.size > 1) continue;
-        kf->prev_value = prev_value;
-        prev_value = kf->next_value;
-      }
-    }
+    post_process_channel(&tg->hidegroup_channel);
+    post_process_channel(&tg->groupalpha_channel);
+    post_process_channel(&tg->enwidencamera_channel);
+    post_process_channel(&tg->enwidenlanes_channel);
 
     list_sort_by(&tg->arcs, arc_compare_start_timing_asc);
     chart_reader_rebuild_arctaps(tg);

@@ -43,7 +43,7 @@ void draw_tap_connection(Tap *tap, ChartSettings *chart_settings, float base_bpm
     DrawConnector((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos - 0.1f },
                   (Vector3){ x, y - 0.21f, z_pos - 0.1f },
                   Lerp(0.05f, 0.08f, z_pos / -100.0f),
-                  Fade(color_from_rgba(chart_settings->skin_side == SK_CONFLICT ? CONFICT_CONNECTOR_CL
+                  Fade(color_from_rgba(chart_settings->skin_side == SK_CONFLICT ? CONFLICT_CONNECTOR_CL
                                                                                 : LIGHT_CONNECTOR_CL),
                        Clamp(fade_ratio, 0.0f, 1.0f * add_fade))
                   );

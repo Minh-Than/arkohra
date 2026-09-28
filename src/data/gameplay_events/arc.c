@@ -313,7 +313,6 @@ MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timin
 MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *timing_events, struct Arc *arc,
                                         Shader *shader, float curr_timing, float increment)
 {
-  // WARNING:
   // 3--2
   // |  |
   // |  |
