@@ -273,18 +273,16 @@ void test_interpolate_endpoints_all_easings(void)
   }
 }
 
-/* 11. Timing past the range extrapolates. The code does not clamp.
-   Linear extrapolation must extend the line. Document the current
-   behavior so a future clamp does not break silently. */
+/* 11. Timing past the range. The code should clamp the minimum and maximum value. */
 void test_interpolate_extrapolation(void)
 {
   float r;
 
   r = easing_interpolate(E_LINEAR, -500, 0, 1000, 0.0f, 1.0f);
-  TEST_CHECK(fabsf(r - (-0.5f)) < EPS);
+  TEST_CHECK(fabsf(r - 0.0f) < EPS);
 
   r = easing_interpolate(E_LINEAR, 1500, 0, 1000, 0.0f, 1.0f);
-  TEST_CHECK(fabsf(r - 1.5f) < EPS);
+  TEST_CHECK(fabsf(r - 1.0f) < EPS);
 }
 
 TEST_LIST = {
