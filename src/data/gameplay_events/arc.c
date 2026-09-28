@@ -640,7 +640,9 @@ void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale,
   float arccap_end_x   = arc_world_x_at(arc_segment->end_timing, arc);
   float arccap_start_y = arc_world_y_at(arc_segment->start_timing, arc);
   float arccap_end_y   = arc_world_y_at(arc_segment->end_timing, arc);
-  float lerp = (current_ms - arc_segment->start_timing) / (arc_segment->end_timing - arc_segment->start_timing);
+  float lerp = 0.0;
+  if (arc_segment->start_timing != arc_segment->end_timing)
+    lerp = (current_ms - arc_segment->start_timing) / (arc_segment->end_timing - arc_segment->start_timing);
   float lerp_x = Clamp(Lerp(arccap_start_x, arccap_end_x, lerp),
                        fminf(arccap_start_x, arccap_end_x),
                        fmaxf(arccap_start_x, arccap_end_x));
