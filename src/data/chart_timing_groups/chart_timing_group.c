@@ -77,7 +77,7 @@ ChartTimingGroup timing_group_init()
                                        .easing = E_LINEAR };
   list_push(&tg.enwidencamera_channel.keyframes, &enwidencamera_init_kf);
 
-  tg.enwidencamera_channel = value_channel_init();
+  tg.enwidenlanes_channel = value_channel_init();
   ValueKeyframe enwidenlanes_init_kf = { .prev_value = 0.0f, .next_value = 0.0f,
                                        .start_timing = -9999999, .end_timing = -9999999,
                                        .easing = E_LINEAR };
@@ -110,7 +110,7 @@ void timing_group_info_print(ChartTimingGroup *tg)
   printf("- Hidegroup     keyframes: \x1b[33m%zu\x1b[0m\n", tg->hidegroup_channel.keyframes.size);
   printf("- Groupalpha    keyframes: \x1b[33m%zu\x1b[0m\n", tg->groupalpha_channel.keyframes.size);
   printf("- Enwidencamera keyframes: \x1b[33m%zu\x1b[0m\n", tg->enwidencamera_channel.keyframes.size);
-  value_channel_print(&tg->groupalpha_channel);
+  printf("- Enwidenlanes  keyframes: \x1b[33m%zu\x1b[0m\n", tg->enwidenlanes_channel.keyframes.size);
   printf("\n");
 }
 
