@@ -6,7 +6,11 @@
 #include "gameplay/camera/camera_service.h"
 #include "data/fonts/fonts_service.h"
 #include "gui_window_file_dialog.h"
+#include "windows/rgui_input_data.h"
 #include "../project_setting/window.h"
+
+#define PROJ_BASE_BPM_DECIMALS 4
+#define PROJ_FLOAT_DECIMALS 2
 
 ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
 {
@@ -17,26 +21,27 @@ ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
 
   data.title = data.composer = data.illustrator = data.charter = data.diff_text = data.alias  = rgui_textinput_init("");
 
-  data.bpm_text = data.search_tag = rgui_textinput_init("");
-  data.base_bpm = data.cc = rgui_floatinput_init("0.00000");
+  data.bpm_text = data.search_tags = rgui_textinput_init("");
+  data.base_bpm = rgui_floatinput_init("0.0000");
+  data.cc = rgui_floatinput_init("0.00");
   data.chart_offset = data.judge_density = data.preview_from = rgui_intinput_init("0");
   data.preview_to = rgui_intinput_init("10000");
 
-  data.audio = data.jacket = data.background = data.bg_video = rgui_fileinput_init();
+  data.audio = data.jacket = data.background = data.bg_video = rgui_fileinput_init("");
   list_push(&data.audio.extensions, ".ogg");
   list_push(&data.jacket.extensions, ".png");   list_push(&data.background.extensions, ".png");
   list_push(&data.jacket.extensions, ".jpeg");  list_push(&data.background.extensions, ".jpeg");
   list_push(&data.jacket.extensions, ".jpg");   list_push(&data.background.extensions, ".jpg");
   list_push(&data.bg_video.extensions, ".mp4");
 
-  snprintf(data.scroll_speed.text, sizeof(data.scroll_speed.text), "%.2f", app_configs->scroll_speed);
+  snprintf(data.scroll_speed.text, sizeof(data.scroll_speed.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->scroll_speed);
   data.scroll_speed = rgui_floatinput_init(data.scroll_speed.text);
   data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->playfield_ratio);
   data.colorblind = app_configs->colorblind;
 
-  snprintf(data.music_volume.text, sizeof(data.music_volume.text), "%.2f", app_configs->music_volume);
+  snprintf(data.music_volume.text, sizeof(data.music_volume.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->music_volume);
   data.music_volume = rgui_floatinput_init(data.music_volume.text);
-  snprintf(data.effect_volume.text, sizeof(data.effect_volume.text), "%.2f", app_configs->hit_volume);
+  snprintf(data.effect_volume.text, sizeof(data.effect_volume.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->hit_volume);
   data.effect_volume = rgui_floatinput_init(data.effect_volume.text);
 
   data.sdf_shader = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
@@ -160,7 +165,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
 
       bool wasEditing = *info_edit[i];
       if (rgui_textinput_draw_font((Rectangle){ info_field_x + label_xs, row_y, info_panel_w - 16 - label_xs, input_field_h },
-                          info_values[i], RGUI_INPUT_TEXT_CAP, 20, 0.6f, wasEditing, &data->font_fallbacks))
+                          info_values[i], RGUI_INPUT_TEXT_CAP, 20, 0.4f, wasEditing, &data->font_fallbacks))
       {
         *info_edit[i] = !wasEditing;
         if (!wasEditing) snprintf(info_snapshots[i], RGUI_INPUT_TEXT_CAP, "%s", info_values[i]);
@@ -184,8 +189,9 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
 
     int is_sync_sub_x = 70;
     GuiLabel(gameplay_label_rect, "Base BPM");
-    rgui_floatinput_textbox(&data->base_bpm, gameplay_field_rect, 5);
     int base_bpm_checkbox_x = gameplay_input_x + info_panel_w - 16 - label_xs - is_sync_sub_x + 8;
+    Rectangle base_bpm_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs - is_sync_sub_x - 8, input_field_h };
+    rgui_floatinput_textbox(&data->base_bpm, base_bpm_field_rect, PROJ_BASE_BPM_DECIMALS);
     GuiCheckBox((Rectangle){base_bpm_checkbox_x, gameplay_field_y + input_field_gap*0, input_field_h, input_field_h},
                 "Sync", &data->is_sync);
 
@@ -214,7 +220,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
     gameplay_label_rect.y += input_field_gap;
     gameplay_field_rect.y += input_field_gap;
     GuiLabel(gameplay_label_rect, "Chart Constant");
-    rgui_floatinput_textbox(&data->cc, gameplay_field_rect, 5);
+    rgui_floatinput_textbox(&data->cc, gameplay_field_rect, PROJ_FLOAT_DECIMALS);
 
     gameplay_label_rect.y += input_field_gap;
     gameplay_field_rect.y += input_field_gap;
@@ -228,13 +234,13 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
 
     gameplay_label_rect.y += input_field_gap;
     gameplay_field_rect.y += input_field_gap;
-    bool search_tag_curr_edit = !data->bpm_text.edit;
+    bool search_tags_curr_edit = !data->bpm_text.edit;
     GuiLabel(gameplay_label_rect, "Search Tag");
-    if (rgui_textinput_draw_font(gameplay_field_rect, data->search_tag.text, RGUI_INPUT_TEXT_CAP, 20, 0.6f, data->search_tag.edit, &data->font_fallbacks))
+    if (rgui_textinput_draw_font(gameplay_field_rect, data->search_tags.text, RGUI_INPUT_TEXT_CAP, 20, 0.4f, data->search_tags.edit, &data->font_fallbacks))
     {
-      data->search_tag.edit = !data->search_tag.edit;
-      if (!search_tag_curr_edit) snprintf(data->search_tag.snapshot, RGUI_INPUT_TEXT_CAP, "%s", data->search_tag.text);
-      else if                    (strcmp(data->search_tag.snapshot, data->search_tag.text) != 0) proj_setting_reload_font(data);
+      data->search_tags.edit = !data->search_tags.edit;
+      if (!search_tags_curr_edit) snprintf(data->search_tags.snapshot, RGUI_INPUT_TEXT_CAP, "%s", data->search_tags.text);
+      else if                    (strcmp(data->search_tags.snapshot, data->search_tags.text) != 0) proj_setting_reload_font(data);
     }
 
     // Files
@@ -316,12 +322,12 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
     Rectangle audio_field_rect = { audio_input_x, audio_field_y, audio_panel_w - 16 - label_xs, input_field_h };
 
     GuiLabel(audio_label_rect, "Music Volume");
-    rgui_floatinput_textbox(&data->music_volume, audio_field_rect, 2);
+    rgui_floatinput_textbox(&data->music_volume, audio_field_rect, PROJ_FLOAT_DECIMALS);
 
     audio_label_rect.y += input_field_gap;
     audio_field_rect.y += input_field_gap;
     GuiLabel(audio_label_rect, "Effect Volume");
-    rgui_floatinput_textbox(&data->effect_volume, audio_field_rect, 2);
+    rgui_floatinput_textbox(&data->effect_volume, audio_field_rect, PROJ_FLOAT_DECIMALS);
 
     // Gameplay
     // WARNING: the dropdown area are treated in rendering the same way, meaning anything drawn after WILL BE DRAWN ON TOP OF IT
@@ -338,7 +344,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
     Rectangle gameplay_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs, input_field_h };
 
     GuiLabel(gameplay_label_rect, "Chart Speed");
-    rgui_floatinput_textbox(&data->scroll_speed, gameplay_field_rect, 2);
+    rgui_floatinput_textbox(&data->scroll_speed, gameplay_field_rect, PROJ_FLOAT_DECIMALS);
 
     gameplay_label_rect.y += input_field_gap*2;
     gameplay_field_rect.y += input_field_gap*2;
@@ -387,7 +393,7 @@ void proj_setting_reload_font(ProjSettingData *proj_setting)
   font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->diff_text.text  , &missing_codepoints);
   font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->alias.text      , &missing_codepoints);
   font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->bpm_text.text   , &missing_codepoints);
-  font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->search_tag.text , &missing_codepoints);
+  font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->search_tags.text, &missing_codepoints);
 
   if (missing_codepoints.size > 0)
   {
@@ -413,7 +419,7 @@ void proj_setting_reload_font(ProjSettingData *proj_setting)
       font_add_string_to_codepoints(&hud_code_points, proj_setting->diff_text.text);
       font_add_string_to_codepoints(&hud_code_points, proj_setting->alias.text);
       font_add_string_to_codepoints(&hud_code_points, proj_setting->bpm_text.text);
-      font_add_string_to_codepoints(&hud_code_points, proj_setting->search_tag.text);
+      font_add_string_to_codepoints(&hud_code_points, proj_setting->search_tags.text);
       for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
       for (int j = 0; j < proj_setting->font_fallbacks.size; j++)
       {
@@ -437,4 +443,42 @@ void proj_setting_reload_font(ProjSettingData *proj_setting)
     list_free(&font_list);
   }
   list_free(&missing_codepoints);
+}
+
+void proj_setting_apply_chart(ProjSettingData *project_setting, ChartSettings *chart_settings)
+{
+  for (int i = 0; i < project_setting->font_fallbacks.size; i++)
+  {
+    Font *font = (Font *)list_get(&project_setting->font_fallbacks, i);
+    UnloadFont(*font);
+  }
+  list_free(&project_setting->font_fallbacks);
+
+  project_setting->title = rgui_textinput_init(chart_settings->title);
+  project_setting->composer = rgui_textinput_init(chart_settings->composer);
+  project_setting->illustrator = rgui_textinput_init(chart_settings->illustrator);
+  project_setting->charter = rgui_textinput_init(chart_settings->charter);
+  project_setting->diff_text = rgui_textinput_init(chart_settings->difficulty);
+  project_setting->alias = rgui_textinput_init(chart_settings->alias);
+
+  snprintf(project_setting->base_bpm.text, sizeof(project_setting->base_bpm.text), "%.*f", PROJ_BASE_BPM_DECIMALS, chart_settings->base_bpm);
+  project_setting->base_bpm = rgui_floatinput_init(project_setting->base_bpm.text);
+  project_setting->is_sync = chart_settings->sync_base_bpm;
+  project_setting->bpm_text = rgui_textinput_init(chart_settings->bpm_text);
+  snprintf(project_setting->chart_offset.text, sizeof(project_setting->chart_offset.text), "%d", chart_settings->audio_offset);
+  project_setting->chart_offset = rgui_intinput_init(project_setting->chart_offset.text);
+  project_setting->judge_density = rgui_intinput_init("0");
+  snprintf(project_setting->cc.text, sizeof(project_setting->cc.text), "%.*f", PROJ_FLOAT_DECIMALS, chart_settings->chart_constant);
+  project_setting->cc = rgui_floatinput_init(project_setting->cc.text);
+  snprintf(project_setting->preview_from.text, sizeof(project_setting->preview_from.text), "%d", chart_settings->preview_from);
+  project_setting->preview_from = rgui_intinput_init(project_setting->preview_from.text);
+  snprintf(project_setting->preview_to.text, sizeof(project_setting->preview_to.text), "%d", chart_settings->preview_to);
+  project_setting->preview_to = rgui_intinput_init(project_setting->preview_to.text);
+  project_setting->search_tags = rgui_textinput_init(chart_settings->search_tags);
+
+  text_copy_bounded(project_setting->audio.file, sizeof(project_setting->audio.file), chart_settings->audio_path);
+  text_copy_bounded(project_setting->jacket.file, sizeof(project_setting->jacket.file), chart_settings->jacket_path);
+  text_copy_bounded(project_setting->background.file, sizeof(project_setting->background.file), chart_settings->background_path);
+
+  proj_setting_reload_font(project_setting);
 }

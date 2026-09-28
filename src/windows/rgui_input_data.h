@@ -47,7 +47,7 @@ typedef struct {
   GuiWindowFileDialogState state;
 } RguiFileInput;
 
-RguiFileInput rgui_fileinput_init();
+RguiFileInput rgui_fileinput_init(const char* path);
 int rgui_fileinput_button(RguiFileInput *input, Rectangle rect);
 void rgui_fileinput_unload(RguiFileInput *input);
 

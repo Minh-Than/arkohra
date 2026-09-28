@@ -20,6 +20,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "render/notes/notes_service.h"
 #include "render/track/track_service.h"
 #include "render/utils/drawing.h"
+#include "windows/project_setting/window.h"
 #include "windows/window_inst.h"
 #include "windows/window_services.h"
 
@@ -101,6 +102,8 @@ int main()
           track_service_apply_chart(&track_service, &render_ctx.chart_settings);
           notes_service_apply_chart(&notes_service, &render_ctx.chart_settings);
           hud_service_apply_chart  (&hud_service  , &render_ctx.chart_settings);
+          ProjSettingData *project_setting = (ProjSettingData *)window_group.project_setting.data;
+          proj_setting_apply_chart(project_setting, &render_ctx.chart_settings);
 
           PlayMusicStream(music);
           PauseMusicStream(music);

@@ -66,10 +66,10 @@ int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal)
   return result;
 }
 
-RguiFileInput rgui_fileinput_init()
+RguiFileInput rgui_fileinput_init(const char* path)
 {
   RguiFileInput input = { 0 };
-  TextCopy(input.file, "");
+  text_copy_bounded(input.file, sizeof(input.file), path);
   List extensions; list_init(&extensions, sizeof(char *));
   input.extensions = extensions;
   input.state = InitGuiWindowFileDialog(NULL);

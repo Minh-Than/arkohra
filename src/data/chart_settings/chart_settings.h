@@ -15,11 +15,13 @@ typedef struct {
   char  bpm_text[256];
   bool  sync_base_bpm;
   int   audio_offset;
+  int   preview_from, preview_to;
   char  background_path[MAXPATHLEN];
   char  title[256];
   char  composer[256];
   char  charter[256];
   char  alias[256];
+  char  search_tags[512];
   char  illustrator[256];
   char  difficulty[256];
   float chart_constant;

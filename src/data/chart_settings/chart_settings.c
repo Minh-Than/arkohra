@@ -82,41 +82,41 @@ bool chart_settings_load_from_project(ChartSettings *chart_settings, AppConfigs 
 
     cJSON *bpm_text = cJSON_GetObjectItemCaseSensitive(chart_item, "bpmText");
     if (cJSON_IsString(bpm_text) && bpm_text->valuestring != NULL)
-      text_copy_bounded(chart_settings->bpm_text, 256, bpm_text->valuestring);
+      text_copy_bounded(chart_settings->bpm_text, sizeof(chart_settings->bpm_text), bpm_text->valuestring);
 
     cJSON *sync_base_bpm = cJSON_GetObjectItemCaseSensitive(chart_item, "syncBaseBpm");
     if (cJSON_IsBool(sync_base_bpm)) chart_settings->sync_base_bpm = cJSON_IsTrue(sync_base_bpm);
 
     cJSON *title = cJSON_GetObjectItemCaseSensitive(chart_item, "title");
     if (cJSON_IsString(title) && title->valuestring != NULL)
-      text_copy_bounded(chart_settings->title, 256, title->valuestring);
+      text_copy_bounded(chart_settings->title, sizeof(chart_settings->title), title->valuestring);
 
     cJSON *composer = cJSON_GetObjectItemCaseSensitive(chart_item, "composer");
     if (cJSON_IsString(composer) && composer->valuestring != NULL)
-      text_copy_bounded(chart_settings->composer, 256, composer->valuestring);
+      text_copy_bounded(chart_settings->composer, sizeof(chart_settings->composer), composer->valuestring);
 
     cJSON *alias = cJSON_GetObjectItemCaseSensitive(chart_item, "alias");
     if (cJSON_IsString(alias) && alias->valuestring != NULL)
-      text_copy_bounded(chart_settings->alias, 256, alias->valuestring);
+      text_copy_bounded(chart_settings->alias, sizeof(chart_settings->alias), alias->valuestring);
 
     cJSON *charter = cJSON_GetObjectItemCaseSensitive(chart_item, "charter");
     if (cJSON_IsString(charter) && charter->valuestring != NULL)
-      text_copy_bounded(chart_settings->charter, 256, charter->valuestring);
+      text_copy_bounded(chart_settings->charter, sizeof(chart_settings->charter), charter->valuestring);
 
     cJSON *illustrator = cJSON_GetObjectItemCaseSensitive(chart_item, "illustrator");
     if (cJSON_IsString(illustrator) && illustrator->valuestring != NULL)
-      text_copy_bounded(chart_settings->illustrator, 256, illustrator->valuestring);
+      text_copy_bounded(chart_settings->illustrator, sizeof(chart_settings->illustrator), illustrator->valuestring);
 
     cJSON *difficulty = cJSON_GetObjectItemCaseSensitive(chart_item, "difficulty");
     if (cJSON_IsString(difficulty) && difficulty->valuestring != NULL)
-      text_copy_bounded(chart_settings->difficulty, 256, difficulty->valuestring);
+      text_copy_bounded(chart_settings->difficulty, sizeof(chart_settings->difficulty), difficulty->valuestring);
 
     cJSON *chart_constant = cJSON_GetObjectItemCaseSensitive(chart_item, "chartConstant");
     if (cJSON_IsNumber(chart_constant)) chart_settings->chart_constant = (float)chart_constant->valuedouble;
 
     cJSON *difficulty_color = cJSON_GetObjectItemCaseSensitive(chart_item, "difficultyColor");
     if (cJSON_IsString(difficulty_color) && difficulty_color->valuestring != NULL)
-      text_copy_bounded(chart_settings->difficulty_color, 256, difficulty_color->valuestring);
+      text_copy_bounded(chart_settings->difficulty_color, sizeof(chart_settings->difficulty_color), difficulty_color->valuestring);
 
     cJSON *skin = cJSON_GetObjectItemCaseSensitive(chart_item, "skin");
     if (cJSON_IsObject(skin)){
@@ -135,6 +135,18 @@ bool chart_settings_load_from_project(ChartSettings *chart_settings, AppConfigs 
       if (cJSON_IsString(single_line) && single_line->valuestring != NULL)
         chart_settings->sl_type = single_line_get_by_string(single_line->valuestring);
     }
+
+    cJSON *preview_from = cJSON_GetObjectItemCaseSensitive(chart_item, "previewStart");
+    if (cJSON_IsNumber(preview_from)) chart_settings->preview_from = (int)preview_from->valueint;
+    else                              chart_settings->preview_from = 0;
+
+    cJSON *preview_to = cJSON_GetObjectItemCaseSensitive(chart_item, "previewEnd");
+    if (cJSON_IsNumber(preview_to)) chart_settings->preview_to = (int)preview_to->valueint;
+    else                            chart_settings->preview_to = 10000;
+
+    cJSON *search_tags = cJSON_GetObjectItemCaseSensitive(chart_item, "searchTags");
+    if (cJSON_IsString(search_tags) && search_tags->valuestring != NULL)
+      text_copy_bounded(chart_settings->search_tags, sizeof(chart_settings->search_tags), search_tags->valuestring);
 
     cJSON_Delete(json); return true;
   }
