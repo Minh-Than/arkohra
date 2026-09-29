@@ -19,6 +19,7 @@ typedef enum
 
 SkinSide skin_side_get_by_string(char *str);
 Texture2D skin_side_get_track(SkinSide side);
+Texture2D skin_side_get_ex_lane(SkinSide side);
 Texture2D skin_side_get_hold(SkinSide side);
 Texture2D skin_side_get_tap(SkinSide side);
 Texture2D skin_side_get_arctap(SkinSide side);

@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include "raymath.h"
+#include "render/texture/skin_side.h"
 #include "rlgl.h"
 #include "constants.h"
 #include "track_service.h"
@@ -38,6 +39,7 @@ TrackService track_service_init(int glsl)
   service.track_tex          = LoadTexture("resources/gameplay/Track/TrackWhite.png");
   service.lane_div_tex       = LoadTexture("resources/gameplay/Track/TrackLaneDivider.png");
   service.critical_line_tex  = LoadTexture("resources/gameplay/CriticalLine/TrackCriticalLine.png");
+  service.extra_lane_tex     = LoadTexture("resources/gameplay/Track/TrackExtraLaneLight.png");
   service.sky_input_line_tex = LoadTexture("resources/gameplay/CriticalLine/SkyInputLine.png");
   service.sky_label_tex      = LoadTexture("resources/gameplay/CriticalLine/SkyInputLabel.png");
   service.single_line_tex    = LoadTexture("resources/gameplay/SingleLine/SingleLineNone.png");
@@ -48,22 +50,23 @@ TrackService track_service_init(int glsl)
   SetTextureWrap(service.track_tex, TEXTURE_WRAP_REPEAT);
   SetTextureWrap(service.single_line_tex, TEXTURE_WRAP_REPEAT);
 
-  // --- Track (1 instance, tiled, scrolling) ---
+  // Track
   service.track = gen_mesh_tiled(service.track_tex, TRACK_SIZE_X, TRACK_SIZE_Y, 1.0f, 2.0f, true);
-  service.scroll_offset_shader = LoadShader(
-      TextFormat("resources/shaders/glsl%i/scroll_shader.vs", glsl),
-      TextFormat("resources/shaders/glsl%i/scroll_shader.fs", glsl)
+  service.track_shader = LoadShader(
+      TextFormat("resources/shaders/glsl%i/track.vs", glsl),
+      TextFormat("resources/shaders/glsl%i/track.fs", glsl)
   );
-  service.scrollOffset_loc = GetShaderLocation(service.scroll_offset_shader, "scrollOffset");
-  service.track.material.shader = service.scroll_offset_shader;
+  service.track_scrollOffset_loc = GetShaderLocation(service.track_shader, "scrollOffset");
+  service.track_enwidenlanesValue_loc = GetShaderLocation(service.track_shader, "enwidenlanesValue");
+  service.track.material.shader = service.track_shader;
   renderable_set_transforms(&service.track, (Matrix[]){MatrixIdentity()}, 1);
 
-  // --- Lane dividers (3 instances, same mesh/material) ---
+  // Lane dividers
   Mesh lane_div_mesh = GenMeshPlane(LANE_DIV_SIZE_X, LANE_DIV_SIZE_Y, 1, 1);
   UploadMesh(&lane_div_mesh, false);
   Material lane_div_material = LoadMaterialDefault();
   lane_div_material.maps[MATERIAL_MAP_DIFFUSE].texture = service.lane_div_tex;
-  service.lane_div = (MeshRenderable){.mesh = lane_div_mesh, .material = lane_div_material};
+  service.lane_div = service.extra_lane_div = (MeshRenderable){.mesh = lane_div_mesh, .material = lane_div_material};
   Matrix lane_div_scale = MatrixScale(0.5587685f, 12.43724f, 1.0f);
   renderable_set_transforms(
     &service.lane_div,
@@ -74,13 +77,51 @@ TrackService track_service_init(int glsl)
     },
     3
   );
+  renderable_set_transforms(
+    &service.extra_lane_div,
+    (Matrix[]){
+        MatrixMultiply(lane_div_scale, MatrixTranslate( 4.76f, 0.0f, 0.0f)),
+        MatrixMultiply(lane_div_scale, MatrixTranslate(-4.76f, 0.0f, 0.0f)),
+    },
+    2
+  );
 
-  // --- Critical lines (4 instances) ---
+  // Extra lanes
+  Mesh extra_lane_mesh = GenMeshPlane(CRITICAL_LINE_SIZE_X, TRACK_SIZE_Y, 1, 1);
+  UploadMesh(&extra_lane_mesh, false);
+  Material extra_lane_material = LoadMaterialDefault();
+  extra_lane_material.maps[MATERIAL_MAP_DIFFUSE].texture = service.extra_lane_tex;
+  service.extra_lane = (MeshRenderable){.mesh = extra_lane_mesh, .material = extra_lane_material};
+  renderable_set_transforms(
+    &service.extra_lane,
+    (Matrix[]){
+      MatrixTranslate( 5.945f, 0.0f, 0.0f),
+      MatrixTranslate(-5.945f, 0.0f, 0.0f),
+    },
+    2
+  );
+
+  // Extra lanes edges
+  service.extra_lane_edge = gen_mesh_tiled(service.track_tex, LANE_EDGE_SIZE_X, TRACK_SIZE_Y, 1.0f, 55.0f, true);
+  for (int i = 0; i < service.extra_lane_edge.mesh.vertexCount; i++) {
+      service.extra_lane_edge.mesh.texcoords[i*2 + 0] = service.extra_lane_edge.mesh.texcoords[i*2 + 0] * 0.03515625f;
+  }
+  UpdateMeshBuffer(service.extra_lane_edge.mesh, 1, service.extra_lane_edge.mesh.texcoords, service.extra_lane_edge.mesh.vertexCount * 2 * sizeof(float), 0);
+  renderable_set_transforms(
+    &service.extra_lane_edge,
+    (Matrix[]){
+      MatrixTranslate( 7.13f + LANE_EDGE_SIZE_X / 2, 0.0f, 0.0f),
+      MatrixTranslate(-7.13f - LANE_EDGE_SIZE_X / 2, 0.0f, 0.0f),
+    },
+    2
+  );
+
+  // Critical lines
   Mesh critical_line_mesh = GenMeshPlane(CRITICAL_LINE_SIZE_X, CRITICAL_LINE_SIZE_Y, 1, 1);
   UploadMesh(&critical_line_mesh, false);
   Material critical_line_material = LoadMaterialDefault();
   critical_line_material.maps[MATERIAL_MAP_DIFFUSE].texture = service.critical_line_tex;
-  service.critical_line = (MeshRenderable){.mesh = critical_line_mesh, .material = critical_line_material};
+  service.critical_line = service.extra_critical_line = (MeshRenderable){.mesh = critical_line_mesh, .material = critical_line_material};
   renderable_set_transforms(
     &service.critical_line,
     (Matrix[]){
@@ -91,10 +132,23 @@ TrackService track_service_init(int glsl)
     },
     4
   );
+  renderable_set_transforms(
+    &service.extra_critical_line,
+    (Matrix[]){
+      MatrixTranslate( 5.945f, 0.0f, 0.0f),
+      MatrixTranslate(-5.945f, 0.0f, 0.0f),
+    },
+    2
+  );
 
-  // --- Single line (2 instances - mirrored, tiled, scrolling) ---
+  // Single line
   service.single_line = gen_mesh_tiled(service.single_line_tex, SINGLE_LINE_SIZE_X, SINGLE_LINE_SIZE_Y, 1.0f, 1.0f, true);
-  service.single_line.material.shader = service.scroll_offset_shader;
+  service.single_line_shader = LoadShader(
+      TextFormat("resources/shaders/glsl%i/single_line.vs", glsl),
+      TextFormat("resources/shaders/glsl%i/single_line.fs", glsl)
+  );
+  service.single_line_scrollOffset_loc = GetShaderLocation(service.single_line_shader, "scrollOffset");
+  service.single_line.material.shader = service.extra_lane_edge.material.shader = service.single_line_shader;
   Matrix single_line_rotate = MatrixMultiply(
       MatrixRotateX(90 * DEG2RAD),
       MatrixMultiply(MatrixMultiply(MatrixRotateZ(-90.0f * DEG2RAD),
@@ -114,7 +168,7 @@ TrackService track_service_init(int glsl)
     2
   );
 
-// --- Sky input line (1 instance, not tiled) ---
+// Sky input line
   Mesh sky_input_mesh = GenMeshPlane(SKY_INPUT_LINE_SIZE_X, SKY_INPUT_LINE_SIZE_Y, 1, 1);
   UploadMesh(&sky_input_mesh, false);
   Material sky_input_material = LoadMaterialDefault();
@@ -162,26 +216,55 @@ TrackService track_service_init(int glsl)
   return service;
 }
 
-void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel)
+void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx,
+                                     ValueChannel *enwidencamera_channel, ValueChannel *enwidenlanes_channel)
 {
   // Background
   float bg_scale = (float)GetScreenWidth() / (float)track_service->background_tex.width;
   DrawTextureEx(track_service->background_tex, (Vector2){0.0f, Lerp(-180.0f, 0.0f, get_aspect_ratio_adjustment()) * bg_scale}, 0.0f, bg_scale, WHITE);
 
   float current_ms = audio_clock_get_time_ms(&render_ctx->audio_clock) - render_ctx->chart_settings.audio_offset;
-  float interpolation = value_channel_interpolate(camera_channel, current_ms);
+  float interpolation = value_channel_interpolate(enwidencamera_channel, current_ms);
   float singleDeltaX = 5;
 
   // Track-related
-  Camera3D final_camera = get_enwidened_camera(render_ctx->camera, camera_channel, current_ms);
+  Camera3D final_camera = get_enwidened_camera(render_ctx->camera, enwidencamera_channel, current_ms);
   BeginMode3D(final_camera);
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
 
       rlDisableDepthTest();
+
+      // Jank ah
+      float enwidenlanes_value = value_channel_interpolate(enwidenlanes_channel, current_ms);
+
+      SetShaderValue(track_service->track_shader, track_service->track_enwidenlanesValue_loc, &enwidenlanes_value, SHADER_UNIFORM_FLOAT);
       renderable_draw(&track_service->track);
+
+      Color *extra_lane_color = &track_service->extra_lane.material.maps[MATERIAL_MAP_DIFFUSE].color;
+      *extra_lane_color = Fade(*extra_lane_color, enwidenlanes_value);
+      rlPushMatrix();
+      rlTranslatef(0.0f, 0.0f, (TRACK_SIZE_Y / 2) + (enwidenlanes_value * -100.0f));
+        renderable_draw(&track_service->extra_lane);
+      rlPopMatrix();
+
+      Color *lane_div_color = &track_service->lane_div.material.maps[MATERIAL_MAP_DIFFUSE].color;
+      *lane_div_color = Fade(*lane_div_color, 1.0f);
       renderable_draw(&track_service->lane_div);
+      *lane_div_color = Fade(*lane_div_color, enwidenlanes_value);
+      renderable_draw(&track_service->extra_lane_div);
+
+      Color *crit_color = &track_service->critical_line.material.maps[MATERIAL_MAP_DIFFUSE].color;
+      *crit_color = Fade(*crit_color, 1.0f);
       renderable_draw(&track_service->critical_line);
+      *crit_color = Fade(*crit_color, enwidenlanes_value);
+      renderable_draw(&track_service->extra_critical_line);
+
+      rlDisableBackfaceCulling();
+      Color *extra_lane_edge_color = &track_service->extra_lane_edge.material.maps[MATERIAL_MAP_DIFFUSE].color;
+      *extra_lane_edge_color = Fade(*extra_lane_edge_color, enwidenlanes_value);
+      renderable_draw(&track_service->extra_lane_edge);
+      rlEnableBackfaceCulling();
       rlEnableDepthTest();
     rlPopMatrix();
 
@@ -249,6 +332,9 @@ void track_service_apply_chart(TrackService *track_service, ChartSettings *chart
   UnloadTexture(track_service->single_line_tex);
   track_service->single_line_tex = single_line_get(chart_settings->sl_type);
   SetTextureWrap(track_service->single_line_tex, TEXTURE_WRAP_REPEAT);
+
+  UnloadTexture(track_service->extra_lane_tex);
+  track_service->extra_lane_tex = skin_side_get_ex_lane(chart_settings->skin_side);
 }
 
 void track_service_unload(TrackService *track_service)
@@ -259,14 +345,22 @@ void track_service_unload(TrackService *track_service)
   renderable_unload(&track_service->sky_input_line);
   renderable_unload(&track_service->sky_label);
   renderable_unload(&track_service->single_line);
+  renderable_unload(&track_service->extra_critical_line);
+  renderable_unload(&track_service->extra_lane);
+  renderable_unload(&track_service->extra_lane_div);
+  renderable_unload(&track_service->extra_lane_edge);
+
   UnloadTexture(track_service->background_tex);
   UnloadTexture(track_service->track_tex);
   UnloadTexture(track_service->lane_div_tex);
   UnloadTexture(track_service->critical_line_tex);
+  UnloadTexture(track_service->extra_lane_tex);
   UnloadTexture(track_service->sky_input_line_tex);
   UnloadTexture(track_service->sky_label_tex);
   UnloadTexture(track_service->single_line_tex);
 
-  if (IsShaderValid(track_service->scroll_offset_shader))
-    UnloadShader(track_service->scroll_offset_shader);
+  if (IsShaderValid(track_service->track_shader))
+    UnloadShader(track_service->track_shader);
+  if (IsShaderValid(track_service->single_line_shader))
+    UnloadShader(track_service->single_line_shader);
 }

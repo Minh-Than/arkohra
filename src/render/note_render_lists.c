@@ -15,6 +15,7 @@ void render_lists_init(NoteRenderLists *render_lists)
   list_init(&render_lists->arctap_render_list, sizeof(ArcTapFP));
 
   render_lists->enwidencamera_channel = value_channel_init();
+  render_lists->enwidenlanes_channel = value_channel_init();
 }
 
 void render_lists_process(NoteRenderLists *render_lists, List *timing_groups, ChartSettings *chart_settings,
@@ -35,6 +36,12 @@ void render_lists_process(NoteRenderLists *render_lists, List *timing_groups, Ch
     {
       ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidencamera_channel.keyframes, j);
       list_push(&render_lists->enwidencamera_channel.keyframes, kf);
+    }
+
+    for (int j = 0; j < tg->enwidenlanes_channel.keyframes.size; j++)
+    {
+      ValueKeyframe *kf = (ValueKeyframe *)list_get(&tg->enwidenlanes_channel.keyframes, j);
+      list_push(&render_lists->enwidenlanes_channel.keyframes, kf);
     }
 
     // Beatlines
@@ -92,6 +99,7 @@ void render_lists_process(NoteRenderLists *render_lists, List *timing_groups, Ch
   list_sort_by(&render_lists->arctap_render_list, arctapfp_compare_fp_asc);
 
   list_sort_by(&render_lists->enwidencamera_channel.keyframes, value_kf_compare_start_timing_asc);
+  list_sort_by(&render_lists->enwidenlanes_channel.keyframes, value_kf_compare_start_timing_asc);
 }
 
 void render_lists_clear(NoteRenderLists *render_lists)

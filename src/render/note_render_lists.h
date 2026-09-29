@@ -15,6 +15,7 @@ typedef struct {
   List arctap_render_list;
 
   ValueChannel enwidencamera_channel;
+  ValueChannel enwidenlanes_channel;
 } NoteRenderLists;
 
 void render_lists_init(NoteRenderLists *render_lists);

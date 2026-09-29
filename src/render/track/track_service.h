@@ -7,15 +7,19 @@
 #include "render/render_service.h"
 
 typedef struct {
-  Texture2D background_tex, track_tex, lane_div_tex, critical_line_tex, sky_input_line_tex, sky_label_tex, single_line_tex;
+  Texture2D background_tex, track_tex, lane_div_tex, critical_line_tex, sky_input_line_tex, sky_label_tex, single_line_tex, extra_lane_tex;
   MeshRenderable track, lane_div, critical_line, sky_input_line, sky_label, single_line;
-  Shader scroll_offset_shader;
-  int scrollOffset_loc;
+  MeshRenderable extra_critical_line, extra_lane, extra_lane_div, extra_lane_edge;
+  Shader track_shader, single_line_shader;
+  int track_scrollOffset_loc;
+  int track_enwidenlanesValue_loc;
+  int single_line_scrollOffset_loc;
 } TrackService;
 
 TrackService track_service_init(int glsl);
 void set_mesh_transforms(MeshRenderable *renderable, Matrix *transforms, int count);
-void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel);
+void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx,
+                                     ValueChannel *enwidencamera_channel, ValueChannel *enwidenlanes_channel);
 void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel);
 void track_service_apply_chart(TrackService *track_service, ChartSettings *chart_settings);
 void track_service_unload(TrackService *track_service);

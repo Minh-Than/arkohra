@@ -90,7 +90,8 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
     static float scroll_offset = 0.0f;
     float scroll_constant = curr_bpms[0] / base_bpm;
     scroll_offset += GetFrameTime() * render_ctx->chart_settings.scroll_speed * scroll_constant;
-    SetShaderValue(track_service->scroll_offset_shader, track_service->scrollOffset_loc, &scroll_offset, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(track_service->track_shader, track_service->track_scrollOffset_loc, &scroll_offset, SHADER_UNIFORM_FLOAT);
+    SetShaderValue(track_service->single_line_shader, track_service->single_line_scrollOffset_loc, &scroll_offset, SHADER_UNIFORM_FLOAT);
   }
 
   // GROUND NOTES

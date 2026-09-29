@@ -178,7 +178,9 @@ int main()
 
       // Order:
       // Base track -> Notes -> Sky Input/Label -> HUD -> Windows
-      track_service_render_base_track(&track_service, &render_ctx, &chart_reader.render_lists.enwidencamera_channel);
+      track_service_render_base_track(&track_service, &render_ctx,
+                                      &chart_reader.render_lists.enwidencamera_channel,
+                                      &chart_reader.render_lists.enwidenlanes_channel);
       if (chart_reader.initialized) notes_service_render(&notes_service, &track_service, &render_ctx, &chart_reader, app_configs.colorblind);
       track_service_render_sky_input(&track_service, &render_ctx, &chart_reader.render_lists.enwidencamera_channel);
       hud_services_render(&hud_service, &render_ctx.chart_settings, &app_configs, &render_ctx);

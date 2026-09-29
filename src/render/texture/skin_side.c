@@ -40,14 +40,27 @@ Texture2D skin_side_get_track(SkinSide side)
   return texture;
 }
 
+Texture2D skin_side_get_ex_lane(SkinSide side)
+{
+  Texture2D texture;
+  switch (side)
+  {
+    default:
+    case SK_LIGHT:    texture = LoadTexture("resources/gameplay/Track/TrackExtraLaneLight.png"); break;
+    case SK_CONFLICT: texture = LoadTexture("resources/gameplay/Track/TrackExtraLaneConflict.png"); break;
+  }
+
+  return texture;
+}
+
 Texture2D skin_side_get_hold(SkinSide side)
 {
   Texture2D texture;
   switch (side)
   {
+    default:
     case SK_LIGHT:    texture = LoadTexture("resources/gameplay/Note/Light/HoldNoteLight.png"); break;
     case SK_CONFLICT: texture = LoadTexture("resources/gameplay/Note/Conflict/HoldNoteConflict.png"); break;
-    default:          texture = LoadTexture("resources/gameplay/Note/Light/HoldNoteLight.png"); break;
   }
 
   return texture;
@@ -58,9 +71,9 @@ Texture2D skin_side_get_tap(SkinSide side)
   Texture2D texture;
   switch (side)
   {
+    default:
     case SK_LIGHT:    texture = LoadTexture("resources/gameplay/Note/Light/TapNoteLight.png"); break;
     case SK_CONFLICT: texture = LoadTexture("resources/gameplay/Note/Conflict/TapNoteConflict.png"); break;
-    default:          texture = LoadTexture("resources/gameplay/Note/Light/TapNoteLight.png"); break;
   }
 
   return texture;
@@ -71,9 +84,9 @@ Texture2D skin_side_get_arctap(SkinSide side)
   Texture2D texture;
   switch (side)
   {
+    default:
     case SK_LIGHT:    texture = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png"); break;
     case SK_CONFLICT: texture = LoadTexture("resources/gameplay/Note/Conflict/ArcTapConflict.png"); break;
-    default:          texture = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png"); break;
   }
 
   return texture;
