@@ -102,7 +102,7 @@ TrackService track_service_init(int glsl)
   );
 
   // Extra lanes edges
-  service.extra_lane_edge = gen_mesh_tiled(service.track_tex, LANE_EDGE_SIZE_X, TRACK_SIZE_Y, 1.0f, 55.0f, true);
+  service.extra_lane_edge = gen_mesh_tiled(service.track_tex, LANE_EDGE_SIZE_X, TRACK_SIZE_Y, 1.0f, 57.0f, true);
   for (int i = 0; i < service.extra_lane_edge.mesh.vertexCount; i++) {
       service.extra_lane_edge.mesh.texcoords[i*2 + 0] = service.extra_lane_edge.mesh.texcoords[i*2 + 0] * 0.03515625f;
   }
