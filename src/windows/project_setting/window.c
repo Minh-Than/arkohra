@@ -1,19 +1,20 @@
-#include <math.h>
 #include <string.h>
 #include "raygui.h"
 #include "raylib.h"
 #include "data/fonts/fonts_service.h"
+#include "windows/window_inst.h"
 #include "../project_setting/window.h"
 
 ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
 {
   ProjSettingData data = { 0 };
-  data.setting_options_active = 2;
+  data.setting_options_active = SETTING_GENERAL;
 
   data.project_panel = project_panel_init();
   data.gen_set_panel = general_setting_panel_init(app_configs);
 
   data.sdf_shader = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
+
   const char *paths[] = { "resources/fonts/NotoSans-Regular.ttf", };
   List font_list; list_init(&font_list, sizeof(char *));
   for (int i = 0; i < 1; i++) list_push(&font_list, &paths[i]);
@@ -32,37 +33,10 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
   Rectangle win_rect = (Rectangle){ window_inst->x, window_inst->y,
                                     window_inst->width, window_inst->height };
 
-  static bool resizing = false;
-  Rectangle handle  = (Rectangle){ win_rect.x + win_rect.width  - 10,
-                                   win_rect.y + win_rect.height - 10,
-                                   20, 20 };
-  if (resizing)
-  {
-    window_inst->width  = fmaxf(400, fminf(GetScreenWidth() , GetMouseX() - window_inst->x));
-    window_inst->height = fmaxf(400, fminf(GetScreenHeight(), GetMouseY() - window_inst->y));
-    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) resizing = false;
-  }
-  else if (CheckCollisionPointRec(GetMousePosition(), handle) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-    resizing = true;
 
-  static bool dragging = false;
-  static Vector2 dragging_pos = { 0, 0 };
-  Rectangle top_bar = (Rectangle){ win_rect.x, win_rect.y, win_rect.width, 24 };
-  if(dragging)
-  {
-    window_inst->x = GetMouseX() - dragging_pos.x;
-    window_inst->y = GetMouseY() - dragging_pos.y;
-    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) dragging = false;
-  }
-  else if (CheckCollisionPointRec(GetMousePosition(), top_bar) &&
-           IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-  {
-    dragging = true;
-    dragging_pos.x = GetMouseX() - window_inst->x;
-    dragging_pos.y = GetMouseY() - window_inst->y;
-  }
-
-  data->setting_window_active = !GuiWindowBox(win_rect, "PROJECT SETTINGS");
+  data->setting_window_active = !GuiWindowBox((Rectangle){ window_inst->x, window_inst->y,
+                                                           window_inst->width, window_inst->height },
+                                              "PROJECT SETTINGS");
   if (!data->setting_window_active) window_inst_close(window_inst);
 
   // --- layout, relative to the window ---
@@ -84,12 +58,9 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
       general_setting_panel_draw(window_inst, &data->gen_set_panel, app_configs, render_ctx, data->sdf_shader, &data->font_fallbacks);
       break;
   }
-
-  DrawTriangle((Vector2){ handle.x + 8, handle.y + 8 },
-               (Vector2){ handle.x + 8, handle.y - 1 },
-               (Vector2){ handle.x - 2, handle.y + 8 }, GRAY);
-
   if (data->project_panel.is_text_edited) proj_setting_reload_font(data);
+
+  window_inst_drag_resize(window_inst, 400, 400);
 }
 
 void proj_setting_unload(ProjSettingData *proj_setting)

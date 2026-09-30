@@ -9,22 +9,21 @@
 WindowGroup window_services_init(int glsl, AppConfigs *app_configs)
 {
   // Command Palette
-  WindowInst command_palette   = window_inst_init(WINDOW_COMMAND_PALETTE);
+  WindowInst command_palette   = window_inst_init(WINDOW_COMMAND_PALETTE,
+                                                  (GetScreenWidth() - CMD_PLT_SIZE_X) / 2, CMD_PLT_Y,
+                                                  CMD_PLT_SIZE_X, CMD_PLT_SIZE_Y);
   CmdPltData *cmd_palette_data = (CmdPltData *)malloc(sizeof(CmdPltData));
   *cmd_palette_data            = cmd_palette_init();
   command_palette.data         = cmd_palette_data;
-  window_inst_ui_update(&command_palette,
-                        (GetScreenWidth() - CMD_PLT_SIZE_X) / 2, CMD_PLT_Y, CMD_PLT_SIZE_X, CMD_PLT_SIZE_Y);
 
   // Command Palette
-  WindowInst project_setting         = window_inst_init(WINDOW_PROJECT_SETTING);
+  int width = 528; int height = 448;
+  WindowInst project_setting         = window_inst_init(WINDOW_PROJECT_SETTING,
+                                                        (GetScreenWidth() - width) / 2, (GetScreenHeight() - height) / 2,
+                                                        width, height);
   ProjSettingData *proj_setting_data = (ProjSettingData *)malloc(sizeof(ProjSettingData));
   *proj_setting_data                 = proj_setting_init(glsl, app_configs);
   project_setting.data               = proj_setting_data;
-
-  int width = 528; int height = 448;
-  window_inst_ui_update(&project_setting,
-                        (GetScreenWidth() - width) / 2, (GetScreenHeight() - height) / 2, width, height);
 
   WindowGroup group = {
     .command_palette = command_palette,

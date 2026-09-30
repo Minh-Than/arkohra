@@ -17,11 +17,12 @@ typedef struct
   bool       is_visible;
 } WindowInst;
 
-WindowInst window_inst_init(WindowType type);
+WindowInst window_inst_init(WindowType type, int x, int y, int width, int height);
 void window_inst_ui_update(WindowInst *window_inst, int x, int y, int width, int height);
 void window_inst_open(WindowInst *window_inst);
 void window_inst_close(WindowInst *window_inst);
 void window_inst_toggle(WindowInst *window_inst);
+void window_inst_drag_resize(WindowInst *window_inst, int min_width, int min_height);
 void window_inst_unload(WindowInst *window_inst);
 
 #endif // WINDOW_INST_H

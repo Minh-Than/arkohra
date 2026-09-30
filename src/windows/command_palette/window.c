@@ -15,6 +15,7 @@ CmdPltData cmd_palette_init()
 void cmd_palette_draw(WindowInst* window_inst, CmdPltData *data)
 {
   if (!window_inst->is_visible) return;
+
   // Main panel
   Rectangle cmd_plt_rect = (Rectangle){ window_inst->x, window_inst->y, window_inst->width, window_inst->height };
   GuiPanel(cmd_plt_rect, NULL);
