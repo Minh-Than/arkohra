@@ -86,11 +86,15 @@ int rgui_fileinput_button(RguiFileInput *input, Rectangle rect)
   if(input->state.SelectFilePressed)
   {
     bool is_valid = false;
-    for (int i = 0; i < input->extensions.size; i++)
+    if (input->extensions.size == 0) is_valid = true;
+    else
     {
-      const char* ext = (char *)list_get(&input->extensions, i);
-      is_valid = IsFileExtension(input->state.fileNameText, ext);
-      if (is_valid) break;
+      for (int i = 0; i < input->extensions.size; i++)
+      {
+        const char* ext = (char *)list_get(&input->extensions, i);
+        is_valid = IsFileExtension(input->state.fileNameText, ext);
+        if (is_valid) break;
+      }
     }
     if(is_valid)
       strcpy(input->file, TextFormat("%s%s%s", input->state.dirPathText, PATH_SEPERATOR, input->state.fileNameText));

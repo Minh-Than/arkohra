@@ -30,9 +30,6 @@ ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
 void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs, RenderContext *render_ctx)
 {
   if (!window_inst->is_visible) return;
-  Rectangle win_rect = (Rectangle){ window_inst->x, window_inst->y,
-                                    window_inst->width, window_inst->height };
-
 
   data->setting_window_active = !GuiWindowBox((Rectangle){ window_inst->x, window_inst->y,
                                                            window_inst->width, window_inst->height },
