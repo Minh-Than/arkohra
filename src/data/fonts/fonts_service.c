@@ -60,7 +60,7 @@ bool font_list_has_codepoint(List *font_list, int cp)
   return has;
 }
 
-void font_add_missing_copepoints(List *font_list, const char* text, List *out)
+void font_add_missing_copepoints(List *codepoints, const char* text, List *font_list)
 {
   for (int i = 0, n = 0; text[i] != '\0'; i += n)
   {
@@ -68,9 +68,9 @@ void font_add_missing_copepoints(List *font_list, const char* text, List *out)
     if (cp < 32 || font_list_has_codepoint(font_list, cp)) continue;
 
     bool queued = false;
-    for (size_t k = 0; k < out->size; k++)
-      if (*(int *)list_get(out, k) == cp) { queued = true; break; }
-    if (!queued) list_push(out, &cp);
+    for (size_t k = 0; k < codepoints->size; k++)
+      if (*(int *)list_get(codepoints, k) == cp) { queued = true; break; }
+    if (!queued) list_push(codepoints, &cp);
   }
 }
 
@@ -83,7 +83,7 @@ bool font_is_mark_combining(int cp)
       || (cp >= 0xFE20 && cp <= 0xFE2F);
 }
 
-void font_add_string_to_codepoints(List *list, const char *text)
+void font_add_string_to_codepoints(List *codepoints, const char *text)
 {
   if (!text) return;
   int byteOffset = 0;
@@ -95,11 +95,11 @@ void font_add_string_to_codepoints(List *list, const char *text)
     {
       // Check for duplicates
       bool exists = false;
-      for (int i = 0; i < list->size; i++) {
-        int *cp_i = (int *)list_get(list, i);
+      for (int i = 0; i < codepoints->size; i++) {
+        int *cp_i = (int *)list_get(codepoints, i);
         if (*cp_i == cp) { exists = true; break; }
       }
-      if (!exists) list_push(list, &cp);
+      if (!exists) list_push(codepoints, &cp);
     }
     byteOffset += codepointSize;
   }

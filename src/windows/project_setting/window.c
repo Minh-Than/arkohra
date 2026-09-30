@@ -62,10 +62,6 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
     dragging_pos.y = GetMouseY() - window_inst->y;
   }
 
-  DrawTriangle((Vector2){ handle.x + 8, handle.y + 8 },
-               (Vector2){ handle.x + 8, handle.y - 1 },
-               (Vector2){ handle.x - 2, handle.y + 8 }, GRAY);
-
   data->setting_window_active = !GuiWindowBox(win_rect, "PROJECT SETTINGS");
   if (!data->setting_window_active) window_inst_close(window_inst);
 
@@ -88,6 +84,10 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
       general_setting_panel_draw(window_inst, &data->gen_set_panel, app_configs, render_ctx, data->sdf_shader, &data->font_fallbacks);
       break;
   }
+
+  DrawTriangle((Vector2){ handle.x + 8, handle.y + 8 },
+               (Vector2){ handle.x + 8, handle.y - 1 },
+               (Vector2){ handle.x - 2, handle.y + 8 }, GRAY);
 
   if (data->project_panel.is_text_edited) proj_setting_reload_font(data);
 }

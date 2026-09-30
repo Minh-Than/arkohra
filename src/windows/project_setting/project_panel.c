@@ -217,14 +217,14 @@ void project_panel_add_missing_codepoints(ProjectPanel *project_panel, List *cod
 {
   if (project_panel->is_text_edited)
   {
-    font_add_missing_copepoints(font_fallbacks, project_panel->title.text      , codepoints);
-    font_add_missing_copepoints(font_fallbacks, project_panel->composer.text   , codepoints);
-    font_add_missing_copepoints(font_fallbacks, project_panel->illustrator.text, codepoints);
-    font_add_missing_copepoints(font_fallbacks, project_panel->charter.text    , codepoints);
-    font_add_missing_copepoints(font_fallbacks, project_panel->diff_text.text  , codepoints);
-    font_add_missing_copepoints(font_fallbacks, project_panel->alias.text      , codepoints);
-    font_add_missing_copepoints(font_fallbacks, project_panel->bpm_text.text   , codepoints);
-    font_add_missing_copepoints(font_fallbacks, project_panel->search_tags.text, codepoints);
+    font_add_missing_copepoints(codepoints, project_panel->title.text      , font_fallbacks);
+    font_add_missing_copepoints(codepoints, project_panel->composer.text   , font_fallbacks);
+    font_add_missing_copepoints(codepoints, project_panel->illustrator.text, font_fallbacks);
+    font_add_missing_copepoints(codepoints, project_panel->charter.text    , font_fallbacks);
+    font_add_missing_copepoints(codepoints, project_panel->diff_text.text  , font_fallbacks);
+    font_add_missing_copepoints(codepoints, project_panel->alias.text      , font_fallbacks);
+    font_add_missing_copepoints(codepoints, project_panel->bpm_text.text   , font_fallbacks);
+    font_add_missing_copepoints(codepoints, project_panel->search_tags.text, font_fallbacks);
   }
 }
 
