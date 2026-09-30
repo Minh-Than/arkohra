@@ -1,12 +1,12 @@
 #ifndef WIN_PROJECT_SETTING
 #define WIN_PROJECT_SETTING
 
-#include "data/chart_settings/chart_settings.h"
 #include "raylib.h"
 #include "data/app_configs/app_config.h"
+#include "data/chart_settings/chart_settings.h"
 #include "render/render_service.h"
-#include "windows/rgui_input_data.h"
-#include "windows/window_inst.h"
+#include "windows/project_setting/general_panel.h"
+#include "windows/project_setting/project_panel.h"
 
 enum ProjTabOption {
   SETTING_PROJECT = 0,
@@ -16,46 +16,11 @@ enum ProjTabOption {
 
 typedef struct
 {
-  bool  setting_window_active;
-  int   setting_options_active;
+  bool setting_window_active;
+  int  setting_options_active;
 
-  // PROJECT
-  // Info
-  RguiTextInput title;
-  RguiTextInput composer;
-  RguiTextInput illustrator;
-  RguiTextInput charter;
-  RguiTextInput diff_text;
-  RguiTextInput alias;
-
-  // Gameplay
-  RguiFloatInput base_bpm;
-  bool is_sync;
-  RguiTextInput bpm_text;
-  RguiIntInput chart_offset;
-  RguiIntInput judge_density;
-  RguiFloatInput cc;
-  RguiIntInput preview_from, preview_to;
-  RguiTextInput search_tags;
-
-  // Files
-  RguiFileInput audio;
-  RguiFileInput jacket;
-  RguiFileInput background;
-  RguiFileInput bg_video;
-
-  Rectangle scroll_rect;
-  Vector2 proj_scroll, general_scroll;
-
-  // GENERAL
-  // Gameplay
-  RguiFloatInput scroll_speed;
-  RguiSelectInput aspect_ratio;
-  bool colorblind;
-
-  // Audio
-  RguiFloatInput music_volume;
-  RguiFloatInput effect_volume;
+  ProjectPanel project_panel;
+  GeneralSettingPanel gen_set_panel;
 
   Shader sdf_shader;
   List font_fallbacks;

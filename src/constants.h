@@ -88,4 +88,7 @@ static const unsigned short int CMD_PLT_SIZE_X_BIG = 600;
 static const unsigned short int CMD_PLT_SIZE_Y     = 40;
 static const unsigned short int CMD_PLT_PADDING    = 8;
 
+static const unsigned short int PROJ_BASE_BPM_DECIMALS = 4;
+static const unsigned short int PROJ_FLOAT_DECIMALS = 2;
+
 #endif // CONSTANTS_H

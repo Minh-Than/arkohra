@@ -1,48 +1,17 @@
+#include <math.h>
 #include <string.h>
 #include "raygui.h"
 #include "raylib.h"
-#include "raymath.h"
-#include "data/custom_types/dynamic_list.h"
-#include "gameplay/camera/camera_service.h"
 #include "data/fonts/fonts_service.h"
-#include "gui_window_file_dialog.h"
-#include "windows/rgui_input_data.h"
 #include "../project_setting/window.h"
-
-#define PROJ_BASE_BPM_DECIMALS 4
-#define PROJ_FLOAT_DECIMALS 2
 
 ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
 {
   ProjSettingData data = { 0 };
-  data.proj_scroll = data.general_scroll = Vector2Zero();
-  data.scroll_rect = (Rectangle){ 0, 0 };
   data.setting_options_active = 2;
 
-  data.title = data.composer = data.illustrator = data.charter = data.diff_text = data.alias  = rgui_textinput_init("");
-
-  data.bpm_text = data.search_tags = rgui_textinput_init("");
-  data.base_bpm = rgui_floatinput_init("0.0000");
-  data.cc = rgui_floatinput_init("0.00");
-  data.chart_offset = data.judge_density = data.preview_from = rgui_intinput_init("0");
-  data.preview_to = rgui_intinput_init("10000");
-
-  data.audio = data.jacket = data.background = data.bg_video = rgui_fileinput_init("");
-  list_push(&data.audio.extensions, ".ogg");
-  list_push(&data.jacket.extensions, ".png");   list_push(&data.background.extensions, ".png");
-  list_push(&data.jacket.extensions, ".jpeg");  list_push(&data.background.extensions, ".jpeg");
-  list_push(&data.jacket.extensions, ".jpg");   list_push(&data.background.extensions, ".jpg");
-  list_push(&data.bg_video.extensions, ".mp4");
-
-  snprintf(data.scroll_speed.text, sizeof(data.scroll_speed.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->scroll_speed);
-  data.scroll_speed = rgui_floatinput_init(data.scroll_speed.text);
-  data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->playfield_ratio);
-  data.colorblind = app_configs->colorblind;
-
-  snprintf(data.music_volume.text, sizeof(data.music_volume.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->music_volume);
-  data.music_volume = rgui_floatinput_init(data.music_volume.text);
-  snprintf(data.effect_volume.text, sizeof(data.effect_volume.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->hit_volume);
-  data.effect_volume = rgui_floatinput_init(data.effect_volume.text);
+  data.project_panel = project_panel_init();
+  data.gen_set_panel = general_setting_panel_init(app_configs);
 
   data.sdf_shader = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
   const char *paths[] = { "resources/fonts/NotoSans-Regular.ttf", };
@@ -73,11 +42,8 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
     window_inst->height = fmaxf(400, fminf(GetScreenHeight(), GetMouseY() - window_inst->y));
     if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) resizing = false;
   }
-  else if (CheckCollisionPointRec(GetMousePosition(), handle) &&
-           IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-  {
+  else if (CheckCollisionPointRec(GetMousePosition(), handle) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     resizing = true;
-  }
 
   static bool dragging = false;
   static Vector2 dragging_pos = { 0, 0 };
@@ -96,304 +62,52 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
     dragging_pos.y = GetMouseY() - window_inst->y;
   }
 
+  DrawTriangle((Vector2){ handle.x + 8, handle.y + 8 },
+               (Vector2){ handle.x + 8, handle.y - 1 },
+               (Vector2){ handle.x - 2, handle.y + 8 }, GRAY);
+
   data->setting_window_active = !GuiWindowBox(win_rect, "PROJECT SETTINGS");
   if (!data->setting_window_active) window_inst_close(window_inst);
 
   // --- layout, relative to the window ---
   int content_x = window_inst->x + 8;
   int toggle_y  = (int)window_inst->y + 32;
-  int scroll_y  = toggle_y + 32;
-  int scroll_w  = (int)window_inst->width  - 16;
-  int scroll_h  = (int)window_inst->height - (scroll_y - (int)window_inst->y) - 8;
 
   GuiToggleGroup((Rectangle){content_x, toggle_y, 56, 24},
                  "Project;Events;Settings", &data->setting_options_active);
 
-  DrawTriangle((Vector2){ handle.x + 8, handle.y + 8 },
-               (Vector2){ handle.x + 8, handle.y - 1 },
-               (Vector2){ handle.x - 2, handle.y + 8 }, GRAY);
-
-  // PROJECT
-  if (data->setting_options_active == SETTING_PROJECT)
+  switch (data->setting_options_active)
   {
-    BeginShaderMode(data->sdf_shader);
-
-    int info_panel_h = 200;
-    int gameplay_panel_h = 230;
-    int files_panel_h = 140;
-
-    int input_field_h = 24;
-    int input_field_gap = 30;
-    int total_content_h = info_panel_h + gameplay_panel_h + files_panel_h + 12*3 + 8;
-    GuiScrollPanel((Rectangle){content_x, scroll_y, scroll_w, scroll_h},
-                   NULL, (Rectangle){0, 0, scroll_w, total_content_h},
-                   &data->proj_scroll, &data->scroll_rect);
-
-    BeginScissorMode(data->scroll_rect.x, data->scroll_rect.y, data->scroll_rect.width, data->scroll_rect.height);
-
-    // Information
-    int info_panel_x = content_x + 8    + (int)data->proj_scroll.x;
-    int info_panel_y = scroll_y  + 12*1 + (int)data->proj_scroll.y;
-    int info_panel_w = scroll_w  - 28;
-    int label_xs = 96;
-    GuiGroupBox ((Rectangle){info_panel_x, info_panel_y, info_panel_w, info_panel_h}, "[ INFORMATION ]");
-
-    int info_field_x = info_panel_x + 8;
-    int info_field_y = info_panel_y + 16;
-    int gameplay_input_x = info_field_x + label_xs;
-
-    char *info_labels[] = { "Title", "Composer", "Illustrator", "Charter", "Difficulty Name", "Alias" };
-    char *info_values[] = {
-      data->title.text, data->composer.text,
-      data->illustrator.text, data->charter.text,
-      data->diff_text.text, data->alias.text
-    };
-    char *info_snapshots[] = {
-      data->title.snapshot, data->composer.snapshot,
-      data->illustrator.snapshot, data->charter.snapshot,
-      data->diff_text.snapshot, data->alias.snapshot
-    };
-    bool *info_edit[] = {
-      &data->title.edit, &data->composer.edit,
-      &data->illustrator.edit, &data->charter.edit,
-      &data->diff_text.edit, &data->alias.edit
-    };
-    for (int i = 0; i < 6; i++)
-    {
-      int row_y = info_field_y + input_field_gap * i;
-      GuiLabel((Rectangle){ info_field_x, row_y, label_xs, input_field_h }, info_labels[i]);
-
-      bool wasEditing = *info_edit[i];
-      if (rgui_textinput_draw_font((Rectangle){ info_field_x + label_xs, row_y, info_panel_w - 16 - label_xs, input_field_h },
-                          info_values[i], RGUI_INPUT_TEXT_CAP, 20, 0.4f, wasEditing, &data->font_fallbacks))
-      {
-        *info_edit[i] = !wasEditing;
-        if (!wasEditing) snprintf(info_snapshots[i], RGUI_INPUT_TEXT_CAP, "%s", info_values[i]);
-        else if (strcmp(info_snapshots[i], info_values[i]) != 0) proj_setting_reload_font(data);
-      }
-      // rgui_textinput_draw_font() ends scissor mode
-      BeginScissorMode(data->scroll_rect.x, data->scroll_rect.y, data->scroll_rect.width, data->scroll_rect.height);
-    }
-
-    // Gameplay
-    int gameplay_panel_x = content_x + 8    + (int)data->proj_scroll.x;
-    int gameplay_panel_y = scroll_y  + 12*2 + (int)data->proj_scroll.y + info_panel_h;
-    int gameplay_panel_w = scroll_w  - 28;
-    GuiGroupBox ((Rectangle){gameplay_panel_x, gameplay_panel_y, gameplay_panel_w, gameplay_panel_h}, "[ GAMEPLAY ]");
-
-    int gameplay_field_x = gameplay_panel_x + 8;
-    int gameplay_field_y = gameplay_panel_y + 16;
-
-    Rectangle gameplay_label_rect = { gameplay_field_x, gameplay_field_y, label_xs, input_field_h };
-    Rectangle gameplay_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs, input_field_h };
-
-    int is_sync_sub_x = 70;
-    GuiLabel(gameplay_label_rect, "Base BPM");
-    int base_bpm_checkbox_x = gameplay_input_x + info_panel_w - 16 - label_xs - is_sync_sub_x + 8;
-    Rectangle base_bpm_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs - is_sync_sub_x - 8, input_field_h };
-    rgui_floatinput_textbox(&data->base_bpm, base_bpm_field_rect, PROJ_BASE_BPM_DECIMALS);
-    GuiCheckBox((Rectangle){base_bpm_checkbox_x, gameplay_field_y + input_field_gap*0, input_field_h, input_field_h},
-                "Sync", &data->is_sync);
-
-    gameplay_label_rect.y += input_field_gap;
-    gameplay_field_rect.y += input_field_gap;
-    GuiLabel(gameplay_label_rect, "BPM Text");
-    bool bpm_text_curr_edit = !data->bpm_text.edit;
-    if (rgui_textinput_draw_font(gameplay_field_rect, data->bpm_text.text, RGUI_INPUT_TEXT_CAP,
-                                 20, 1.0f, data->bpm_text.edit, &data->font_fallbacks))
-    {
-      data->bpm_text.edit = !data->bpm_text.edit;
-      if (!bpm_text_curr_edit) snprintf(data->bpm_text.snapshot, RGUI_INPUT_TEXT_CAP, "%s", data->bpm_text.text);
-      else if                  (strcmp(data->bpm_text.snapshot, data->bpm_text.text) != 0) proj_setting_reload_font(data);
-    }
-
-    gameplay_label_rect.y += input_field_gap;
-    gameplay_field_rect.y += input_field_gap;
-    GuiLabel(gameplay_label_rect, "Chart Offset");
-    rgui_intinput_textbox(&data->chart_offset, gameplay_field_rect);
-
-    gameplay_label_rect.y += input_field_gap;
-    gameplay_field_rect.y += input_field_gap;
-    GuiLabel(gameplay_label_rect, "Judge Density");
-    rgui_intinput_textbox(&data->judge_density, gameplay_field_rect);
-
-    gameplay_label_rect.y += input_field_gap;
-    gameplay_field_rect.y += input_field_gap;
-    GuiLabel(gameplay_label_rect, "Chart Constant");
-    rgui_floatinput_textbox(&data->cc, gameplay_field_rect, PROJ_FLOAT_DECIMALS);
-
-    gameplay_label_rect.y += input_field_gap;
-    gameplay_field_rect.y += input_field_gap;
-    GuiLabel(gameplay_label_rect, "Preview Segment");
-    rgui_intinput_textbox(&data->preview_from,
-                          (Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*5,
-                                       ((float)info_panel_w / 2) - label_xs + 38, input_field_h });
-    rgui_intinput_textbox(&data->preview_to,
-                          (Rectangle){ gameplay_input_x + ((float)info_panel_w / 2) - label_xs + 44, gameplay_field_y + input_field_gap*5,
-                                       ((float)info_panel_w / 2) - label_xs + 36, input_field_h });
-
-    gameplay_label_rect.y += input_field_gap;
-    gameplay_field_rect.y += input_field_gap;
-    bool search_tags_curr_edit = !data->bpm_text.edit;
-    GuiLabel(gameplay_label_rect, "Search Tag");
-    if (rgui_textinput_draw_font(gameplay_field_rect, data->search_tags.text, RGUI_INPUT_TEXT_CAP, 20, 0.4f, data->search_tags.edit, &data->font_fallbacks))
-    {
-      data->search_tags.edit = !data->search_tags.edit;
-      if (!search_tags_curr_edit) snprintf(data->search_tags.snapshot, RGUI_INPUT_TEXT_CAP, "%s", data->search_tags.text);
-      else if                    (strcmp(data->search_tags.snapshot, data->search_tags.text) != 0) proj_setting_reload_font(data);
-    }
-
-    // Files
-    int files_panel_x = content_x + 8    + (int)data->proj_scroll.x;
-    int files_panel_y = scroll_y  + 12*3 + (int)data->proj_scroll.y + info_panel_h + gameplay_panel_h;
-    int files_panel_w = scroll_w  - 28;
-    GuiGroupBox ((Rectangle){files_panel_x, files_panel_y, files_panel_w, files_panel_h}, "[ FILES ]");
-
-    int files_field_x = files_panel_x + 8;
-    int files_field_y = files_panel_y + 16;
-    int files_input_x = info_field_x + label_xs;
-
-    Rectangle files_label_rect = { files_field_x, files_field_y, label_xs, input_field_h };
-    Rectangle files_field_rect = { files_input_x, files_field_y, files_panel_w - 16 - label_xs, input_field_h };
-
-    GuiLabel(files_label_rect, "Audio");
-    rgui_fileinput_button(&data->audio, files_field_rect);
-
-    files_label_rect.y += input_field_gap;
-    files_field_rect.y += input_field_gap;
-    GuiLabel(files_label_rect, "Jacket Art");
-    rgui_fileinput_button(&data->jacket, files_field_rect);
-
-    files_label_rect.y += input_field_gap;
-    files_field_rect.y += input_field_gap;
-    GuiLabel(files_label_rect, "Background");
-    rgui_fileinput_button(&data->background, files_field_rect);
-
-    files_label_rect.y += input_field_gap;
-    files_field_rect.y += input_field_gap;
-    GuiLabel(files_label_rect, "Video");
-    rgui_fileinput_button(&data->bg_video, files_field_rect);
-
-    EndScissorMode();
-    GuiWindowFileDialog(&data->audio.state);
-    GuiWindowFileDialog(&data->jacket.state);
-    GuiWindowFileDialog(&data->background.state);
-    GuiWindowFileDialog(&data->bg_video.state);
-    BeginScissorMode(data->scroll_rect.x, data->scroll_rect.y, data->scroll_rect.width, data->scroll_rect.height);
-
-    EndScissorMode();
-    EndShaderMode();
+    case SETTING_PROJECT:
+      project_panel_draw(window_inst, &data->project_panel, app_configs, render_ctx, data->sdf_shader, &data->font_fallbacks);
+      break;
+    case SETTING_EVENTS:
+      GuiLabel((Rectangle){content_x, toggle_y + 32, 50, 10}, "Balls");
+      break;
+    case SETTING_GENERAL:
+      general_setting_panel_draw(window_inst, &data->gen_set_panel, app_configs, render_ctx, data->sdf_shader, &data->font_fallbacks);
+      break;
   }
 
-  if (data->setting_options_active == SETTING_EVENTS)
-  {
-    GuiLabel((Rectangle){content_x, scroll_y, 50, 10}, "Balls");
-  }
-
-  // GENERAL
-  if (data->setting_options_active == SETTING_GENERAL)
-  {
-    BeginShaderMode(data->sdf_shader);
-
-    int gameplay_panel_h = 110;
-    int audio_panel_h = 80;
-
-    int input_field_h = 24;
-    int input_field_gap = 30;
-    int total_content_h = gameplay_panel_h +audio_panel_h + 12*2 + 8;
-    GuiScrollPanel((Rectangle){content_x, scroll_y, scroll_w, scroll_h},
-                   NULL, (Rectangle){0, 0, scroll_w, total_content_h},
-                   &data->general_scroll, &data->scroll_rect);
-
-    int label_xs = 96;
-    BeginScissorMode(data->scroll_rect.x, data->scroll_rect.y, data->scroll_rect.width, data->scroll_rect.height);
-
-    // Audio
-    int audio_panel_x = content_x + 8    + (int)data->general_scroll.x;
-    int audio_panel_y = scroll_y  + 12*2 + (int)data->general_scroll.y + gameplay_panel_h;
-    int audio_panel_w = scroll_w  - 28;
-    GuiGroupBox ((Rectangle){audio_panel_x, audio_panel_y, audio_panel_w, audio_panel_h}, "[ AUDIO ]");
-
-    int audio_field_x = audio_panel_x + 8;
-    int audio_field_y = audio_panel_y + 16;
-    int audio_input_x = audio_field_x + label_xs;
-
-    Rectangle audio_label_rect = { audio_field_x, audio_field_y, label_xs, input_field_h };
-    Rectangle audio_field_rect = { audio_input_x, audio_field_y, audio_panel_w - 16 - label_xs, input_field_h };
-
-    GuiLabel(audio_label_rect, "Music Volume");
-    rgui_floatinput_textbox(&data->music_volume, audio_field_rect, PROJ_FLOAT_DECIMALS);
-
-    audio_label_rect.y += input_field_gap;
-    audio_field_rect.y += input_field_gap;
-    GuiLabel(audio_label_rect, "Effect Volume");
-    rgui_floatinput_textbox(&data->effect_volume, audio_field_rect, PROJ_FLOAT_DECIMALS);
-
-    // Gameplay
-    // WARNING: the dropdown area are treated in rendering the same way, meaning anything drawn after WILL BE DRAWN ON TOP OF IT
-    int gameplay_panel_x = content_x + 8    + (int)data->general_scroll.x;
-    int gameplay_panel_y = scroll_y  + 12*1 + (int)data->general_scroll.y;
-    int gameplay_panel_w = scroll_w  - 28;
-    GuiGroupBox ((Rectangle){gameplay_panel_x, gameplay_panel_y, gameplay_panel_w, gameplay_panel_h}, "[ GAMEPLAY ]");
-
-    int gameplay_field_x = gameplay_panel_x + 8;
-    int gameplay_field_y = gameplay_panel_y + 16;
-    int gameplay_input_x = gameplay_field_x + label_xs;
-
-    Rectangle gameplay_label_rect = { gameplay_field_x, gameplay_field_y, label_xs, input_field_h };
-    Rectangle gameplay_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs, input_field_h };
-
-    GuiLabel(gameplay_label_rect, "Chart Speed");
-    rgui_floatinput_textbox(&data->scroll_speed, gameplay_field_rect, PROJ_FLOAT_DECIMALS);
-
-    gameplay_label_rect.y += input_field_gap*2;
-    gameplay_field_rect.y += input_field_gap*2;
-    if(GuiCheckBox((Rectangle){ gameplay_field_x, gameplay_label_rect.y, input_field_h, input_field_h},
-                "Use Colorblind Arc Colors", &data->colorblind))
-    {
-      app_configs->colorblind = data->colorblind;
-    }
-
-    gameplay_label_rect.y -= input_field_gap;
-    gameplay_field_rect.y -= input_field_gap;
-    GuiLabel(gameplay_label_rect, "Aspect Ratio");
-    EndScissorMode();
-    if (rgui_selectinput_dropdown(&data->aspect_ratio, gameplay_field_rect))
-    {
-      app_configs->playfield_ratio = data->aspect_ratio.option;
-      SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs->playfield_ratio));
-      recalibrate_camera(&render_ctx->camera);
-    }
-    EndShaderMode();
-  }
+  if (data->project_panel.is_text_edited) proj_setting_reload_font(data);
 }
 
 void proj_setting_unload(ProjSettingData *proj_setting)
 {
+  project_panel_unload(&proj_setting->project_panel);
+
   for (int i = 0; i < proj_setting->font_fallbacks.size; i++)
   {
     Font *font = (Font *)list_get(&proj_setting->font_fallbacks, i);
     UnloadFont(*font);
   }
   list_free(&proj_setting->font_fallbacks);
-
-  rgui_fileinput_unload(&proj_setting->audio);
-  rgui_fileinput_unload(&proj_setting->jacket);
-  rgui_fileinput_unload(&proj_setting->background);
-  rgui_fileinput_unload(&proj_setting->bg_video);
 }
 
 void proj_setting_reload_font(ProjSettingData *proj_setting)
 {
   List missing_codepoints; list_init(&missing_codepoints, sizeof(int));
-  font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->title.text      , &missing_codepoints);
-  font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->composer.text   , &missing_codepoints);
-  font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->illustrator.text, &missing_codepoints);
-  font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->charter.text    , &missing_codepoints);
-  font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->diff_text.text  , &missing_codepoints);
-  font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->alias.text      , &missing_codepoints);
-  font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->bpm_text.text   , &missing_codepoints);
-  font_add_missing_copepoints(&proj_setting->font_fallbacks, proj_setting->search_tags.text, &missing_codepoints);
+  project_panel_add_missing_codepoints(&proj_setting->project_panel, &missing_codepoints, &proj_setting->font_fallbacks);
 
   if (missing_codepoints.size > 0)
   {
@@ -412,14 +126,7 @@ void proj_setting_reload_font(ProjSettingData *proj_setting)
     if (proj_setting->font_fallbacks.size > 16)
     {
       List hud_code_points; list_init(&hud_code_points, sizeof(int));
-      font_add_string_to_codepoints(&hud_code_points, proj_setting->title.text);
-      font_add_string_to_codepoints(&hud_code_points, proj_setting->composer.text);
-      font_add_string_to_codepoints(&hud_code_points, proj_setting->illustrator.text);
-      font_add_string_to_codepoints(&hud_code_points, proj_setting->charter.text);
-      font_add_string_to_codepoints(&hud_code_points, proj_setting->diff_text.text);
-      font_add_string_to_codepoints(&hud_code_points, proj_setting->alias.text);
-      font_add_string_to_codepoints(&hud_code_points, proj_setting->bpm_text.text);
-      font_add_string_to_codepoints(&hud_code_points, proj_setting->search_tags.text);
+      project_panel_add_str_to_codepoints(&proj_setting->project_panel, &hud_code_points);
       for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
       for (int j = 0; j < proj_setting->font_fallbacks.size; j++)
       {
@@ -443,6 +150,8 @@ void proj_setting_reload_font(ProjSettingData *proj_setting)
     list_free(&font_list);
   }
   list_free(&missing_codepoints);
+
+  if (proj_setting->project_panel.is_text_edited) proj_setting->project_panel.is_text_edited = false;
 }
 
 void proj_setting_apply_chart(ProjSettingData *project_setting, ChartSettings *chart_settings)
@@ -454,31 +163,6 @@ void proj_setting_apply_chart(ProjSettingData *project_setting, ChartSettings *c
   }
   list_free(&project_setting->font_fallbacks);
 
-  project_setting->title = rgui_textinput_init(chart_settings->title);
-  project_setting->composer = rgui_textinput_init(chart_settings->composer);
-  project_setting->illustrator = rgui_textinput_init(chart_settings->illustrator);
-  project_setting->charter = rgui_textinput_init(chart_settings->charter);
-  project_setting->diff_text = rgui_textinput_init(chart_settings->difficulty);
-  project_setting->alias = rgui_textinput_init(chart_settings->alias);
-
-  snprintf(project_setting->base_bpm.text, sizeof(project_setting->base_bpm.text), "%.*f", PROJ_BASE_BPM_DECIMALS, chart_settings->base_bpm);
-  project_setting->base_bpm = rgui_floatinput_init(project_setting->base_bpm.text);
-  project_setting->is_sync = chart_settings->sync_base_bpm;
-  project_setting->bpm_text = rgui_textinput_init(chart_settings->bpm_text);
-  snprintf(project_setting->chart_offset.text, sizeof(project_setting->chart_offset.text), "%d", chart_settings->audio_offset);
-  project_setting->chart_offset = rgui_intinput_init(project_setting->chart_offset.text);
-  project_setting->judge_density = rgui_intinput_init("0");
-  snprintf(project_setting->cc.text, sizeof(project_setting->cc.text), "%.*f", PROJ_FLOAT_DECIMALS, chart_settings->chart_constant);
-  project_setting->cc = rgui_floatinput_init(project_setting->cc.text);
-  snprintf(project_setting->preview_from.text, sizeof(project_setting->preview_from.text), "%d", chart_settings->preview_from);
-  project_setting->preview_from = rgui_intinput_init(project_setting->preview_from.text);
-  snprintf(project_setting->preview_to.text, sizeof(project_setting->preview_to.text), "%d", chart_settings->preview_to);
-  project_setting->preview_to = rgui_intinput_init(project_setting->preview_to.text);
-  project_setting->search_tags = rgui_textinput_init(chart_settings->search_tags);
-
-  text_copy_bounded(project_setting->audio.file, sizeof(project_setting->audio.file), chart_settings->audio_path);
-  text_copy_bounded(project_setting->jacket.file, sizeof(project_setting->jacket.file), chart_settings->jacket_path);
-  text_copy_bounded(project_setting->background.file, sizeof(project_setting->background.file), chart_settings->background_path);
-
+  project_panel_apply_chart(&project_setting->project_panel, chart_settings);
   proj_setting_reload_font(project_setting);
 }
