@@ -6,12 +6,15 @@
 #include "raylib.h"
 #include "render/mesh_renderable.h"
 #include "render/render_service.h"
+#include "render/texture/skin_side.h"
 #include "render/track/track_service.h"
 
 typedef struct {
   Texture2D tap_tex, hold_tex, height_indicator_tex, arc_tex, arccap_tex, arctap_tex, arctap_shadow_tex;
   MeshRenderable tap, hold, arccap, arc_head, height_indicator, arctap, arctap_shadow;
   ArcShader arc_shader;
+
+  SkinSide skin_side;
 }NotesService;
 
 NotesService notes_service_init(int glsl);

@@ -4,6 +4,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 */
 
 #include <stdlib.h>
+#include "data/fonts/fonts_service.h"
 #include "raylib.h"
 #include "raygui.h"
 #include "rlgl.h"
@@ -20,6 +21,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "render/notes/notes_service.h"
 #include "render/track/track_service.h"
 #include "render/utils/drawing.h"
+#include "windows/command_palette/window.h"
 #include "windows/project_setting/window.h"
 #include "windows/window_inst.h"
 #include "windows/window_services.h"
@@ -41,10 +43,11 @@ int main()
   // Now a special case a kohra
   TextureGroup texture_group = textures_init();
   ChartReader  chart_reader  = { 0 };
+  CachedFontProbes font_probes = cached_font_probes_init();
   TrackService track_service = track_service_init(GLSL_VERSION);
   NotesService notes_service = notes_service_init(GLSL_VERSION);
-  HudService   hud_service   = hud_service_init(GLSL_VERSION);
-  WindowGroup  window_group  = window_services_init(GLSL_VERSION, &app_configs);
+  HudService   hud_service   = hud_service_init(GLSL_VERSION, &app_configs, &font_probes);
+  WindowGroup  window_group  = window_services_init(GLSL_VERSION, &app_configs, &font_probes);
 
   RenderContext render_ctx = {
     .camera         = camera_init_playfield(),
@@ -54,7 +57,7 @@ int main()
 
   InitAudioDevice();
 
-  Music music = LoadMusicStream("");
+  Music music = { 0 };
   music.looping = false;
   SetMusicPan(music, 0.0f);
   SetMusicVolume(music, app_configs.music_volume);
@@ -101,9 +104,9 @@ int main()
 
           track_service_apply_chart(&track_service, &render_ctx.chart_settings);
           notes_service_apply_chart(&notes_service, &render_ctx.chart_settings);
-          hud_service_apply_chart  (&hud_service  , &render_ctx.chart_settings);
+          hud_service_apply_chart  (&hud_service  , &render_ctx.chart_settings, &font_probes);
           ProjSettingData *project_setting = (ProjSettingData *)window_group.project_setting.data;
-          proj_setting_apply_chart(project_setting, &render_ctx.chart_settings);
+          proj_setting_apply_chart(project_setting, &render_ctx.chart_settings, &font_probes);
 
           PlayMusicStream(music);
           PauseMusicStream(music);
@@ -151,11 +154,13 @@ int main()
       app_configs = app_configs_init(&rini_d);
       SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.playfield_ratio));
       recalibrate_camera(&render_ctx.camera);
+      hud_service.playfield_ratio = app_configs.playfield_ratio;
       render_ctx.chart_settings.scroll_speed = app_configs.scroll_speed;
       SetMusicVolume(music, app_configs.music_volume);
 
       bool is_setting_open = window_group.project_setting.is_visible;
-      window_group = window_services_init(GLSL_VERSION, &app_configs);
+      windows_services_unload(&window_group);
+      window_group = window_services_init(GLSL_VERSION, &app_configs, &font_probes);
       if (is_setting_open && !window_group.project_setting.is_visible) window_inst_toggle(&window_group.project_setting);
 
       // Update chart reader to regenerate arc meshes
@@ -176,15 +181,17 @@ int main()
     BeginDrawing();
       ClearBackground(WHITE);
 
-      // Order:
-      // Base track -> Notes -> Sky Input/Label -> HUD -> Windows
-      track_service_render_base_track(&track_service, &render_ctx,
-                                      &chart_reader.render_lists.enwidencamera_channel,
-                                      &chart_reader.render_lists.enwidenlanes_channel);
+      // Gameplay scene
+      // Order: Base track -> Notes -> Sky Input/Label -> HUD -> Windows
+      track_service_render_base_track(&track_service, &render_ctx, &chart_reader.render_lists);
       if (chart_reader.initialized) notes_service_render(&notes_service, &track_service, &render_ctx, &chart_reader, app_configs.colorblind);
-      track_service_render_sky_input(&track_service, &render_ctx, &chart_reader.render_lists.enwidencamera_channel);
-      hud_services_render(&hud_service, &render_ctx.chart_settings, &app_configs, &render_ctx);
-      windows_services_render(&window_group, &app_configs, &render_ctx);
+      track_service_render_sky_input(&track_service, &render_ctx, &chart_reader.render_lists);
+      hud_services_render(&hud_service, &render_ctx);
+
+      // Windows
+      cmd_palette_draw (&window_group.command_palette, (CmdPltData *)window_group.command_palette.data);
+      proj_setting_draw(&window_group.project_setting, (ProjSettingData *)window_group.project_setting.data,
+                        &app_configs, &render_ctx, &font_probes);
 
       // Debug FPS
       DrawFPS(5, 5);
@@ -209,6 +216,7 @@ int main()
   chart_reader_unload(&chart_reader);
   textures_unload(&texture_group);
   windows_services_unload(&window_group);
+  cached_font_probes_free(&font_probes);
 
   // One last config writing just in case
   app_configs_write_to_file(&app_configs, &rini_d);

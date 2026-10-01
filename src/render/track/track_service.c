@@ -1,6 +1,5 @@
 #include "raylib.h"
 #include "raymath.h"
-#include "render/texture/skin_side.h"
 #include "rlgl.h"
 #include "constants.h"
 #include "track_service.h"
@@ -213,12 +212,18 @@ TrackService track_service_init(int glsl)
       MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), MatrixTranslate(0.0f, 0.17f, 0.0f))},
     1
   );
+
+  text_copy_bounded(service.background_path, sizeof(service.background_path), DEFAULT_BACKGROUND_PATH);
+  service.skin_track = service.skin_side = SK_LIGHT;
+  service.sl_type = SL_NONE;
   return service;
 }
 
-void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx,
-                                     ValueChannel *enwidencamera_channel, ValueChannel *enwidenlanes_channel)
+void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx, NoteRenderLists *note_render_lists)
 {
+  ValueChannel *enwidencamera_channel = &note_render_lists->enwidencamera_channel;
+  ValueChannel *enwidenlanes_channel = &note_render_lists->enwidenlanes_channel;
+
   // Background
   float bg_scale = (float)GetScreenWidth() / (float)track_service->background_tex.width;
   DrawTextureEx(track_service->background_tex, (Vector2){0.0f, Lerp(-180.0f, 0.0f, get_aspect_ratio_adjustment()) * bg_scale}, 0.0f, bg_scale, WHITE);
@@ -288,14 +293,15 @@ void track_service_render_base_track(TrackService *track_service, RenderContext 
   EndMode3D();
 }
 
-void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel)
+void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx, NoteRenderLists *note_render_lists)
 {
+  ValueChannel *enwidencamera_channel = &note_render_lists->enwidencamera_channel;
   float current_ms = audio_clock_get_time_ms(&render_ctx->audio_clock) - render_ctx->chart_settings.audio_offset;
-  float interpolation = value_channel_interpolate(camera_channel, current_ms);
+  float interpolation = value_channel_interpolate(enwidencamera_channel, current_ms);
   float skyDeltaY = 2.745f;
 
   // Sky input line - label
-  Camera3D final_camera = get_enwidened_camera(render_ctx->camera, camera_channel, current_ms);
+  Camera3D final_camera = get_enwidened_camera(render_ctx->camera, enwidencamera_channel, current_ms);
   BeginMode3D(final_camera);
     rlDisableDepthTest();
     rlPushMatrix();
@@ -316,25 +322,62 @@ void track_service_render_sky_input(TrackService *track_service, RenderContext *
 
 void track_service_apply_chart(TrackService *track_service, ChartSettings *chart_settings)
 {
-  UnloadTexture(track_service->background_tex);
-  if (!TextIsEqual(chart_settings->background_path, ""))
+  const char *bg_path = TextIsEqual(chart_settings->background_path, "")
+                        ? DEFAULT_BACKGROUND_PATH
+                        : chart_settings->background_path;
+
+  if (!TextIsEqual(track_service->background_path, bg_path))
   {
+    UnloadTexture(track_service->background_tex);
     track_service->background_tex = LoadTexture(chart_settings->background_path);
     if (!IsTextureValid(track_service->background_tex))
+    {
       track_service->background_tex = LoadTexture(DEFAULT_BACKGROUND_PATH);
-  } else track_service->background_tex = LoadTexture(DEFAULT_BACKGROUND_PATH);
-  SetTextureFilter(track_service->background_tex, TEXTURE_FILTER_BILINEAR);
+      text_copy_bounded(track_service->background_path, sizeof(track_service->background_path), DEFAULT_BACKGROUND_PATH);
+    } else
+    {
+      text_copy_bounded(track_service->background_path, sizeof(track_service->background_path), chart_settings->background_path);
+    }
+  } else
+  {
+    track_service->background_tex = LoadTexture(DEFAULT_BACKGROUND_PATH);
+    text_copy_bounded(track_service->background_path, sizeof(track_service->background_path), DEFAULT_BACKGROUND_PATH);
+  }
+  GenTextureMipmaps(&track_service->background_tex);
+  SetTextureFilter(track_service->background_tex, TEXTURE_FILTER_TRILINEAR);
 
-  UnloadTexture(track_service->track_tex);
-  track_service->track_tex = skin_side_get_track(chart_settings->skin_track);
-  SetTextureWrap(track_service->track_tex, TEXTURE_WRAP_REPEAT);
+  if (track_service->skin_track != chart_settings->skin_track)
+  {
+    track_service-> skin_track = chart_settings->skin_track;
 
-  UnloadTexture(track_service->single_line_tex);
-  track_service->single_line_tex = single_line_get(chart_settings->sl_type);
-  SetTextureWrap(track_service->single_line_tex, TEXTURE_WRAP_REPEAT);
+    UnloadTexture(track_service->track_tex);
+    track_service->track_tex = skin_side_get_track(chart_settings->skin_track);
+    SetTextureWrap(track_service->track_tex, TEXTURE_WRAP_REPEAT);
 
-  UnloadTexture(track_service->extra_lane_tex);
-  track_service->extra_lane_tex = skin_side_get_ex_lane(chart_settings->skin_side);
+    track_service->track.material.maps[MATERIAL_MAP_DIFFUSE].texture = track_service->track_tex;
+    track_service->extra_lane_edge.material.maps[MATERIAL_MAP_DIFFUSE].texture = track_service->track_tex;
+  }
+
+  if (track_service->sl_type != chart_settings->sl_type)
+  {
+    track_service->sl_type = chart_settings->sl_type;
+
+    UnloadTexture(track_service->single_line_tex);
+    track_service->single_line_tex = single_line_get(chart_settings->sl_type);
+    SetTextureWrap(track_service->single_line_tex, TEXTURE_WRAP_REPEAT);
+
+    track_service->single_line.material.maps[MATERIAL_MAP_DIFFUSE].texture = track_service->single_line_tex;
+  }
+
+  if (track_service->skin_side != chart_settings->skin_side)
+  {
+    track_service->skin_side = chart_settings->skin_side;
+
+    UnloadTexture(track_service->extra_lane_tex);
+    track_service->extra_lane_tex = skin_side_get_ex_lane(chart_settings->skin_side);
+
+    track_service->extra_lane.material.maps[MATERIAL_MAP_DIFFUSE].texture = track_service->extra_lane_tex;
+  }
 }
 
 void track_service_unload(TrackService *track_service)

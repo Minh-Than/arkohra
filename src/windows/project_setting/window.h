@@ -1,6 +1,7 @@
 #ifndef WIN_PROJECT_SETTING
 #define WIN_PROJECT_SETTING
 
+#include "data/fonts/fonts_service.h"
 #include "raylib.h"
 #include "data/app_configs/app_config.h"
 #include "data/chart_settings/chart_settings.h"
@@ -26,10 +27,10 @@ typedef struct
   List font_fallbacks;
 } ProjSettingData;
 
-ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs);
-void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs, RenderContext *render_ctx);
+ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes);
+void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs, RenderContext *render_ctx, CachedFontProbes *font_probes);
 void proj_setting_unload(ProjSettingData *proj_setting);
-void proj_setting_reload_font(ProjSettingData *proj_setting);
-void proj_setting_apply_chart(ProjSettingData *project_setting, ChartSettings *chart_settings);
+void proj_setting_reload_font(ProjSettingData *proj_setting, CachedFontProbes *font_probes);
+void proj_setting_apply_chart(ProjSettingData *project_setting, ChartSettings *chart_settings, CachedFontProbes *font_probes);
 
 #endif // WIN_PROJECT_SETTING

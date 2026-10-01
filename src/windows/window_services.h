@@ -2,7 +2,7 @@
 #define WINDOW_SERVICES_H
 
 #include "data/app_configs/app_config.h"
-#include "render/render_service.h"
+#include "data/fonts/fonts_service.h"
 #include "window_inst.h"
 
 typedef struct
@@ -11,8 +11,7 @@ typedef struct
   WindowInst project_setting;
 } WindowGroup;
 
-WindowGroup window_services_init(int glsl, AppConfigs *app_configs);
-void windows_services_render(WindowGroup *window_group, AppConfigs *app_configs, RenderContext *render_ctx);
+WindowGroup window_services_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes);
 void window_services_handle_inputs(WindowGroup *window_group);
 void windows_services_unload(WindowGroup *window_group);
 

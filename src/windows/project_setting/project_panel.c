@@ -160,7 +160,7 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
 
   gameplay_label_rect.y += input_field_gap;
   gameplay_field_rect.y += input_field_gap;
-  bool search_tags_curr_edit = !project_panel->bpm_text.edit;
+  bool search_tags_curr_edit = !project_panel->search_tags.edit;
   GuiLabel(gameplay_label_rect, "Search Tag");
   if (rgui_textinput_draw_font(gameplay_field_rect, project_panel->search_tags.text, RGUI_INPUT_TEXT_CAP, 20, 0.4f, project_panel->search_tags.edit, font_fallbacks))
   {

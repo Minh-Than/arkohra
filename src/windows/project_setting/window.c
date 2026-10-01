@@ -5,7 +5,7 @@
 #include "windows/window_inst.h"
 #include "../project_setting/window.h"
 
-ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
+ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes)
 {
   ProjSettingData data = { 0 };
   data.setting_options_active = SETTING_GENERAL;
@@ -15,19 +15,19 @@ ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs)
 
   data.sdf_shader = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
 
-  const char *paths[] = { "resources/fonts/NotoSans-Regular.ttf", };
-  List font_list; list_init(&font_list, sizeof(char *));
-  for (int i = 0; i < 1; i++) list_push(&font_list, &paths[i]);
+  List fallback_probes; list_init(&fallback_probes, sizeof(FontProbe));
+  list_push(&fallback_probes, &font_probes->noto_reg);
+
   List hud_code_points; list_init(&hud_code_points, sizeof(int));
   for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
-  data.font_fallbacks = fonts_init(&font_list, 45, (int *)hud_code_points.data, hud_code_points.size); 
+  data.font_fallbacks = fonts_init(&fallback_probes, 45, (int *)hud_code_points.data, hud_code_points.size); 
   list_free(&hud_code_points);
-  list_free(&font_list);
+  list_free(&fallback_probes);
 
   return data;
 }
 
-void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs, RenderContext *render_ctx)
+void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs, RenderContext *render_ctx, CachedFontProbes *font_probes)
 {
   if (!window_inst->is_visible) return;
 
@@ -55,7 +55,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
       general_setting_panel_draw(window_inst, &data->gen_set_panel, app_configs, render_ctx, data->sdf_shader, &data->font_fallbacks);
       break;
   }
-  if (data->project_panel.is_text_edited) proj_setting_reload_font(data);
+  if (data->project_panel.is_text_edited) proj_setting_reload_font(data, font_probes);
 
   window_inst_drag_resize(window_inst, 400, 400);
 }
@@ -72,42 +72,39 @@ void proj_setting_unload(ProjSettingData *proj_setting)
   list_free(&proj_setting->font_fallbacks);
 }
 
-void proj_setting_reload_font(ProjSettingData *proj_setting)
+void proj_setting_reload_font(ProjSettingData *proj_setting, CachedFontProbes *font_probes)
 {
   List missing_codepoints; list_init(&missing_codepoints, sizeof(int));
   project_panel_add_missing_codepoints(&proj_setting->project_panel, &missing_codepoints, &proj_setting->font_fallbacks);
 
   if (missing_codepoints.size > 0)
   {
-    const char *paths[] = {
-      "resources/fonts/NotoSans-Regular.ttf",
-      "resources/fonts/NotoSansSC-Regular.ttf",
-      "resources/fonts/NotoSansJP-Regular.ttf",
-      "resources/fonts/NotoSansKR-Regular.ttf",
-      "resources/fonts/NotoSansMath-Regular.ttf",
-    };
-    List font_list; list_init(&font_list, sizeof(char *));
-    for (int j = 0; j < 5; j++) list_push(&font_list, &paths[j]);
+    List fallback_probes; list_init(&fallback_probes, sizeof(FontProbe));
+    list_push(&fallback_probes, &font_probes->noto_reg);
+    list_push(&fallback_probes, &font_probes->noto_sc_reg);
+    list_push(&fallback_probes, &font_probes->noto_jp_reg);
+    list_push(&fallback_probes, &font_probes->noto_kr_reg);
+    list_push(&fallback_probes, &font_probes->noto_math_reg);
 
     // If the fallback chain gets too long, the app might lag from drawing
     // --> unload all fonts then reprocess needed codepoints
     if (proj_setting->font_fallbacks.size > 16)
     {
       List hud_code_points; list_init(&hud_code_points, sizeof(int));
-      project_panel_add_str_to_codepoints(&proj_setting->project_panel, &hud_code_points);
       for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
+      project_panel_add_str_to_codepoints(&proj_setting->project_panel, &hud_code_points);
       for (int j = 0; j < proj_setting->font_fallbacks.size; j++)
       {
         Font *font = (Font *)list_get(&proj_setting->font_fallbacks, j);
         UnloadFont(*font);
       }
       list_free(&proj_setting->font_fallbacks);
-      proj_setting->font_fallbacks = fonts_init(&font_list, 45, (int *)hud_code_points.data, hud_code_points.size);
+      proj_setting->font_fallbacks = fonts_init(&fallback_probes, 45, (int *)hud_code_points.data, hud_code_points.size);
 
       list_free(&hud_code_points);
     } else // Only add missing copepoints
     {
-      List extra_font = fonts_init(&font_list, 45, (int *)missing_codepoints.data, missing_codepoints.size);
+      List extra_font = fonts_init(&fallback_probes, 45, (int *)missing_codepoints.data, missing_codepoints.size);
       for (int j = 0; j < extra_font.size; j++)
       {
         Font *font = (Font *)list_get(&extra_font, j);
@@ -115,22 +112,15 @@ void proj_setting_reload_font(ProjSettingData *proj_setting)
       }
       list_free(&extra_font);
     }
-    list_free(&font_list);
+    list_free(&fallback_probes);
   }
   list_free(&missing_codepoints);
 
   if (proj_setting->project_panel.is_text_edited) proj_setting->project_panel.is_text_edited = false;
 }
 
-void proj_setting_apply_chart(ProjSettingData *project_setting, ChartSettings *chart_settings)
+void proj_setting_apply_chart(ProjSettingData *project_setting, ChartSettings *chart_settings, CachedFontProbes *font_probes)
 {
-  for (int i = 0; i < project_setting->font_fallbacks.size; i++)
-  {
-    Font *font = (Font *)list_get(&project_setting->font_fallbacks, i);
-    UnloadFont(*font);
-  }
-  list_free(&project_setting->font_fallbacks);
-
   project_panel_apply_chart(&project_setting->project_panel, chart_settings);
-  proj_setting_reload_font(project_setting);
+  proj_setting_reload_font(project_setting, font_probes);
 }

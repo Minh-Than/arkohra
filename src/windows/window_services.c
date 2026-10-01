@@ -6,7 +6,7 @@
 #include "windows/project_setting/window.h"
 #include "windows/window_inst.h"
 
-WindowGroup window_services_init(int glsl, AppConfigs *app_configs)
+WindowGroup window_services_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes)
 {
   // Command Palette
   WindowInst command_palette   = window_inst_init(WINDOW_COMMAND_PALETTE,
@@ -22,7 +22,7 @@ WindowGroup window_services_init(int glsl, AppConfigs *app_configs)
                                                         (GetScreenWidth() - width) / 2, (GetScreenHeight() - height) / 2,
                                                         width, height);
   ProjSettingData *proj_setting_data = (ProjSettingData *)malloc(sizeof(ProjSettingData));
-  *proj_setting_data                 = proj_setting_init(glsl, app_configs);
+  *proj_setting_data                 = proj_setting_init(glsl, app_configs, font_probes);
   project_setting.data               = proj_setting_data;
 
   WindowGroup group = {
@@ -31,13 +31,6 @@ WindowGroup window_services_init(int glsl, AppConfigs *app_configs)
   };
 
   return group;
-}
-
-void windows_services_render(WindowGroup *window_group, AppConfigs *app_configs, RenderContext *render_ctx)
-{
-  cmd_palette_draw (&window_group->command_palette, (CmdPltData *)window_group->command_palette.data);
-  proj_setting_draw(&window_group->project_setting, (ProjSettingData *)window_group->project_setting.data,
-                    app_configs, render_ctx);
 }
 
 void window_services_handle_inputs(WindowGroup *window_group)

@@ -25,6 +25,9 @@ NotesService notes_service_init(int glsl)
   service.arctap_tex           = LoadTexture("resources/gameplay/Note/Light/ArcTapLight.png");
   service.arctap_shadow_tex    = LoadTexture("resources/gameplay/Note/ArcTapShadow.png");
 
+  SetTextureFilter(service.tap_tex, TEXTURE_FILTER_BILINEAR);
+  SetTextureFilter(service.hold_tex, TEXTURE_FILTER_BILINEAR);
+  SetTextureFilter(service.arctap_tex, TEXTURE_FILTER_BILINEAR);
   SetTextureWrap  (service.hold_tex, TEXTURE_WRAP_CLAMP);
   SetTextureWrap  (service.arc_tex, TEXTURE_WRAP_CLAMP);
 
@@ -47,6 +50,8 @@ NotesService notes_service_init(int glsl)
     .tintHigh_loc = GetShaderLocation(arc_shader, "tintHigh")
   };
   service.arc_head = generate_arc_head_mesh(&service.arc_tex, &arc_shader);
+
+  service.skin_side = SK_LIGHT;
 
   return service;
 }
@@ -295,17 +300,24 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
 
 void notes_service_apply_chart(NotesService *notes_service, ChartSettings *chart_settings)
 {
-  UnloadTexture(notes_service->hold_tex);
-  notes_service->hold_tex = skin_side_get_hold(chart_settings->skin_side);
-  SetTextureFilter(notes_service->hold_tex, TEXTURE_FILTER_BILINEAR);
+  if(notes_service->skin_side == chart_settings->skin_side) return;
+
+  notes_service->skin_side = chart_settings->skin_side;
 
   UnloadTexture(notes_service->tap_tex);
   notes_service->tap_tex = skin_side_get_tap(chart_settings->skin_side);
   SetTextureFilter(notes_service->tap_tex, TEXTURE_FILTER_BILINEAR);
+  notes_service->tap.material.maps[MATERIAL_MAP_DIFFUSE].texture = notes_service->tap_tex;
+
+  UnloadTexture(notes_service->hold_tex);
+  notes_service->hold_tex = skin_side_get_hold(chart_settings->skin_side);
+  SetTextureFilter(notes_service->hold_tex, TEXTURE_FILTER_BILINEAR);
+  notes_service->hold.material.maps[MATERIAL_MAP_DIFFUSE].texture = notes_service->hold_tex;
 
   UnloadTexture(notes_service->arctap_tex);
   notes_service->arctap_tex = skin_side_get_arctap(chart_settings->skin_side);
   SetTextureFilter(notes_service->arctap_tex, TEXTURE_FILTER_BILINEAR);
+  notes_service->arctap.material.maps[MATERIAL_MAP_DIFFUSE].texture = notes_service->arctap_tex;
 }
 
 void notes_service_unload(NotesService *notes_service)

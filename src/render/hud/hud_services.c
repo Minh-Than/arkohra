@@ -11,22 +11,21 @@
 #include "data/fonts/fonts_service.h"
 #include "gameplay/audio_service.h"
 
-HudService hud_service_init(int glsl)
+HudService hud_service_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes)
 {
   HudService service = { 0 };
   service.sdf_shader    = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
-  service.saira_regular = font_generate_sdf((char *)"resources/fonts/Saira-Regular.ttf", 45, NULL, 95);
-  service.saira_medium  = font_generate_sdf((char *)"resources/fonts/Saira-Medium.ttf", 45, NULL, 95);
+  service.saira_regular = font_generate_sdf(font_probes->saira_reg.data, font_probes->saira_reg.size, 45, NULL, 95);
+  service.saira_medium = font_generate_sdf(font_probes->saira_med.data, font_probes->saira_med.size, 45, NULL, 95);
 
-  const char *paths[] = { "resources/fonts/NotoSans-Regular.ttf" };
-  List font_list; list_init(&font_list, sizeof(char *));
-  for (int i = 0; i < 1; i++) list_push(&font_list, &paths[i]);
+  List fallback_probes; list_init(&fallback_probes, sizeof(FontProbe));
+  list_push(&fallback_probes, &font_probes->noto_reg);
 
   List hud_code_points; list_init(&hud_code_points, sizeof(int));
   for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
-  service.font_with_fallback = fonts_init(&font_list, 45, (int *)hud_code_points.data, hud_code_points.size);
+  service.font_with_fallback = fonts_init(&fallback_probes, 45, (int *)hud_code_points.data, hud_code_points.size);
   list_free(&hud_code_points);
-  list_free(&font_list);
+  list_free(&fallback_probes);
 
   service.pause_button  = LoadTexture("resources/gameplay/HUD/PauseLight.png");
   service.info_panel    = LoadTexture("resources/gameplay/HUD/InfoLight.png");
@@ -36,19 +35,25 @@ HudService hud_service_init(int glsl)
   service.progress_glow = LoadTexture("resources/gameplay/HUD/ProgressGlow.png");
   SetTextureFilter(service.jacket_img, TEXTURE_FILTER_BILINEAR);
 
+  service.playfield_ratio = app_configs->playfield_ratio;
+  text_copy_bounded(service.jacket_path, sizeof(service.jacket_path), "");
+
   return service;
 }
 
-void hud_services_render(HudService *hud_service, ChartSettings *chart_settings, AppConfigs *app_configs, RenderContext *render_ctx)
+void hud_services_render(HudService *hud_service, RenderContext *render_ctx)
 {
+  ChartSettings *chart_settings = &render_ctx->chart_settings;
+  AudioClock audio_clock = render_ctx->audio_clock;
+
   float width_ratio         = (float)GetScreenWidth()  / BASE_APP_WINDOW_WIDTH;
-  float height_ratio        = (float)GetScreenHeight() / aspect_ratio_get_height(BASE_APP_WINDOW_WIDTH, app_configs->playfield_ratio);
+  float height_ratio        = (float)GetScreenHeight() / aspect_ratio_get_height(BASE_APP_WINDOW_WIDTH, hud_service->playfield_ratio);
   float hud_dynamic_scaling = Clamp(fminf(width_ratio, height_ratio * 1.8f), 0.7f, 1.4f) * INFO_PANEL_SCALE;
   float info_panel_width    = hud_service->info_panel.width  * hud_dynamic_scaling;
   float info_panel_height   = hud_service->info_panel.height * hud_dynamic_scaling;
   float jacket_bg_width     = hud_service->jacket_bg.width   * hud_dynamic_scaling;
   float info_panel_posX     = (GetScreenWidth() - info_panel_width) / hud_dynamic_scaling;
-  float denominator = (float)(render_ctx->audio_clock.total_audio_length) + (chart_settings->audio_offset < 0.0f ? chart_settings->audio_offset
+  float denominator = (float)(audio_clock.total_audio_length) + (chart_settings->audio_offset < 0.0f ? chart_settings->audio_offset
                                                                                                                  : 0.0f);
   float audio_ratio = 0.0f;
   if (fabsf(denominator) > 1e-6)
@@ -143,40 +148,63 @@ void hud_services_render(HudService *hud_service, ChartSettings *chart_settings,
   rlPopMatrix();
 }
 
-void hud_service_apply_chart(HudService *hud_service, ChartSettings *chart_settings)
+void hud_service_apply_chart(HudService *hud_service, ChartSettings *chart_settings, CachedFontProbes *font_probes)
 {
-  UnloadTexture(hud_service->jacket_img);
-  if (!TextIsEqual(chart_settings->jacket_path, ""))
+    UnloadTexture(hud_service->jacket_img);
+  if (!TextIsEqual(hud_service->jacket_path, chart_settings->jacket_path))
   {
     hud_service->jacket_img = LoadTexture(chart_settings->jacket_path);
     if (!IsTextureValid(hud_service->jacket_img))
       hud_service->jacket_img = LoadTexture(DEFAULT_JACKET_PATH);
   } else hud_service->jacket_img = LoadTexture(DEFAULT_JACKET_PATH);
-          SetTextureFilter(hud_service->jacket_img, TEXTURE_FILTER_BILINEAR);
+  SetTextureFilter(hud_service->jacket_img, TEXTURE_FILTER_BILINEAR);
+  text_copy_bounded(hud_service->jacket_path, sizeof(hud_service->jacket_path), chart_settings->jacket_path);
 
-  const char *paths[] = {
-    "resources/fonts/NotoSans-Regular.ttf",
-    "resources/fonts/NotoSansSC-Regular.ttf",
-    "resources/fonts/NotoSansJP-Regular.ttf",
-    "resources/fonts/NotoSansKR-Regular.ttf",
-    "resources/fonts/NotoSansMath-Regular.ttf",
-  };
-  List font_list; list_init(&font_list, sizeof(char *));
-  for (int i = 0; i < 5; i++) list_push(&font_list, &paths[i]);
-  List hud_code_points; list_init(&hud_code_points, sizeof(int));
-  for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&hud_code_points, &cp);
-  font_add_string_to_codepoints(&hud_code_points, chart_settings->title);
-  font_add_string_to_codepoints(&hud_code_points, chart_settings->composer);
-  font_add_string_to_codepoints(&hud_code_points, chart_settings->difficulty);
-  for (int i = 0; i < hud_service->font_with_fallback.size; i++)
+  List missing_codepoints; list_init(&missing_codepoints, sizeof(int));
+  font_add_missing_copepoints(&missing_codepoints, chart_settings->title,     &hud_service->font_with_fallback);
+  font_add_missing_copepoints(&missing_codepoints, chart_settings->composer,  &hud_service->font_with_fallback);
+  font_add_missing_copepoints(&missing_codepoints, chart_settings->difficulty,&hud_service->font_with_fallback);
+
+  if (missing_codepoints.size > 0)
   {
-    Font *font = (Font *)list_get(&hud_service->font_with_fallback, i);
-    UnloadFont(*font);
+    List fallback_probes; list_init(&fallback_probes, sizeof(FontProbe));
+    list_push(&fallback_probes, &font_probes->noto_reg);
+    list_push(&fallback_probes, &font_probes->noto_sc_reg);
+    list_push(&fallback_probes, &font_probes->noto_jp_reg);
+    list_push(&fallback_probes, &font_probes->noto_kr_reg);
+    list_push(&fallback_probes, &font_probes->noto_math_reg);
+
+    // If the fallback chain gets too long, the app might lag from drawing
+    // --> unload all fonts then reprocess needed codepoints
+    if (hud_service->font_with_fallback.size > 16)
+    {
+      List codepoints; list_init(&codepoints, sizeof(int));
+      for (int cp = 0x20; cp <= 0x7E; cp++) list_push(&codepoints, &cp);
+      font_add_string_to_codepoints(&codepoints, chart_settings->title);
+      font_add_string_to_codepoints(&codepoints, chart_settings->composer);
+      font_add_string_to_codepoints(&codepoints, chart_settings->difficulty);
+      for (int j = 0; j < hud_service->font_with_fallback.size; j++)
+      {
+        Font *font = (Font *)list_get(&hud_service->font_with_fallback, j);
+        UnloadFont(*font);
+      }
+      list_free(&hud_service->font_with_fallback);
+      hud_service->font_with_fallback = fonts_init(&fallback_probes, 45, (int *)codepoints.data, codepoints.size);
+
+      list_free(&codepoints);
+    } else // Only add missing copepoints
+    {
+      List extra_font = fonts_init(&fallback_probes, 45, (int *)missing_codepoints.data, missing_codepoints.size);
+      for (int j = 0; j < extra_font.size; j++)
+      {
+        Font *font = (Font *)list_get(&extra_font, j);
+        list_push(&hud_service->font_with_fallback, font);
+      }
+      list_free(&extra_font);
+    }
+    list_free(&fallback_probes);
   }
-  list_clear(&hud_service->font_with_fallback);
-  hud_service->font_with_fallback = fonts_init(&font_list, 45, (int *)hud_code_points.data, hud_code_points.size);
-  list_free(&hud_code_points);
-  list_free(&font_list);
+  list_free(&missing_codepoints);
 }
 
 void hud_service_unload(HudService *hud_service)

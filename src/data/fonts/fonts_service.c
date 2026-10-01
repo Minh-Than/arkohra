@@ -1,26 +1,22 @@
 #include <string.h>
 #include "data/custom_types/dynamic_list.h"
-#include "external/stb_truetype.h"
 #include "fonts_service.h"
 
-Font font_generate_sdf(char *font_file_path, int base_size, int *codepoints, int glyph_count)
+Font font_generate_sdf(const unsigned char *font_file_data, int font_file_size, int base_size, int *codepoints, int glyph_count)
 {
-  int fileSize = 0;
-  unsigned char *font_file_data = LoadFileData(font_file_path, &fileSize);
   Font font_sdf = { 0 };
   font_sdf.baseSize   = base_size;
   font_sdf.glyphCount = glyph_count;
-  font_sdf.glyphs     = LoadFontData(font_file_data, fileSize,
+  font_sdf.glyphs     = LoadFontData(font_file_data, font_file_size,
                                      font_sdf.baseSize,
                                      codepoints, glyph_count,
                                      FONT_SDF, &font_sdf.glyphCount);
 
   Image atlas = GenImageFontAtlas(font_sdf.glyphs, &font_sdf.recs,
                                   font_sdf.glyphCount,
-                                  font_sdf.baseSize, 0, 1);
+                                  font_sdf.baseSize, 1, 1);
   font_sdf.texture = LoadTextureFromImage(atlas);
   UnloadImage(atlas);
-  UnloadFileData(font_file_data);
   SetTextureFilter(font_sdf.texture, TEXTURE_FILTER_BILINEAR);
   return font_sdf;
 }
@@ -105,23 +101,16 @@ void font_add_string_to_codepoints(List *codepoints, const char *text)
   }
 }
 
-typedef struct {
-  unsigned char *data;
-  stbtt_fontinfo info;
-  bool valid;
-} FontProbe;
-
-static FontProbe font_probe_load(const char *path)
+FontProbe font_probe_load(const char *path)
 {
   FontProbe p = { 0 };
-  int size = 0;
-  p.data = LoadFileData(path, &size);
+  p.data = LoadFileData(path, &p.size);
   if (p.data)
     p.valid = stbtt_InitFont(&p.info, p.data, stbtt_GetFontOffsetForIndex(p.data, 0));
   return p;
 }
 
-static void font_probe_free(FontProbe *p)
+void font_probe_free(FontProbe *p)
 {
   if (p->data) UnloadFileData(p->data);
   p->data = NULL;
@@ -133,30 +122,31 @@ static bool font_probe_has_glyph(const FontProbe *p, int cp)
   return p->valid && (stbtt_FindGlyphIndex(&p->info, cp) != 0);
 }
 
-List fonts_init(List *font_path_list, int base_size, int *codepoints, int glyph_count)
+List fonts_init(List *probes, int base_size, int *codepoints, int glyph_count)
 {
   List result; list_init(&result, sizeof(Font));
 
-  for (int i = 0; i < font_path_list->size; i++)
+  for (int i = 0; i < probes->size; i++)
   {
-    char *path = *(char **)list_get(font_path_list, i);
+    FontProbe *prb = (FontProbe *)list_get(probes, i);
     List codepoint_entry; list_init(&codepoint_entry, sizeof(int));
 
     // Populate codepoints
     // (probe the font info once)
-    FontProbe prb = font_probe_load(path);
+    if (!prb->valid) continue;
     for (int j = 0; j < glyph_count; j++)
     {
       int codepoint = codepoints[j];
-      if (font_probe_has_glyph(&prb, codepoint))
+      if (font_probe_has_glyph(prb, codepoint))
         list_push(&codepoint_entry, &codepoint);
     }
-    font_probe_free(&prb);
 
     // Generate final SDF font
-    if (codepoint_entry.size == 0) continue;
-    Font entry_sdf_font = font_generate_sdf(path, base_size, (int *)codepoint_entry.data, codepoint_entry.size);
-    list_push(&result, &entry_sdf_font);
+    if (codepoint_entry.size > 0)
+    {
+      Font entry_sdf_font = font_generate_sdf(prb->data, prb->size, base_size, (int *)codepoint_entry.data, codepoint_entry.size);
+      list_push(&result, &entry_sdf_font);
+    }
     list_free(&codepoint_entry);
   }
 
@@ -292,3 +282,28 @@ int count_decimals(const char *text)
   return n;
 }
 
+CachedFontProbes cached_font_probes_init()
+{
+  CachedFontProbes probes;
+
+  probes.saira_reg = font_probe_load("resources/fonts/Saira-Regular.ttf");
+  probes.saira_med = font_probe_load("resources/fonts/Saira-Medium.ttf");
+  probes.noto_reg = font_probe_load("resources/fonts/NotoSans-Regular.ttf");
+  probes.noto_sc_reg = font_probe_load("resources/fonts/NotoSansSC-Regular.ttf");
+  probes.noto_jp_reg = font_probe_load("resources/fonts/NotoSansJP-Regular.ttf");
+  probes.noto_kr_reg = font_probe_load("resources/fonts/NotoSansKR-Regular.ttf");
+  probes.noto_math_reg = font_probe_load("resources/fonts/NotoSansMath-Regular.ttf");
+
+  return probes;
+}
+
+void cached_font_probes_free(CachedFontProbes *font_probes)
+{
+  font_probe_free(&font_probes->saira_reg);
+  font_probe_free(&font_probes->saira_med);
+  font_probe_free(&font_probes->noto_reg);
+  font_probe_free(&font_probes->noto_sc_reg);
+  font_probe_free(&font_probes->noto_jp_reg);
+  font_probe_free(&font_probes->noto_kr_reg);
+  font_probe_free(&font_probes->noto_math_reg);
+}

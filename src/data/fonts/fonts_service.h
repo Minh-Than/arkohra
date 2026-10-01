@@ -3,8 +3,19 @@
 
 #include "raylib.h"
 #include "data/custom_types/dynamic_list.h"
+#include "external/stb_truetype.h"
 
-Font font_generate_sdf(char *font_file_path, int base_size, int *codepoints, int glyph_count);
+typedef struct {
+  unsigned char *data;
+  stbtt_fontinfo info;
+  int size;
+  bool valid;
+} FontProbe;
+
+FontProbe font_probe_load(const char *path);
+void font_probe_free(FontProbe *p);
+
+Font font_generate_sdf(const unsigned char *font_file_data, int font_file_size, int base_size, int *codepoints, int glyph_count);
 bool font_file_has_codepoint(const char *path, int cp);
 bool font_has_codepoint(Font f, int cp);
 bool font_list_has_codepoint(List *font_list, int cp);
@@ -21,5 +32,13 @@ int text_to_int_validated(const char *text, int fallback, int min, int max);
 bool text_is_valid_decimal(const char *text);
 float text_to_float_validated(const char *text, float fallback, float min, float max);
 int count_decimals(const char *text);
+
+typedef struct {
+  FontProbe saira_reg, saira_med;
+  FontProbe noto_reg, noto_sc_reg, noto_jp_reg, noto_kr_reg, noto_math_reg;
+} CachedFontProbes;
+
+CachedFontProbes cached_font_probes_init();
+void cached_font_probes_free(CachedFontProbes *font_probes);
 
 #endif // FONTS_SERVICE_H

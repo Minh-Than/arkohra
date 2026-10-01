@@ -1,9 +1,9 @@
 #ifndef TRACK_SERVICE_H
 #define TRACK_SERVICE_H
 
-#include "data/keyframe/value_channel.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
+#include "render/note_render_lists.h"
 #include "render/render_service.h"
 
 typedef struct {
@@ -14,13 +14,16 @@ typedef struct {
   int track_scrollOffset_loc;
   int track_enwidenlanesValue_loc;
   int single_line_scrollOffset_loc;
+
+  char background_path[MAXPATHLEN];
+  SkinSide skin_track, skin_side;
+  SingleLineType sl_type;
 } TrackService;
 
 TrackService track_service_init(int glsl);
 void set_mesh_transforms(MeshRenderable *renderable, Matrix *transforms, int count);
-void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx,
-                                     ValueChannel *enwidencamera_channel, ValueChannel *enwidenlanes_channel);
-void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx, ValueChannel *camera_channel);
+void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx, NoteRenderLists *note_render_lists);
+void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx, NoteRenderLists *note_render_lists);
 void track_service_apply_chart(TrackService *track_service, ChartSettings *chart_settings);
 void track_service_unload(TrackService *track_service);
 
