@@ -72,15 +72,15 @@ int main()
   {
     if (IsFileDropped())
     {
-      // Pause audio before processing
-      PauseMusicStream(music);
-      audio_clock_pause(&render_ctx.audio_clock);
-
       // Parse and repolulate chart settings
       FilePathList dropped_file = LoadDroppedFiles();
       char *project_file = dropped_file.paths[0];
       if (TextIsEqual(GetFileName(project_file), "project.json"))
       {
+        // Pause audio before processing
+        PauseMusicStream(music);
+        audio_clock_pause(&render_ctx.audio_clock);
+
         if (chart_settings_load_from_project(&render_ctx.chart_settings, &app_configs, project_file))
         {
           // Stop audio entirely

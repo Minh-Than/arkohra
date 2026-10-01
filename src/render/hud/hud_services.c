@@ -53,8 +53,8 @@ void hud_services_render(HudService *hud_service, RenderContext *render_ctx)
   float info_panel_height   = hud_service->info_panel.height * hud_dynamic_scaling;
   float jacket_bg_width     = hud_service->jacket_bg.width   * hud_dynamic_scaling;
   float info_panel_posX     = (GetScreenWidth() - info_panel_width) / hud_dynamic_scaling;
-  float denominator = (float)(audio_clock.total_audio_length) + (chart_settings->audio_offset < 0.0f ? chart_settings->audio_offset
-                                                                                                                 : 0.0f);
+  float denominator = (float)(audio_clock.total_audio_length) + (chart_settings->audio_offset < 0.0f
+                                                                 ? chart_settings->audio_offset : 0.0f);
   float audio_ratio = 0.0f;
   if (fabsf(denominator) > 1e-6)
   {

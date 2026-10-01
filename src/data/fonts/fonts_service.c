@@ -14,7 +14,7 @@ Font font_generate_sdf(const unsigned char *font_file_data, int font_file_size, 
 
   Image atlas = GenImageFontAtlas(font_sdf.glyphs, &font_sdf.recs,
                                   font_sdf.glyphCount,
-                                  font_sdf.baseSize, 1, 1);
+                                  font_sdf.baseSize * 4, 1, 1);
   font_sdf.texture = LoadTextureFromImage(atlas);
   UnloadImage(atlas);
   SetTextureFilter(font_sdf.texture, TEXTURE_FILTER_BILINEAR);
