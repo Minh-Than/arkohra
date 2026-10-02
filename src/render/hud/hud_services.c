@@ -89,7 +89,7 @@ void hud_services_render(HudService *hud_service, RenderContext *render_ctx)
 
     // Jacket + Difficulty
     rlPushMatrix();
-      rlTranslatef(info_panel_posX - 70.0f, info_panel_height * 0.25f, 0.0f);
+      rlTranslatef(info_panel_posX - 70.0f, hud_service->info_panel.height * 0.15f, 0.0f);
       DrawTexture(hud_service->jacket_bg, 0.0f, 0.0f, WHITE);
       rlPushMatrix();
         rlTranslatef(18.0f, 18.0f, 0.0f);
@@ -150,15 +150,18 @@ void hud_services_render(HudService *hud_service, RenderContext *render_ctx)
 
 void hud_service_apply_chart(HudService *hud_service, ChartSettings *chart_settings, CachedFontProbes *font_probes)
 {
-    UnloadTexture(hud_service->jacket_img);
   if (!TextIsEqual(hud_service->jacket_path, chart_settings->jacket_path))
   {
+    UnloadTexture(hud_service->jacket_img);
     hud_service->jacket_img = LoadTexture(chart_settings->jacket_path);
+    text_copy_bounded(hud_service->jacket_path, sizeof(hud_service->jacket_path), chart_settings->jacket_path);
     if (!IsTextureValid(hud_service->jacket_img))
+    {
       hud_service->jacket_img = LoadTexture(DEFAULT_JACKET_PATH);
-  } else hud_service->jacket_img = LoadTexture(DEFAULT_JACKET_PATH);
+      text_copy_bounded(hud_service->jacket_path, sizeof(hud_service->jacket_path), DEFAULT_JACKET_PATH);
+    }
+  }
   SetTextureFilter(hud_service->jacket_img, TEXTURE_FILTER_BILINEAR);
-  text_copy_bounded(hud_service->jacket_path, sizeof(hud_service->jacket_path), chart_settings->jacket_path);
 
   List missing_codepoints; list_init(&missing_codepoints, sizeof(int));
   font_add_missing_copepoints(&missing_codepoints, chart_settings->title,     &hud_service->font_with_fallback);

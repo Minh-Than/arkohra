@@ -330,18 +330,12 @@ void track_service_apply_chart(TrackService *track_service, ChartSettings *chart
   {
     UnloadTexture(track_service->background_tex);
     track_service->background_tex = LoadTexture(chart_settings->background_path);
+    text_copy_bounded(track_service->background_path, sizeof(track_service->background_path), chart_settings->background_path);
     if (!IsTextureValid(track_service->background_tex))
     {
       track_service->background_tex = LoadTexture(DEFAULT_BACKGROUND_PATH);
       text_copy_bounded(track_service->background_path, sizeof(track_service->background_path), DEFAULT_BACKGROUND_PATH);
-    } else
-    {
-      text_copy_bounded(track_service->background_path, sizeof(track_service->background_path), chart_settings->background_path);
     }
-  } else
-  {
-    track_service->background_tex = LoadTexture(DEFAULT_BACKGROUND_PATH);
-    text_copy_bounded(track_service->background_path, sizeof(track_service->background_path), DEFAULT_BACKGROUND_PATH);
   }
   GenTextureMipmaps(&track_service->background_tex);
   SetTextureFilter(track_service->background_tex, TEXTURE_FILTER_TRILINEAR);
