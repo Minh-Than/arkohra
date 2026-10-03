@@ -249,7 +249,7 @@ void track_service_render_base_track(TrackService *track_service, RenderContext 
       Color *extra_lane_color = &track_service->extra_lane.material.maps[MATERIAL_MAP_DIFFUSE].color;
       *extra_lane_color = Fade(*extra_lane_color, enwidenlanes_value);
       rlPushMatrix();
-      rlTranslatef(0.0f, 0.0f, (TRACK_SIZE_Y / 2) + (enwidenlanes_value * -100.0f));
+        rlTranslatef(0.0f, 0.0f, (TRACK_SIZE_Y / 2) + (enwidenlanes_value * -100.0f));
         renderable_draw(&track_service->extra_lane);
       rlPopMatrix();
 
@@ -306,15 +306,13 @@ void track_service_render_sky_input(TrackService *track_service, RenderContext *
     rlDisableDepthTest();
     rlPushMatrix();
       rlScalef(1.7896f, 1.0f, 1.0f);
+      rlTranslatef(0.0f, 5.5f + interpolation * skyDeltaY, 0.0f);
 
-      rlPushMatrix();
-        rlTranslatef(0.0f, 5.5f + interpolation * skyDeltaY, 0.0f);
-        renderable_draw(&track_service->sky_input_line);
+      renderable_draw(&track_service->sky_input_line);
 
-        rlDisableBackfaceCulling();
+      rlDisableBackfaceCulling();
         renderable_draw(&track_service->sky_label);
-        rlEnableBackfaceCulling();
-      rlPopMatrix();
+      rlEnableBackfaceCulling();
     rlPopMatrix();
     rlEnableDepthTest();
   EndMode3D();
