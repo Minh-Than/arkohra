@@ -5,6 +5,9 @@ in vec2 fragTexCoord;
 uniform sampler2D texture0;
 uniform vec4 colDiffuse;
 
+uniform float timing;
+uniform vec2 screenSize;
+
 out vec4 finalColor;
 
 void main()
