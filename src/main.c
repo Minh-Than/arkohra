@@ -4,12 +4,11 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 */
 
 #include <stdlib.h>
-#include "data/fonts/fonts_service.h"
 #include "raylib.h"
 #include "raygui.h"
+#include "raymath.h"
 #include "rlgl.h"
 #include "constants.h"
-#include "resource_util.h"
 #include "data/app_configs/app_config.h"
 #include "data/chart_settings/chart_settings.h"
 #include "gameplay/audio_service.h"
@@ -23,10 +22,14 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "render/utils/drawing.h"
 #include "windows/command_palette/window.h"
 #include "windows/project_setting/window.h"
-#include "windows/window_inst.h"
 #include "windows/window_services.h"
 
-#define GLSL_VERSION 330
+
+#if defined(PLATFORM_DESKTOP)
+    #define GLSL_VERSION 330
+#else   // PLATFORM_ANDROID, PLATFORM_WEB
+    #define GLSL_VERSION 100
+#endif
 
 int main()
 {
@@ -54,6 +57,15 @@ int main()
     .chart_settings = chart_settings_init(&app_configs),
     .audio_clock    = { 0 },
   };
+
+  Shader chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION),
+                                   TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
+  int timing_loc = GetShaderLocation(chart_shader, "timing");
+  int screenSize_loc = GetShaderLocation(chart_shader, "screenSize");
+
+  RenderTexture2D target = LoadRenderTexture(GetRenderWidth(), GetRenderHeight());
+  GenTextureMipmaps(&target.texture);
+  SetTextureFilter(target.texture, TEXTURE_FILTER_TRILINEAR);
 
   InitAudioDevice();
 
@@ -102,9 +114,25 @@ int main()
                                             &notes_service.arc_shader.shader);
           chart_settings_print(&render_ctx.chart_settings);
 
+          const char *fs_path = TextIsEqual(render_ctx.chart_settings.shader_fs_path, "")
+                                ? TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION)
+                                : render_ctx.chart_settings.shader_fs_path;
+          UnloadShader(chart_shader);
+          if (IsPathFile(fs_path) && IsFileExtension(fs_path, ".fs"))
+          {
+            chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION), fs_path);
+          } else
+          {
+            chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION),
+                                     TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
+          }
+          timing_loc = GetShaderLocation(chart_shader, "timing");
+          screenSize_loc = GetShaderLocation(chart_shader, "screenSize");
+
           track_service_apply_chart(&track_service, &render_ctx.chart_settings);
           notes_service_apply_chart(&notes_service, &render_ctx.chart_settings);
           hud_service_apply_chart  (&hud_service  , &render_ctx.chart_settings, &font_probes);
+
           ProjSettingData *project_setting = (ProjSettingData *)window_group.project_setting.data;
           proj_setting_apply_chart(project_setting, &render_ctx.chart_settings, &font_probes);
 
@@ -119,6 +147,14 @@ int main()
 
     camera_handle_main_window_resize(&render_ctx.camera, app_configs.playfield_ratio);
     window_services_handle_inputs(&window_group);
+
+    if (target.texture.width != GetRenderWidth() || target.texture.height != GetRenderHeight())
+    {
+      UnloadRenderTexture(target);
+      target = LoadRenderTexture(GetRenderWidth(), GetRenderHeight());
+      SetTextureWrap(target.texture, TEXTURE_WRAP_CLAMP);
+      SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR);
+    }
 
     if (IsMusicValid(music))
     {
@@ -178,7 +214,12 @@ int main()
       app_configs.kohra = !app_configs.kohra;
     // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA
 
-    BeginDrawing();
+    BeginTextureMode(target);
+      rlMatrixMode(RL_PROJECTION);
+      rlLoadIdentity();
+      rlOrtho(0, GetScreenWidth(), GetScreenHeight(), 0, 0.0f, 1.0f);
+      rlMatrixMode(RL_MODELVIEW);
+      rlLoadIdentity();
       ClearBackground(WHITE);
 
       // Gameplay scene
@@ -187,6 +228,23 @@ int main()
       if (chart_reader.initialized) notes_service_render(&notes_service, &track_service, &render_ctx, &chart_reader, app_configs.colorblind);
       track_service_render_sky_input(&track_service, &render_ctx, &chart_reader.render_lists);
       hud_services_render(&hud_service, &render_ctx);
+
+    EndTextureMode();
+
+    BeginDrawing();
+      ClearBackground(WHITE);
+
+      float timing = (audio_clock_get_time_ms(&render_ctx.audio_clock) - render_ctx.chart_settings.audio_offset);
+      float screen_size[2] = {(float)GetRenderWidth(), (float)GetRenderHeight()};
+      SetShaderValue(chart_shader, timing_loc, &timing, SHADER_UNIFORM_FLOAT);
+      SetShaderValue(chart_shader, screenSize_loc, &screen_size, SHADER_UNIFORM_VEC2);
+
+      BeginShaderMode(chart_shader);
+        DrawTexturePro(target.texture,
+                       (Rectangle){ 0, 0, (float)target.texture.width, (float)-target.texture.height },
+                       (Rectangle){ 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() },
+                       Vector2Zero(), 0.0f, WHITE);
+      EndShaderMode();
 
       // Windows
       cmd_palette_draw (&window_group.command_palette, (CmdPltData *)window_group.command_palette.data);
@@ -217,6 +275,7 @@ int main()
   textures_unload(&texture_group);
   windows_services_unload(&window_group);
   cached_font_probes_free(&font_probes);
+  UnloadShader(chart_shader);
 
   // One last config writing just in case
   app_configs_write_to_file(&app_configs, &rini_d);

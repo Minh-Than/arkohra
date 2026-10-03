@@ -22,6 +22,7 @@ ChartSettings chart_settings_init(AppConfigs *app_configs)
   TextCopy(settings.title, "Title");
   TextCopy(settings.composer, "Composer");
   TextCopy(settings.difficulty_color, color_rgba_to_hex(FTR_DIFF_COLOR));
+  TextCopy(settings.shader_fs_path, DEFAULT_CHART_SHADER_FS);
 
   return settings;
 }
@@ -76,6 +77,10 @@ bool chart_settings_load_from_project(ChartSettings *chart_settings, AppConfigs 
     cJSON *background_path = cJSON_GetObjectItemCaseSensitive(chart_item, "backgroundPath");
     if (cJSON_IsString(background_path) && background_path->valuestring != NULL)
       text_copy_bounded(chart_settings->background_path, MAXPATHLEN, TextFormat("%s/%s", dir, background_path->valuestring));
+
+    cJSON *shader_fs_path = cJSON_GetObjectItemCaseSensitive(chart_item, "shaderFsPath");
+    if (cJSON_IsString(shader_fs_path) && shader_fs_path->valuestring != NULL)
+      text_copy_bounded(chart_settings->shader_fs_path, MAXPATHLEN, TextFormat("%s/%s", dir, shader_fs_path->valuestring));
 
     cJSON *base_bpm = cJSON_GetObjectItemCaseSensitive(chart_item, "baseBpm");
     if (cJSON_IsNumber(base_bpm)) chart_settings->base_bpm = (float)base_bpm->valuedouble;

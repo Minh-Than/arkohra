@@ -11,6 +11,7 @@ typedef struct {
   char  chart_path[MAXPATHLEN];
   char  audio_path[MAXPATHLEN];
   char  jacket_path[MAXPATHLEN];
+  char  shader_fs_path[MAXPATHLEN];
   float base_bpm;
   char  bpm_text[256];
   bool  sync_base_bpm;

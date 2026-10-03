@@ -5,6 +5,8 @@ static const unsigned int BASE_APP_WINDOW_WIDTH = 1280;
 
 static const char* DEFAULT_BACKGROUND_PATH = "resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg";
 static const char* DEFAULT_JACKET_PATH     = "resources/gameplay/DefaultJacket.png";
+static const char* DEFAULT_CHART_SHADER_VS = "resources/shaders/glsl%i/chart_default.vs";
+static const char* DEFAULT_CHART_SHADER_FS = "resources/shaders/glsl%i/chart_default.fs";
 
 static const float MINIMUM_SCROLL_SPEED  = 0.01f;
 static const float MAXIMUM_SCROLL_SPEED  = 10.0f;
