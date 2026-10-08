@@ -1,21 +1,7 @@
+#include <math.h>
 #include <stdlib.h>
 #include "arctap.h"
-#include "constants.h"
-#include "gameplay/arc_formula.h"
 #include "rlgl.h"
-#include "raymath.h"
-
-void draw_arctap(MeshRenderable *arctap_r, ArcTap *arctap, double z_pos, float add_fade)
-{
-  float fade_ratio = (z_pos - SKY_STOP_FADE) / (ARCTAP_START_FADE - SKY_STOP_FADE);
-  arctap_r->material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(WHITE, Clamp(fade_ratio, 0.0f, add_fade));
-  Matrix tr = MatrixTranslate(
-    arc_world_x_at(arctap->timing, arctap->arc),
-    arc_world_y_at(arctap->timing, arctap->arc),
-    z_pos
-  );
-  DrawMesh(arctap_r->mesh, arctap_r->material, tr);
-}
 
 MeshRenderable arctap_load_mesh(Texture2D *texture)
 {

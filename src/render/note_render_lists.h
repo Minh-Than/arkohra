@@ -20,7 +20,8 @@ typedef struct {
 
 void render_lists_init(NoteRenderLists *render_lists);
 void render_lists_process(NoteRenderLists *render_lists, List *timing_groups, ChartSettings *chart_settings,
-                          float current_ms, double *curr_fps, float *curr_bpms, double low_z_clip, double high_z_clip);
+                          float current_ms, double *curr_fps, float *curr_bpms, bool *hidegroup_actives, float *groupalpha_fade,
+                          double low_z_clip, double high_z_clip);
 void render_lists_clear(NoteRenderLists *render_lists);
 void render_lists_unload(NoteRenderLists *render_lists);
 

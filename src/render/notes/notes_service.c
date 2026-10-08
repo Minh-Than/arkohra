@@ -6,15 +6,17 @@
 #include "notes_service.h"
 #include "data/chart_settings/chart_settings.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
+#include "data/custom_types/dynamic_list.h"
+#include "data/selection/raycast_note.h"
 #include "data/gameplay_events/gameplay_events.h"
-#include "data/keyframe/value_channel.h"
 #include "gameplay/audio_service.h"
 #include "gameplay/arc_formula.h"
 #include "gameplay/camera/camera_service.h"
+#include "render/mesh_renderable.h"
 #include "render/note_render_lists.h"
 #include "render/utils/drawing.h"
 
-NotesService notes_service_init(int glsl)
+NotesService notes_service_init(int glsl, AppConfigs *app_configs)
 {
   NotesService service;
   service.tap_tex              = LoadTexture("resources/gameplay/Note/Light/TapNoteLight.png");
@@ -52,12 +54,27 @@ NotesService notes_service_init(int glsl)
   service.arc_head = generate_arc_head_mesh(&service.arc_tex, &arc_shader);
 
   service.skin_side = SK_LIGHT;
+  service.colorblind = app_configs->colorblind;
 
   return service;
 }
 
-void notes_service_render(NotesService *notes_service, TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader, bool colorblind)
+static void process_collision(Ray ray, List *raycast_results, void *note, RawEventType type, Mesh *mesh, Matrix note_tr)
 {
+  RayCollision collision = GetRayCollisionMesh(ray, *mesh, MatrixMultiply(note_tr, rlGetMatrixTransform()));
+  if (!collision.hit) return;
+  RaycastNote raycast_note = { .data = note, .collision = collision, .note_type = type };
+  list_push(raycast_results, &raycast_note);
+}
+
+void notes_service_render(NotesService *notes_service, TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader,
+                          List *raycast_results)
+{
+  if (!chart_reader->initialized) return;
+
+  ChartSettings *chart_settings = &render_ctx->chart_settings;
+  AudioClock *audio_clock = &render_ctx->audio_clock;
+
   List *timing_groups = &chart_reader->timing_groups;
   NoteRenderLists *render_lists  = &chart_reader->render_lists;
   List *beatline_list = &render_lists->beatline_render_list;
@@ -67,8 +84,6 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
   List *arccap_list   = &render_lists->arccap_render_list;
   List *arctap_list   = &render_lists->arctap_render_list;
 
-  ChartSettings *chart_settings = &render_ctx->chart_settings;
-  AudioClock *audio_clock = &render_ctx->audio_clock;
   float current_ms = audio_clock_get_time_ms(audio_clock) - chart_settings->audio_offset;
   float base_bpm     = chart_settings->base_bpm;
   float scroll_speed = chart_settings->scroll_speed;
@@ -78,16 +93,9 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
   float        curr_bpms[timing_groups->size];
   bool hidegroup_actives[timing_groups->size];
   float  groupalpha_fade[timing_groups->size];
-  render_lists_process(render_lists, timing_groups, chart_settings, current_ms, curr_fps, curr_bpms,
+  render_lists_process(render_lists, timing_groups, chart_settings,
+                       current_ms, curr_fps, curr_bpms, hidegroup_actives, groupalpha_fade,
                        chart_reader->low_z_clip, chart_reader->high_z_clip);
-  for (int i = 0; i < timing_groups->size; i++)
-  {
-    ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, i);
-    tg->hidegroup_channel.current_value = value_channel_interpolate(&tg->hidegroup_channel, current_ms);
-    hidegroup_actives[i] = fabsf(tg->hidegroup_channel.current_value) > 1e-6;
-    tg->groupalpha_channel.current_value = value_channel_interpolate(&tg->groupalpha_channel, current_ms);
-    groupalpha_fade[i] = tg->groupalpha_channel.current_value / 255.0f;
-  }
 
   if (render_ctx->audio_clock.is_playing)
   {
@@ -99,13 +107,16 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
     SetShaderValue(track_service->single_line_shader, track_service->single_line_scrollOffset_loc, &scroll_offset, SHADER_UNIFORM_FLOAT);
   }
 
-  // GROUND NOTES
   Camera3D final_camera = get_enwidened_camera(render_ctx->camera, &render_lists->enwidencamera_channel, current_ms);
+  Ray rayclust = GetScreenToWorldRay(GetMousePosition(), final_camera);
+  list_clear(raycast_results);
+
+  // GROUND NOTES
   BeginMode3D(final_camera);
     rlDisableDepthTest();
     rlDisableBackfaceCulling();
     rlPushMatrix();
-      rlScalef(1.7896f, 1.0f, 1.0f);
+      rlScalef(FUCKASS_SCALE, 1.0f, 1.0f);
       BeginBlendMode(BLEND_ALPHA);
       // Beatlines
       for(int i = 0; i < beatline_list->size; i++)
@@ -121,10 +132,24 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
       {
         Hold *hold = *(Hold **)list_get(hold_list, i);
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, hold->timing_group);
-        if (hidegroup_actives[tg->value]) continue;
         double curr_fp = curr_fps[tg->value];
+        double z_pos   = floor_position_to_z(hold->start_fp - curr_fp, base_bpm, scroll_speed);
+        float z_scale  = floor_position_to_z(hold->end_fp - hold->start_fp, base_bpm, scroll_speed);
+
+        Matrix tr = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
+                                   MatrixMultiply(MatrixScale(1.0f, 1.0f, -z_scale),
+                                                  MatrixTranslate(lane_to_world_x(hold->lane), 0.0f, z_pos)));
+        process_collision(rayclust, raycast_results, hold, HOLD, &notes_service->hold.mesh, tr);
+
+        if (hidegroup_actives[tg->value]) continue;
+
+        MeshRenderable *hold_r = &notes_service->hold;
+
         float curr_groupalpha = groupalpha_fade[tg->value];
-        draw_hold(&notes_service->hold, hold, current_ms, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
+        float alpha = hold->start_timing < current_ms && !hold->is_active ? 0.5f : 1.0f;
+        alpha *= curr_groupalpha;
+        hold_r->material.maps->color = Fade(hold_r->material.maps->color, alpha);
+        DrawMesh(hold_r->mesh, hold_r->material, tr);
       }
 
       // Taps
@@ -132,13 +157,30 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
       {
         Tap *tap = ((TapFP *)list_get(tap_list, i))->tap;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, tap->timing_group);
+        double curr_fp        = curr_fps[tg->value];
+
+        double diff_fp = tap->fp - curr_fp;
+        double z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
+        float z_scale  = Clamp(Lerp(1.8f, 5.8f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
+                               1.8f, 5.8f);
+
+        Matrix tr = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
+                                   MatrixMultiply(MatrixScale(1.0f, 1.0f, z_scale),
+                                                  MatrixTranslate(lane_to_world_x(tap->lane), 0.0f, z_pos)));
+        process_collision(rayclust, raycast_results, tap, TAP, &notes_service->tap.mesh, tr);
+
         if (hidegroup_actives[tg->value]) continue;
+
+        MeshRenderable *tap_r = &notes_service->tap;
+
+        float alpha = groupalpha_fade[tg->value];
+        float fade_ratio = (z_pos - TAP_STOP_FADE) / (TAP_START_FADE - TAP_STOP_FADE);
+        tap_r->material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(WHITE, Clamp(fade_ratio, 0.0f, alpha));
         if (tg->props.no_input && tap->timing - current_ms < 0) continue;
-        double curr_fp = curr_fps[tg->value];
-        float curr_groupalpha = groupalpha_fade[tg->value];
-        draw_tap(&notes_service->tap, tap, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
+        DrawMesh(tap_r->mesh, tap_r->material, tr);
+
         if (tg->props.no_connection) continue;
-        draw_tap_connection(tap, chart_settings, base_bpm, scroll_speed, curr_fp, curr_groupalpha);
+        draw_tap_connection(tap, chart_settings, base_bpm, scroll_speed, curr_fp, alpha);
       }
       EndBlendMode();
     rlPopMatrix();
@@ -152,7 +194,7 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
     rlDisableDepthTest();
     rlDisableBackfaceCulling();
     rlPushMatrix();
-      rlScalef(1.7896f, 1.0f, 1.0f);
+      rlScalef(FUCKASS_SCALE, 1.0f, 1.0f);
       BeginBlendMode(BLEND_ALPHA);
       // Arctap shadows
       for (int i = 0; i < arctap_list->size; i++)
@@ -160,18 +202,19 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         ArcTapFP *arctap_fp = (ArcTapFP *)list_get(arctap_list, i);
         ArcTap *arctap = arctap_fp->arctap;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arctap->timing_group);
+
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_shadow) continue;
         if (tg->props.no_input && arctap->timing - current_ms < 0) continue;
+
         double curr_fp   = curr_fps[tg->value];
-        float curr_groupalpha = groupalpha_fade[tg->value];
         double z_pos     = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
+        float alpha      = groupalpha_fade[tg->value] * ARCTAP_SHADOW_ALPHA;
         float fade_ratio = (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE);
         notes_service->arctap_shadow.material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(color_from_rgba(NOTE_SHADOW_CL),
-                                                                                      Clamp(fade_ratio, 0.0f, ARCTAP_SHADOW_ALPHA * curr_groupalpha));
+                                                                                      Clamp(fade_ratio, 0.0f, alpha));
         Matrix tr = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
-                                        MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc),
-                                                        0.0f, z_pos));
+                                   MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc), 0.0f, z_pos));
         DrawMesh(notes_service->arctap_shadow.mesh, notes_service->arctap_shadow.material, tr);
       }
 
@@ -180,13 +223,15 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
+
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_shadow) continue;
-        double curr_fp =  curr_fps[tg->value];
+
+        double curr_fp = curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
+        float alpha    = groupalpha_fade[tg->value];
         double z_pos   = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-        float curr_groupalpha = groupalpha_fade[tg->value];
-        draw_arc_shadow(tg, arc_segment, &notes_service->arc_shader, current_ms, curr_bpm, z_pos, curr_groupalpha);
+        draw_arc_shadow(tg, arc_segment, &notes_service->arc_shader, current_ms, curr_bpm, z_pos, alpha);
       }
 
       // Following arccaps
@@ -195,12 +240,13 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arccap_list, i);
         struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc->timing_group);
+
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_arccap) continue;
-
-        float curr_groupalpha = groupalpha_fade[tg->value];
         if (!between_int_range_inclusive(current_ms, arc->start_timing, arc->end_timing)) continue;
-        draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, ARCCAP_ALPHA * curr_groupalpha, current_ms);
+
+        float alpha = groupalpha_fade[tg->value] * ARCCAP_ALPHA;
+        draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, alpha, current_ms);
       }
 
       // Approaching arccaps
@@ -209,6 +255,7 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
         struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc->timing_group);
+
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_arccap) continue;
         if (arc->is_void) continue;
@@ -219,9 +266,9 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         double curr_fp  = curr_fps[tg->value];
         float curr_groupalpha = groupalpha_fade[tg->value];
         float diff_fp_z = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
-        float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f    , diff_fp_z / -100.0f), 0.0f, ARCCAP_ALPHA * curr_groupalpha);
-        float cap_scale = Clamp(Lerp(1.0f, ARCCAP_FAR_SCALE, diff_fp_z / -100.0f), 1.0f, ARCCAP_FAR_SCALE);
-        draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, cap_scale, cap_alpha, current_ms);
+        float alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f    , diff_fp_z / -100.0f), 0.0f, ARCCAP_ALPHA * curr_groupalpha);
+        float scale = Clamp(Lerp(1.0f, ARCCAP_FAR_SCALE, diff_fp_z / -100.0f), 1.0f, ARCCAP_FAR_SCALE);
+        draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, scale, alpha, current_ms);
       }
 
       // Ending arccaps
@@ -230,6 +277,7 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
         struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc->timing_group);
+
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_arccap) continue;
         if (arc->next_arc != NULL) continue;
@@ -238,27 +286,34 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         if (arc->end_timing > current_ms) continue;
 
         double curr_fp  = curr_fps[tg->value];
-        float curr_groupalpha = groupalpha_fade[tg->value];
-        float cap_alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f, fabsf(current_ms - arc->end_timing) / 120.0f), 0.0f, ARCCAP_ALPHA * 0.7f * curr_groupalpha);
-        draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, cap_alpha, current_ms);
+        float alpha = groupalpha_fade[tg->value] * ARCCAP_ALPHA * 0.7f;
+        alpha = Clamp(Lerp(ARCCAP_ALPHA, 0.0f, fabsf(current_ms - arc->end_timing) / 120.0f), 0.0f, alpha);
+        draw_arccap(arc_segment, &notes_service->arccap.mesh, notes_service->arccap.material, 1.0f, alpha, current_ms);
       }
 
       // Height indicators + Arcs/Traces
       for(int i = arc_list->size - 1; i >= 0; i--)
       {
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
+        struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
-        if (hidegroup_actives[tg->value]) continue;
+
         double curr_fp =  curr_fps[tg->value];
-        float curr_bpm = curr_bpms[tg->value];
-        float curr_groupalpha = groupalpha_fade[tg->value];
         double z_pos  = floor_position_to_z(arc_segment->start_fp - curr_fp, base_bpm, scroll_speed);
+        Matrix tr = MatrixTranslate(0.0f, 0.0f, z_pos);
+        process_collision(rayclust, raycast_results, arc, ARC, &arc_segment->mesh_r.mesh, tr);
+
+        if (hidegroup_actives[tg->value]) continue;
+
+        float curr_bpm = curr_bpms[tg->value];
+        float alpha = groupalpha_fade[tg->value];
         if (!tg->props.no_height_indicator &&
             !(!tg->props.no_clip && tg->props.no_input && arc_segment->arc->start_timing - current_ms < 0))
-          draw_height_indicator(arc_segment, &notes_service->height_indicator.mesh, notes_service->height_indicator.material, z_pos, curr_groupalpha, colorblind);
-        struct Arc *arc = arc_segment->arc;
+          draw_height_indicator(arc_segment, &notes_service->height_indicator.mesh, notes_service->height_indicator.material,
+                                z_pos, alpha, notes_service->colorblind);
         if (!tg->props.no_clip && arc->is_void && arc->end_timing < current_ms) continue;
-        draw_arc_segment(tg, arc_segment, &notes_service->arc_shader, current_ms, curr_bpm, z_pos, curr_groupalpha, colorblind);
+        draw_arc_segment(tg, arc_segment, &notes_service->arc_shader,
+                         current_ms, curr_bpm, z_pos, alpha, notes_service->colorblind);
       }
 
       // Arc heads
@@ -267,14 +322,16 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         ArcSegment *arc_segment = *(ArcSegment **)list_get(arc_list, i);
         struct Arc *arc = arc_segment->arc;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arc_segment->arc->timing_group);
+
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_head) continue;
         if (tg->props.no_input && arc->start_timing - current_ms < 0) continue;
+
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
-        float curr_groupalpha = groupalpha_fade[tg->value];
+        float alpha = groupalpha_fade[tg->value];
         draw_arc_head(tg, arc_segment, &notes_service->arc_shader, &notes_service->arc_head,
-                      current_ms, curr_bpm, base_bpm, scroll_speed, curr_fp, curr_groupalpha, colorblind);
+                      current_ms, curr_bpm, base_bpm, scroll_speed, curr_fp, alpha, notes_service->colorblind);
       }
 
       // Arctaps
@@ -283,12 +340,22 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         ArcTapFP *arctap_fp = (ArcTapFP *)list_get(arctap_list, i);
         ArcTap *arctap = arctap_fp->arctap;
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, arctap->timing_group);
+        double curr_fp = curr_fps[arctap->timing_group];
+        double z_pos   = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
+        Matrix tr = MatrixTranslate(arc_world_x_at(arctap->timing, arctap->arc),
+                                    arc_world_y_at(arctap->timing, arctap->arc),
+                                    z_pos);
+        process_collision(rayclust, raycast_results, arctap, ARCTAP, &notes_service->arctap.mesh, tr);
+
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_input && arctap->timing - current_ms < 0) continue;
-        double curr_fp = curr_fps[arctap->timing_group];
-        float curr_groupalpha = groupalpha_fade[tg->value];
-        double z_pos   = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
-        draw_arctap(&notes_service->arctap, arctap, z_pos, curr_groupalpha);
+
+        MeshRenderable *arctap_r = &notes_service->arctap;
+
+        float alpha = groupalpha_fade[tg->value];
+        float fade_ratio = (z_pos - SKY_STOP_FADE) / (ARCTAP_START_FADE - SKY_STOP_FADE);
+        arctap_r->material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(WHITE, Clamp(fade_ratio, 0.0f, alpha));
+        DrawMesh(arctap_r->mesh, arctap_r->material, tr);
       }
       EndBlendMode();
     rlPopMatrix();
@@ -296,6 +363,9 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
     rlEnableDepthTest();
   EndMode3D();
   rlSetClipPlanes(0.01f, 100.0f);
+
+  if (raycast_results->size > 1)
+    list_remove_dups(raycast_results, raycast_note_compare_distance_asc, raycast_note_compare_data);
 }
 
 void notes_service_apply_chart(NotesService *notes_service, ChartSettings *chart_settings)

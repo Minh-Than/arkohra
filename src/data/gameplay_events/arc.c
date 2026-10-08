@@ -179,7 +179,7 @@ void arc_print(const void *elem)
     if (i < arc->arctaps.size - 1) printf(",");
   }
   if (arc->arctaps.size != 0) printf("]");
-  printf(";");
+  printf(";\n");
 }
 
 MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timing_events, struct Arc *arc,

@@ -10,7 +10,6 @@
 #include "data/gameplay_events/arc_shader.h"
 #include "render/mesh_renderable.h"
 
-// ARC
 typedef enum
 {
   B = 1,
@@ -25,6 +24,7 @@ typedef enum
 
 ArcType arctype_get_by_string(char *str);
 
+// ARC
 struct Arc {
   List arctaps;
   float x1, y1, x2, y2;

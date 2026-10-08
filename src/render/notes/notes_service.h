@@ -1,9 +1,11 @@
 #ifndef NOTES_SERVICE_H
 #define NOTES_SERVICE_H
 
+#include "data/app_configs/app_config.h"
+#include "raylib.h"
+#include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/arc_shader.h"
 #include "gameplay/chart_reader.h"
-#include "raylib.h"
 #include "render/mesh_renderable.h"
 #include "render/render_service.h"
 #include "render/texture/skin_side.h"
@@ -15,10 +17,12 @@ typedef struct {
   ArcShader arc_shader;
 
   SkinSide skin_side;
+  bool colorblind;
 }NotesService;
 
-NotesService notes_service_init(int glsl);
-void notes_service_render(NotesService *notes_service, TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader, bool colorblind);
+NotesService notes_service_init(int glsl, AppConfigs *app_configs);
+void notes_service_render(NotesService *notes_service, TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader,
+                          List *raycast_results);
 void notes_service_apply_chart(NotesService *notes_service, ChartSettings *chart_settings);
 void notes_service_unload(NotesService *notes_service);
 

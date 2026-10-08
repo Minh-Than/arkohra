@@ -1,3 +1,4 @@
+#include <math.h>
 #include "note_render_lists.h"
 #include "data/gameplay_events/beatline.h"
 #include "data/gameplay_events/tap.h"
@@ -19,7 +20,8 @@ void render_lists_init(NoteRenderLists *render_lists)
 }
 
 void render_lists_process(NoteRenderLists *render_lists, List *timing_groups, ChartSettings *chart_settings,
-                          float current_ms, double *curr_fps, float *curr_bpms, double low_z_clip, double high_z_clip)
+                          float current_ms, double *curr_fps, float *curr_bpms, bool *hidegroup_actives, float *groupalpha_fade,
+                          double low_z_clip, double high_z_clip)
 {
   render_lists_clear(render_lists);
 
@@ -31,6 +33,11 @@ void render_lists_process(NoteRenderLists *render_lists, List *timing_groups, Ch
     float curr_bpm = curr_event != NULL ? curr_event->bpm : chart_settings->base_bpm;
     curr_fps[i]  = curr_fp;
     curr_bpms[i] = curr_bpm;
+
+    tg->hidegroup_channel.current_value = value_channel_interpolate(&tg->hidegroup_channel, current_ms);
+    hidegroup_actives[i] = fabsf(tg->hidegroup_channel.current_value) > 1e-6;
+    tg->groupalpha_channel.current_value = value_channel_interpolate(&tg->groupalpha_channel, current_ms);
+    groupalpha_fade[i] = tg->groupalpha_channel.current_value / 255.0f;
 
     for (int j = 0; j < tg->enwidencamera_channel.keyframes.size; j++)
     {
@@ -112,6 +119,7 @@ void render_lists_clear(NoteRenderLists *render_lists)
   list_clear(&render_lists->arctap_render_list);
 
   list_clear(&render_lists->enwidencamera_channel.keyframes);
+  list_clear(&render_lists->enwidenlanes_channel.keyframes);
 }
 
 void render_lists_unload(NoteRenderLists *render_lists)
@@ -124,4 +132,5 @@ void render_lists_unload(NoteRenderLists *render_lists)
   list_free(&render_lists->arctap_render_list);
 
   value_channel_unload(&render_lists->enwidencamera_channel);
+  value_channel_unload(&render_lists->enwidenlanes_channel);
 }

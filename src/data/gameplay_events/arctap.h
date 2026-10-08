@@ -14,7 +14,6 @@ typedef struct
   bool  is_selected;
 } ArcTap;
 
-void draw_arctap(MeshRenderable *arctap_r, ArcTap *arctap, double z_pos, float add_fade);
 MeshRenderable arctap_load_mesh(Texture2D *texture);
 MeshRenderable arctap_shadow_load_mesh(Texture2D *texture);
 void parse_arctaps(const char *line, List *out);

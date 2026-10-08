@@ -236,7 +236,7 @@ void track_service_render_base_track(TrackService *track_service, RenderContext 
   Camera3D final_camera = get_enwidened_camera(render_ctx->camera, enwidencamera_channel, current_ms);
   BeginMode3D(final_camera);
     rlPushMatrix();
-      rlScalef(1.7896f, 1.0f, 1.0f);
+      rlScalef(FUCKASS_SCALE, 1.0f, 1.0f);
 
       rlDisableDepthTest();
 
@@ -305,7 +305,7 @@ void track_service_render_sky_input(TrackService *track_service, RenderContext *
   BeginMode3D(final_camera);
     rlDisableDepthTest();
     rlPushMatrix();
-      rlScalef(1.7896f, 1.0f, 1.0f);
+      rlScalef(FUCKASS_SCALE, 1.0f, 1.0f);
       rlTranslatef(0.0f, 5.5f + interpolation * skyDeltaY, 0.0f);
 
       renderable_draw(&track_service->sky_input_line);
@@ -375,15 +375,21 @@ void track_service_apply_chart(TrackService *track_service, ChartSettings *chart
 void track_service_unload(TrackService *track_service)
 {
   renderable_unload(&track_service->track);
-  renderable_unload(&track_service->lane_div);
-  renderable_unload(&track_service->critical_line);
+  renderable_unload(&track_service->lane_div);      // (1)
+  renderable_unload(&track_service->critical_line); // (2)
   renderable_unload(&track_service->sky_input_line);
   renderable_unload(&track_service->sky_label);
   renderable_unload(&track_service->single_line);
-  renderable_unload(&track_service->extra_critical_line);
   renderable_unload(&track_service->extra_lane);
-  renderable_unload(&track_service->extra_lane_div);
   renderable_unload(&track_service->extra_lane_edge);
+
+  // Mesh / material already unloaded in (1) (2)
+  free(track_service->extra_lane_div.transforms);
+  free(track_service->extra_critical_line.transforms);
+  if (track_service->extra_lane_div.initial_texcoords)
+    free(track_service->extra_lane_div.initial_texcoords);
+  if (track_service->extra_critical_line.initial_texcoords)
+    free(track_service->extra_critical_line.initial_texcoords);
 
   UnloadTexture(track_service->background_tex);
   UnloadTexture(track_service->track_tex);

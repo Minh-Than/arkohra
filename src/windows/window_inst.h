@@ -1,6 +1,7 @@
 #ifndef WINDOW_INST_H
 #define WINDOW_INST_H
 
+#include "raylib.h"
 #include <stdbool.h>
 
 typedef enum
@@ -18,6 +19,8 @@ typedef struct
 } WindowInst;
 
 WindowInst window_inst_init(WindowType type, int x, int y, int width, int height);
+Rectangle window_inst_get_rect(WindowInst *window_inst);
+bool window_inst_bounded_cursor(WindowInst *window_inst);
 void window_inst_ui_update(WindowInst *window_inst, int x, int y, int width, int height);
 void window_inst_open(WindowInst *window_inst);
 void window_inst_close(WindowInst *window_inst);

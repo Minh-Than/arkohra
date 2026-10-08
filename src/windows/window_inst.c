@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "raygui.h"
+#include "raylib.h"
 #include "windows/command_palette/window.h"
 #include "window_inst.h"
 
@@ -15,6 +16,16 @@ WindowInst window_inst_init(WindowType type, int x, int y, int width, int height
     .type       = type,
     .is_visible = false
   };
+}
+
+Rectangle window_inst_get_rect(WindowInst *window_inst)
+{
+  return (Rectangle){window_inst->x, window_inst->y, window_inst->width, window_inst->height};
+}
+
+bool window_inst_bounded_cursor(WindowInst *window_inst)
+{
+  return CheckCollisionPointRec(GetMousePosition(), window_inst_get_rect(window_inst));
 }
 
 void window_inst_ui_update(WindowInst *window_inst, int x, int y, int width, int height)

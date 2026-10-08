@@ -21,6 +21,7 @@ static const float CAMERA_Z_TABLET     = 8.0f;
 static const float CAMERA_ROT_X        = 26.565f;
 static const float CAMERA_ROT_X_TABLET = 27.378f;
 
+static const float FUCKASS_SCALE         = 1.7896f;
 static const float TRACK_SIZE_X          = 10.24f;
 static const float TRACK_SIZE_Y          = 200.0f;
 static const float LANE_WIDTH            = 2.38f;
@@ -90,6 +91,8 @@ static const unsigned short int CMD_PLT_SIZE_X_BIG = 600;
 static const unsigned short int CMD_PLT_SIZE_Y     = 40;
 static const unsigned short int CMD_PLT_PADDING    = 8;
 
+static const unsigned short int PROJ_SET_SIZE_X = 528;
+static const unsigned short int PROJ_SET_SIZE_Y = 448;
 static const unsigned short int PROJ_BASE_BPM_DECIMALS = 4;
 static const unsigned short int PROJ_FLOAT_DECIMALS = 2;
 

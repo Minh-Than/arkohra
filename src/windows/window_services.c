@@ -16,11 +16,10 @@ WindowGroup window_services_init(int glsl, AppConfigs *app_configs, CachedFontPr
   *cmd_palette_data            = cmd_palette_init();
   command_palette.data         = cmd_palette_data;
 
-  // Command Palette
-  int width = 528; int height = 448;
+  // Project Settings
   WindowInst project_setting         = window_inst_init(WINDOW_PROJECT_SETTING,
-                                                        (GetScreenWidth() - width) / 2, (GetScreenHeight() - height) / 2,
-                                                        width, height);
+                                                        (GetScreenWidth() - PROJ_SET_SIZE_X) / 2, (GetScreenHeight() - PROJ_SET_SIZE_Y) / 2,
+                                                        PROJ_SET_SIZE_X, PROJ_SET_SIZE_Y);
   ProjSettingData *proj_setting_data = (ProjSettingData *)malloc(sizeof(ProjSettingData));
   *proj_setting_data                 = proj_setting_init(glsl, app_configs, font_probes);
   project_setting.data               = proj_setting_data;
@@ -39,7 +38,11 @@ void window_services_handle_inputs(WindowGroup *window_group)
       (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
       IsKeyPressed(KEY_P))
     window_inst_toggle(&window_group->command_palette);
-  if (IsKeyPressed(KEY_ESCAPE))
+
+  if ((IsKeyPressed(KEY_ESCAPE) || (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
+                                    !window_inst_bounded_cursor(&window_group->command_palette)) &&
+        window_group->command_palette.is_visible)
+     )
     window_inst_close(&window_group->command_palette);
 
   if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&

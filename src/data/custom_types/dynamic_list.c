@@ -32,6 +32,30 @@ void list_sort_by(List *list, int (*compare)(const void *a, const void *b))
   qsort(list->data, list->size, list->elem_size, compare);
 }
 
+// This will sort the list the therefore lose the original order
+void list_remove_dups(List *list, int (*compare)(const void *a, const void *b), int (*equal)(const void *a, const void *b))
+{
+  if (!list || list->size < 2) return;
+  list_sort_by(list, compare);
+
+  unsigned char *base = list->data;
+  size_t elem_size = list->elem_size;
+  size_t write_idx = 1;
+
+  for (size_t read_idx = 1; read_idx < list->size; read_idx++)
+  {
+    void *curr_item = base + read_idx * elem_size;
+    void *last_item = base + (write_idx - 1) * elem_size;
+    if (equal(last_item, curr_item) != 0)
+    {
+      if (write_idx != read_idx)
+        memcpy(base + write_idx * elem_size, curr_item, elem_size);
+      write_idx++;
+    }
+  }
+  list->size = write_idx;
+}
+
 int bisect_right(List *list, const void *target, int (*compare)(const void *a, const void *b))
 {
   int low = 0;

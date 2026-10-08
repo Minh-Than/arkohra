@@ -3,7 +3,6 @@ Cloned from quickstart `https://github.com/raylib-extras/raylib-quickstart` by J
 To view a copy of this license, visit https://creativecommons.org/publicdomain/zero/1.0/
 */
 
-#include <stdlib.h>
 #include "raylib.h"
 #include "raygui.h"
 #include "raymath.h"
@@ -11,19 +10,19 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "constants.h"
 #include "data/app_configs/app_config.h"
 #include "data/chart_settings/chart_settings.h"
+#include "data/selection/selection_service.h"
 #include "gameplay/audio_service.h"
 #include "gameplay/camera/camera_service.h"
 #include "gameplay/chart_reader.h"
-#include "render/render_service.h"
-#include "render/texture/texture_service.h"
 #include "render/hud/hud_services.h"
 #include "render/notes/notes_service.h"
+#include "render/render_service.h"
+#include "render/texture/texture_service.h"
 #include "render/track/track_service.h"
 #include "render/utils/drawing.h"
 #include "windows/command_palette/window.h"
 #include "windows/project_setting/window.h"
 #include "windows/window_services.h"
-
 
 #if defined(PLATFORM_DESKTOP)
     #define GLSL_VERSION 330
@@ -48,9 +47,10 @@ int main()
   ChartReader  chart_reader  = { 0 };
   CachedFontProbes font_probes = cached_font_probes_init();
   TrackService track_service = track_service_init(GLSL_VERSION);
-  NotesService notes_service = notes_service_init(GLSL_VERSION);
+  NotesService notes_service = notes_service_init(GLSL_VERSION, &app_configs);
   HudService   hud_service   = hud_service_init(GLSL_VERSION, &app_configs, &font_probes);
   WindowGroup  window_group  = window_services_init(GLSL_VERSION, &app_configs, &font_probes);
+  SelectionService selection_service = selection_service_init();
 
   RenderContext render_ctx = {
     .camera         = camera_init_playfield(),
@@ -105,9 +105,10 @@ int main()
           SetMusicPan(music, 0.0f);
           SetMusicVolume(music, app_configs.music_volume);
 
+          selection_service_unload(&selection_service);
+
           // Update chart reader
           if(chart_reader.initialized) chart_reader_unload(&chart_reader);
-
           chart_reader = chart_reader_parse(&render_ctx.chart_settings,
                                             &render_ctx.audio_clock,
                                             &notes_service.arc_tex,
@@ -147,6 +148,7 @@ int main()
 
     camera_handle_main_window_resize(&render_ctx.camera, app_configs.playfield_ratio);
     window_services_handle_inputs(&window_group);
+    selection_service_handle_inputs(&selection_service, &track_service, &window_group, chart_reader.initialized);
 
     if (target.texture.width != GetRenderWidth() || target.texture.height != GetRenderHeight())
     {
@@ -163,11 +165,6 @@ int main()
       if (!IsMusicStreamPlaying(music) && render_ctx.audio_clock.is_playing)
         audio_clock_pause(&render_ctx.audio_clock);
 
-      if (IsKeyPressed(KEY_Q))
-      {
-        if (render_ctx.audio_clock.is_playing) { PauseMusicStream(music) ; audio_clock_pause(&render_ctx.audio_clock) ; }
-        else                                   { ResumeMusicStream(music); audio_clock_resume(&render_ctx.audio_clock); }
-      }
       if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_Q))
       {
         StopMusicStream(music);
@@ -175,6 +172,11 @@ int main()
         PauseMusicStream(music);
         audio_clock_start(&render_ctx.audio_clock);
         audio_clock_pause(&render_ctx.audio_clock);
+      }
+      else if (IsKeyPressed(KEY_Q))
+      {
+        if (render_ctx.audio_clock.is_playing) { PauseMusicStream(music) ; audio_clock_pause(&render_ctx.audio_clock) ; }
+        else                                   { ResumeMusicStream(music); audio_clock_resume(&render_ctx.audio_clock); }
       }
     }
 
@@ -192,12 +194,15 @@ int main()
       recalibrate_camera(&render_ctx.camera);
       hud_service.playfield_ratio = app_configs.playfield_ratio;
       render_ctx.chart_settings.scroll_speed = app_configs.scroll_speed;
+      notes_service.colorblind = app_configs.colorblind;
       SetMusicVolume(music, app_configs.music_volume);
 
       bool is_setting_open = window_group.project_setting.is_visible;
       windows_services_unload(&window_group);
       window_group = window_services_init(GLSL_VERSION, &app_configs, &font_probes);
       if (is_setting_open && !window_group.project_setting.is_visible) window_inst_toggle(&window_group.project_setting);
+
+      selection_service_unload(&selection_service);
 
       // Update chart reader to regenerate arc meshes
       if(chart_reader.initialized) chart_reader_unload(&chart_reader);
@@ -225,7 +230,8 @@ int main()
       // Gameplay scene
       // Order: Base track -> Notes -> Sky Input/Label -> HUD -> Windows
       track_service_render_base_track(&track_service, &render_ctx, &chart_reader.render_lists);
-      if (chart_reader.initialized) notes_service_render(&notes_service, &track_service, &render_ctx, &chart_reader, app_configs.colorblind);
+      notes_service_render(&notes_service, &track_service, &render_ctx, &chart_reader,
+                           &selection_service.raycast_results);
       track_service_render_sky_input(&track_service, &render_ctx, &chart_reader.render_lists);
       hud_services_render(&hud_service, &render_ctx);
 
@@ -275,6 +281,7 @@ int main()
   textures_unload(&texture_group);
   windows_services_unload(&window_group);
   cached_font_probes_free(&font_probes);
+  selection_service_unload(&selection_service);
   UnloadShader(chart_shader);
 
   // One last config writing just in case
