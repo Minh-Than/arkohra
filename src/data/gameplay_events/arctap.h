@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include "data/custom_types/dynamic_list.h"
 #include "render/mesh_renderable.h"
+#include "render/texture/skin_side.h"
 
 typedef struct
 {
@@ -20,6 +21,8 @@ MeshRenderable arctap_shadow_load_mesh(Texture2D *texture);
 void parse_arctaps(const char *line, List *out);
 int arctap_compare_fp_asc(const void *a, const void *b);
 int arctap_compare_id_eq(const void *a, const void *b);
+Color arctap_get_shadow_color(SkinSide side);
+float arctap_get_shadow_alpha(SkinSide side);
 
 typedef struct {
   int arctap_id;

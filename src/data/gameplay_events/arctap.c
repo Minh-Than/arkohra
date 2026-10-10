@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "arctap.h"
+#include "color_services.h"
+#include "constants.h"
+#include "render/texture/skin_side.h"
 #include "rlgl.h"
 
 MeshRenderable arctap_load_mesh(Texture2D *texture)
@@ -107,9 +110,7 @@ MeshRenderable arctap_shadow_load_mesh(Texture2D *texture)
   UploadMesh(&r.mesh, false);
 
   r.material = LoadMaterialDefault();
-  r.material.maps[MATERIAL_MAP_DIFFUSE].color = (Color){ 90, 90, 90, 60 };
-  // r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
-  // r.material.maps->color = Fade(r.material.maps->color, 0.23);
+  r.material.maps[MATERIAL_MAP_DIFFUSE].texture = *texture;
 
   return r;
 }
@@ -154,6 +155,26 @@ int arctap_compare_id_eq(const void *a, const void *b)
   const ArcTap *arctap_a = (const ArcTap *) a;
   const ArcTap *arctap_b = (const ArcTap *) b;
   return arctap_a->id == arctap_b->id ? 0 : 1;
+}
+
+Color arctap_get_shadow_color(SkinSide side)
+{
+  switch (side)
+  {
+    default:
+    case SK_LIGHT   : return color_from_rgba(NOTE_SHADOW_LIGHT_CL);
+    case SK_CONFLICT: return color_from_rgba(NOTE_SHADOW_CONFLICT_CL);
+  }
+}
+
+float arctap_get_shadow_alpha(SkinSide side)
+{
+  switch (side)
+  {
+    default:
+    case SK_LIGHT   : return ARCTAP_SHADOW_ALPHA_LIGHT;
+    case SK_CONFLICT: return ARCTAP_SHADOW_ALPHA_CONFLICT;
+  }
 }
 
 int arctap_render_compare_fp_asc(const void *a, const void *b)

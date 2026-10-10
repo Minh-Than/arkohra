@@ -3,9 +3,9 @@
 #include "data/gameplay_events/hold.h"
 #include "raylib.h"
 #include "raymath.h"
+#include "render/texture/skin_side.h"
 #include "rlgl.h"
 #include "constants.h"
-#include "color_services.h"
 #include "notes_service.h"
 #include "data/chart_settings/chart_settings.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
@@ -222,9 +222,9 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
 
         double curr_fp   = curr_fps[tg->value];
         double z_pos     = floor_position_to_z(arctap->fp - curr_fp, base_bpm, scroll_speed);
-        float alpha      = groupalpha_fade[tg->value] * ARCTAP_SHADOW_ALPHA;
+        float alpha      = groupalpha_fade[tg->value] * arctap_get_shadow_alpha(chart_settings->skin_side);
         float fade_ratio = (z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE);
-        notes_service->arctap_shadow.material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(color_from_rgba(NOTE_SHADOW_CL),
+        notes_service->arctap_shadow.material.maps[MATERIAL_MAP_DIFFUSE].color = Fade(arctap_get_shadow_color(chart_settings->skin_side),
                                                                                       Clamp(fade_ratio, 0.0f, alpha));
 
         struct Arc find_arc = { .id = arctap->arc_id, .start_timing = arctap->arc_start_timing };

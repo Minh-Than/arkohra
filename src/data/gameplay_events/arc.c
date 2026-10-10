@@ -403,7 +403,6 @@ MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *tim
   UploadMesh(&r.mesh, false);
 
   r.material = LoadMaterialDefault();
-  r.material.maps[MATERIAL_MAP_DIFFUSE].color = color_from_rgba(NOTE_SHADOW_CL);
   r.material.shader = *shader;
 
   renderable_set_transforms(&r, (Matrix[]){ MatrixIdentity() }, 1);
@@ -537,7 +536,7 @@ void draw_arc_shadow(ChartTimingGroup *tg, ArcSegmentRender *segment_render, str
                      float current_ms, float curr_bpm, double z_pos, float add_fade)
 {
   float fade_ratio = arc->is_void ? 1.0f : ((z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE));
-  Vector4 shadow_tint = ColorNormalize(Fade(color_from_rgba(NOTE_SHADOW_CL), Clamp(fade_ratio, 0.0f, ARC_SHADOW_ALPHA * add_fade)));
+  Vector4 shadow_tint = ColorNormalize(Fade(color_from_rgba(NOTE_SHADOW_LIGHT_CL), Clamp(fade_ratio, 0.0f, ARC_SHADOW_ALPHA * add_fade)));
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
   int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
