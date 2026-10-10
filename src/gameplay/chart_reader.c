@@ -6,6 +6,7 @@
 #include "color_services.h"
 #include "constants.h"
 #include "data/custom_types/dynamic_list.h"
+#include "data/gameplay_events/arc.h"
 #include "data/gameplay_events/scenecontrol/scenecontrols.h"
 #include "data/keyframe/value_channel.h"
 #include "raylib.h"
@@ -16,41 +17,6 @@
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
 #include "render/note_render_lists.h"
-
-static void chart_reader_rebuild_arctaps(ChartTimingGroup *tg)
-{
-  list_clear(&tg->arctaps);
-
-  // Pass 1: rebuild tg->arctaps from arc->arctaps
-  for (int j = 0; j < tg->arcs.size; j++)
-  {
-    struct Arc *arc = (struct Arc *)list_get(&tg->arcs, j);
-    for (int k = 0; k < arc->arctaps.size; k++)
-    {
-      ArcTap *arctap = (ArcTap *)list_get(&arc->arctaps, k);
-      arctap->arc = arc;
-      arctap->fp  = get_floor_position(&tg->timing_events, arctap->timing);
-      list_push(&tg->arctaps, arctap);
-    }
-  }
-
-  // Pass 2: set arc pointers on tg->arctaps copies
-  //         (tg->arcs buffer is frozen — no more pushes to it)
-  int idx = 0;
-  for (int j = 0; j < tg->arcs.size; j++)
-  {
-    struct Arc *arc = (struct Arc *)list_get(&tg->arcs, j);
-    for (int k = 0; k < arc->arctaps.size; k++)
-    {
-      if (idx < tg->arctaps.size)
-      {
-        ArcTap *tg_at = (ArcTap *)list_get(&tg->arctaps, idx);
-        tg_at->arc = arc;
-        idx++;
-      }
-    }
-  }
-}
 
 static bool parse_aff_header(char *line, ChartSettings *chart_settings)
 {
@@ -80,7 +46,7 @@ static void parse_aff_lines(char *line, ChartReader *chart_reader, int *tg_count
     case TIMING_EVENT: timing_event_parse_aff(&tg->timing_events, line, current_tg);                     break;
     case TAP:          tap_parse_aff(&tg->taps, line, current_tg);                                       break;
     case HOLD:         hold_parse_aff(&tg->holds, line, current_tg);                                     break;
-    case ARC:          arc_parse_aff(&tg->arcs, line, current_tg);                                       break;
+    case ARC:          arc_parse_aff(&tg->arcs, &tg->arctaps, line, current_tg, &chart_reader->arc_counter);break;
     case SCENECONTROL: scenecontrol_parse_aff(tg, line);                                                 break;
     default: break;
   }
@@ -112,8 +78,6 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
     post_process_channel(&tg->enwidencamera_channel);
     post_process_channel(&tg->enwidenlanes_channel);
 
-    list_sort_by(&tg->arcs, arc_compare_start_timing_asc);
-    chart_reader_rebuild_arctaps(tg);
 
     // Beatlines
     if (tg->value == 0)
@@ -123,40 +87,8 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
       list_sort_by(&tg->beatlines, beatline_compare_fp_asc);
     }
 
-    // Pre-calculate the notes's floor position
-    // Arctaps' floor position is already calculated in `chart_reader_rebuild_arctaps`
-    for (int j = 0; j < tg->holds.size; j++)
-    {
-      Hold *hold = (Hold *)list_get(&tg->holds, j);
-      hold->start_fp = get_floor_position(&tg->timing_events, hold->start_timing);
-      hold->end_fp   = get_floor_position(&tg->timing_events, hold->end_timing);
-    }
-    list_sort_by(&tg->holds, hold_compare_start_fp_asc);
-    hold_build_tree(&tg->holds_tree, &tg->holds, 0, tg->holds.size - 1);
-
-    for (int j = 0; j < tg->taps.size; j++)
-    {
-      Tap *tap = (Tap *)list_get(&tg->taps, j);
-      tap->fp  = get_floor_position(&tg->timing_events, tap->timing);
-
-      TapFP tap_fp = { .tap = tap, .fp = tap->fp };
-      list_push(&tg->tap_fps, &tap_fp);
-
-      for (int k = 0; k < tg->arctaps.size; k++)
-      {
-        ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, k);
-        if (abs(arctap->timing - tap->timing) < 2)
-        {
-          float x = arc_world_x_at(arctap->timing, arctap->arc);
-          float y = arc_world_y_at(arctap->timing, arctap->arc);
-          list_push(&tap->connector_x, &x);
-          list_push(&tap->connector_y, &y);
-        }
-      }
-    }
-    list_sort_by(&tg->tap_fps, tapfp_compare_fp_asc);
-
     // Arcs
+    list_sort_by(&tg->arcs, arc_compare_start_timing_asc);
     for (int j = 0; j < tg->arcs.size; j++)
     {
       struct Arc *arc = (struct Arc *)list_get(&tg->arcs, j);
@@ -183,17 +115,54 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
       }
       generate_segment_meshes(chart_settings, tg, arc, arc_texture, arc_shader);
     };
-    list_sort_by(&tg->arc_segments, arc_segment_compare_start_fp_asc);
-    arc_segment_build_tree(&tg->arc_segments_tree, &tg->arc_segments, 0, tg->arc_segments.size - 1);
+    list_sort_by(&tg->arc_segments, arc_segment_render_compare_start_fp_asc);
+    arc_segment_render_build_tree(&tg->arc_segments_tree, &tg->arc_segments, 0, tg->arc_segments.size - 1);
 
     // Arctaps
     for (int j = 0; j < tg->arctaps.size; j++)
     {
       ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, j);
-      ArcTapFP arctap_fp = { .arctap = arctap, .fp = arctap->fp };
-      list_push(&tg->arctap_fps, &arctap_fp);
+      arctap->id = chart_reader->arctap_counter++;
+      arctap->fp = get_floor_position(&tg->timing_events, arctap->timing);
     }
-    list_sort_by(&tg->arctap_fps, arctapfp_compare_fp_asc);
+    list_sort_by(&tg->arctaps, arctap_compare_fp_asc);
+
+    // Holds
+    for (int j = 0; j < tg->holds.size; j++)
+    {
+      Hold *hold = (Hold *)list_get(&tg->holds, j);
+      hold->id  = chart_reader->hold_counter++;
+      hold->start_fp = get_floor_position(&tg->timing_events, hold->start_timing);
+      hold->end_fp   = get_floor_position(&tg->timing_events, hold->end_timing);
+    }
+    list_sort_by(&tg->holds, hold_compare_start_fp_asc);
+    hold_build_tree(&tg->holds_tree, &tg->holds, 0, tg->holds.size - 1);
+
+    // Taps
+    for (int j = 0; j < tg->taps.size; j++)
+    {
+      Tap *tap = (Tap *)list_get(&tg->taps, j);
+      tap->id  = chart_reader->tap_counter++;
+      tap->fp  = get_floor_position(&tg->timing_events, tap->timing);
+
+      for (int k = 0; k < tg->arctaps.size; k++)
+      {
+        ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, k);
+        if (abs(arctap->timing - tap->timing) < 2)
+        {
+          struct Arc compare_arc = { .id = arctap->arc_id };
+          struct Arc *arc = (struct Arc *)list_find(&tg->arcs, &compare_arc, arc_compare_id_eq);
+          if (arc != NULL)
+          {
+            float x = arc_world_x_at(arctap->timing, arc);
+            float y = arc_world_y_at(arctap->timing, arc);
+            list_push(&tap->connector_x, &x);
+            list_push(&tap->connector_y, &y);
+          }
+        }
+      }
+    }
+    list_sort_by(&tg->taps, tap_compare_fp_asc);
   }
 }
 
@@ -255,6 +224,10 @@ void chart_reader_print(ChartReader *chart_reader)
 void chart_reader_unload(ChartReader *chart_reader)
 {
   chart_reader->initialized = false;
+  chart_reader->tap_counter = 0;
+  chart_reader->hold_counter = 0;
+  chart_reader->arc_counter = 0;
+  chart_reader->arctap_counter = 0;
   render_lists_unload(&chart_reader->render_lists);
   for (int i = 0; i < chart_reader->timing_groups.size; i++)
     timing_group_unload((ChartTimingGroup *)list_get(&chart_reader->timing_groups, i));

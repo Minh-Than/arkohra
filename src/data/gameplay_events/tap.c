@@ -25,8 +25,8 @@ void draw_tap_connection(Tap *tap, ChartSettings *chart_settings, float base_bpm
   {
     float x = *(float *)list_get(&tap->connector_x, k);
     float y = *(float *)list_get(&tap->connector_y, k);
-    DrawConnector((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos - 0.1f },
-                  (Vector3){ x, y - 0.21f, z_pos - 0.1f },
+    DrawConnector((Vector3){ lane_to_world_x(tap->lane), 0.0f, z_pos },
+                  (Vector3){ x, y - 0.21f, z_pos },
                   Lerp(0.05f, 0.08f, z_pos / -100.0f),
                   Fade(color_from_rgba(chart_settings->skin_side == SK_CONFLICT ? CONFLICT_CONNECTOR_CL
                                                                                 : LIGHT_CONNECTOR_CL),
@@ -86,15 +86,39 @@ void tap_parse_aff(List *taps, const char* line, int *current_tg)
   {
     List connector_x; list_init(&connector_x, sizeof(float));
     List connector_y; list_init(&connector_y, sizeof(float));
-    Tap tap = (Tap) { .connector_x = connector_x, .connector_y = connector_y, .lane = lane, .timing = timing, .timing_group = *current_tg };
+    Tap tap = (Tap) {
+      .connector_x = connector_x,
+      .connector_y = connector_y,
+      .lane = lane,
+      .timing = timing,
+      .timing_group = *current_tg,
+    };
     list_push(taps, &tap);
   }
 }
 
-int tapfp_compare_fp_asc(const void *a, const void *b)
+int tap_compare_fp_asc(const void *a, const void *b)
 {
-  const TapFP *tap_a = (const TapFP *) a;
-  const TapFP *tap_b = (const TapFP *) b;
+  const Tap *tap_a = (const Tap *) a;
+  const Tap *tap_b = (const Tap *) b;
+  double fp_a = tap_a->fp;
+  double fp_b = tap_b->fp;
+  if (fabs(fp_a - fp_b) > 1e-6 && fp_a < fp_b) return -1;
+  if (fabs(fp_a - fp_b) > 1e-6 && fp_a > fp_b) return 1;
+  return 0;
+}
+
+int tap_compare_id_eq(const void *a, const void *b)
+{
+  const Tap *tap_a = (const Tap *) a;
+  const Tap *tap_b = (const Tap *) b;
+  return tap_a->id == tap_b->id ? 0 : -1;
+}
+
+int tap_render_compare_fp_asc(const void *a, const void *b)
+{
+  const TapRender *tap_a = (const TapRender *) a;
+  const TapRender *tap_b = (const TapRender *) b;
   double fp_a = tap_a->fp;
   double fp_b = tap_b->fp;
   if (fabs(fp_a - fp_b) > 1e-6 && fp_a < fp_b) return -1;

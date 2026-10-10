@@ -8,9 +8,10 @@
 
 static const float TEST_ARC_LENGTH  = 1000.0f / 14.0f;
 
-static struct Arc make_arc(int start_timing, int end_timing, float x1, float y1, float x2, float y2, ArcType type)
+static struct Arc make_arc(int id, int start_timing, int end_timing, float x1, float y1, float x2, float y2, ArcType type)
 {
   struct Arc arc = {0};
+  arc.id = id;
   arc.start_timing = start_timing;
   arc.end_timing   = end_timing;
   arc.x1 = x1; arc.y1 = y1;
@@ -174,60 +175,11 @@ void test_simd_fp_to_z(void)
   free(simd_z_out);
 }
 
-void test_get_world_at(void)
-{
-  // arc(0,1500,-0.50,0.00,b,0.00,0.00,0,none,true)[arctap(1500)];
-  struct Arc arc_1 = make_arc(0, 1500, -0.50f, 0.00f, 0.00f, 0.00f, B);
-  ArcTap arctap_1 = {.arc = &arc_1, .timing = 1500};
-  float expected_x_1 = arc_x_to_world(0.0f);
-  float expected_y_1 = arc_y_to_world(0.0f);
-  float produced_x_1 = arc_world_x_at(arctap_1.timing, arctap_1.arc);
-  float produced_y_1 = arc_world_y_at(arctap_1.timing, arctap_1.arc);
-  TEST_CHECK(fabsf(expected_x_1 - produced_x_1) < 1e-6);
-  TEST_MSG("Arc 1 expected x: %f; produced x: %f", expected_x_1, produced_x_1);
-  TEST_CHECK(fabsf(expected_y_1 - produced_y_1) < 1e-6);
-  TEST_MSG("Arc 1 expected y: %f; produced y: %f", expected_y_1, produced_y_1);
-
-  // arc(0,1688,-0.50,0.50,b,0.00,0.00,0,none,true)[arctap(1688)];
-  struct Arc arc_2 = make_arc(0, 1688, -0.50f, 0.00f, 0.50f, 0.00f, B);
-  ArcTap arctap_2 = {.arc = &arc_2, .timing = 1688};
-  float expected_x_2 = arc_x_to_world(0.5f);
-  float expected_y_2 = arc_y_to_world(0.0f);
-  float produced_x_2 = arc_world_x_at(arctap_2.timing, arctap_2.arc);
-  float produced_y_2 = arc_world_y_at(arctap_2.timing, arctap_2.arc);
-  TEST_CHECK(fabsf(expected_x_2 - produced_x_2) < 1e-6);
-  TEST_MSG("Arc 2 expected x: %f; produced x: %f", expected_x_2, produced_x_2);
-  TEST_CHECK(fabsf(expected_y_2 - produced_y_2) < 1e-6);
-  TEST_MSG("Arc 2 expected y: %f; produced y: %f", expected_y_2, produced_y_2);
-
-  // arc(0,1875,-0.50,1.00,b,0.00,0.00,0,none,true)[arctap(1875)];
-  struct Arc arc_3 = make_arc(0, 1875, -0.50f, 0.00f, 1.00f, 0.00f, B);
-  ArcTap arctap_3 = {.arc = &arc_3, .timing = 1875};
-  float expected_x_3 = arc_x_to_world(1.0f);
-  float expected_y_3 = arc_y_to_world(0.0f);
-  float produced_x_3 = arc_world_x_at(arctap_3.timing, arctap_3.arc);
-  float produced_y_3 = arc_world_y_at(arctap_3.timing, arctap_3.arc);
-  TEST_CHECK(fabsf(expected_x_3 - produced_x_3) < 1e-6);
-  TEST_MSG("Arc 3 expected x: %f; produced x: %f", expected_x_3, produced_x_3);
-  TEST_CHECK(fabsf(expected_y_3 - produced_y_3) < 1e-6);
-  TEST_MSG("Arc 3 expected y: %f; produced y: %f", expected_y_3, produced_y_3);
-
-  // arc(23625,23625,1.00,1.00,soso,1.00,0.00, none, true)
-  struct Arc arc_zd = make_arc(23625, 23625, 1.00f, 1.00f, 1.00f, 0.00f, SOSO);
-  // arctap at the arc's timing → world(x1, y1)
-  TEST_CHECK(fabsf(arc_world_x_at(23625, &arc_zd) - arc_x_to_world(1.00f)) < 1e-6);
-  TEST_CHECK(fabsf(arc_world_y_at(23625, &arc_zd) - arc_y_to_world(1.00f)) < 1e-6);
-  // timing after the arc → world(x2, y2)
-  TEST_CHECK(fabsf(arc_world_x_at(23626, &arc_zd) - arc_x_to_world(1.00f)) < 1e-6);
-  TEST_CHECK(fabsf(arc_world_y_at(23626, &arc_zd) - arc_y_to_world(0.00f)) < 1e-6);
-}
-
 TEST_LIST = {
   {"z_to_fp", test_z_to_fp},
   {"fp_to_z", test_fp_to_z},
   {"zfp_round_trip", test_zfp_round_trip},
   {"calculate_arc_segment_length", test_calculate_arc_segment_length},
   {"simd_fp_to_z", test_simd_fp_to_z},
-  {"get_world_at", test_get_world_at},
   { NULL, NULL }
 };

@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include "chart_timing_group.h"
+#include "raylib.h"
 #include "constants.h"
+#include "chart_timing_group.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "data/keyframe/easings.h"
 #include "data/keyframe/value_channel.h"
-#include "raylib.h"
-#include "render/mesh_renderable.h"
 
 TGPropTypes determine_tg_prop(char *str)
 {
@@ -49,12 +48,10 @@ ChartTimingGroup timing_group_init()
   List arcs    ; list_init(&arcs, sizeof(struct Arc))     ; tg.arcs = arcs;
   List arctaps ; list_init(&arctaps, sizeof(ArcTap))      ; tg.arctaps = arctaps;
 
-  List tap_fps   ; list_init(&tap_fps, sizeof(TapFP))      ; tg.tap_fps = tap_fps;
-  List arctap_fps; list_init(&arctap_fps, sizeof(ArcTapFP)); tg.arctap_fps = arctap_fps;
 
   itv_tree_init(&tg.holds_tree, double_compare_asc);
 
-  List arc_segments; list_init(&arc_segments, sizeof(ArcSegment)); tg.arc_segments = arc_segments;
+  List arc_segments; list_init(&arc_segments, sizeof(ArcSegmentRender)); tg.arc_segments = arc_segments;
   itv_tree_init(&tg.arc_segments_tree, double_compare_asc);
 
   List beatlines; list_init(&beatlines, sizeof(BeatLine)); tg.beatlines = beatlines;
@@ -123,33 +120,17 @@ void timing_group_unload(ChartTimingGroup *tg)
     list_free(&tap->connector_y);
   }
 
-  for (size_t i = 0; i < tg->arcs.size; i++)
-  {
-    struct Arc *arc = (struct Arc *)list_get(&tg->arcs, i);
-    list_free(&arc->arctaps);
-  }
-
+  list_free(&tg->beatlines);
   list_free(&tg->taps);
   list_free(&tg->holds);
   list_free(&tg->arcs);
   list_free(&tg->arctaps);
   list_free(&tg->timing_events);
 
-  list_free(&tg->tap_fps);
-  list_free(&tg->arctap_fps);
-
-  for (size_t i = 0; i < tg->arc_segments.size; i++)
-  {
-    ArcSegment *arc_segment = (ArcSegment *)list_get(&tg->arc_segments, i);
-    renderable_unload(&arc_segment->mesh_r);
-    renderable_unload(&arc_segment->shadow_r);
-  }
   itv_tree_free(&tg->holds_tree);
 
   list_free(&tg->arc_segments);
   itv_tree_free(&tg->arc_segments_tree);
-
-  list_free(&tg->beatlines);
 
   value_channel_unload(&tg->hidegroup_channel);
   value_channel_unload(&tg->groupalpha_channel);

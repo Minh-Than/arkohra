@@ -27,6 +27,31 @@ void *list_get(List *list, size_t index)
   return (char *)list->data + (index * list->elem_size);
 }
 
+void *list_find(List *list, const void *key, int (*compare)(const void *a, const void *b))
+{
+  for (int i = 0; i < list->size; i++)
+  {
+    void *elem = list_get(list, i);
+    if(compare(key, elem) == 0) return elem;
+  }
+  return NULL;
+}
+
+void *list_find_sorted(List *list, const void *key,
+                       int (*bisect_compare)(const void *a, const void *b), int (*eq_compare)(const void *a, const void *b))
+{
+  size_t idx = bisect_left(list, key, bisect_compare);
+  if (idx < 0 || idx >= list->size) return NULL;
+
+  for (size_t i = idx; i < list->size; i++)
+  {
+    void *elem = list_get(list, i);
+    if (bisect_compare(key, elem) < 0) break;
+    if (eq_compare(key, elem) == 0) return elem;
+  }
+  return NULL;
+}
+
 void list_sort_by(List *list, int (*compare)(const void *a, const void *b))
 {
   qsort(list->data, list->size, list->elem_size, compare);

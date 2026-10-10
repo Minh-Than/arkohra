@@ -12,6 +12,7 @@ typedef struct {
   NoteRenderLists render_lists;
   double low_z_clip, high_z_clip;
   bool initialized;
+  int tap_counter, hold_counter, arc_counter, arctap_counter;
 } ChartReader;
 
 ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_clock, Texture2D *arc_texture, Shader *arc_shader);

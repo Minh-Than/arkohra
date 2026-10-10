@@ -274,6 +274,7 @@ int main()
   }
 
   // Unload stuffs
+  StopMusicStream(music);
   UnloadMusicStream(music);
   CloseAudioDevice();
 

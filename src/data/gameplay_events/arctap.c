@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include "arctap.h"
 #include "rlgl.h"
 
@@ -137,19 +138,38 @@ void parse_arctaps(const char *line, List *out)
   }
 }
 
-void arctap_fp_print(const void *elem)
+int arctap_compare_fp_asc(const void *a, const void *b)
 {
-  ArcTapFP *arctap_fp = (ArcTapFP *)elem;
-  printf("%f %zu", arctap_fp->fp, (unsigned long)arctap_fp->arctap);
-}
-
-int arctapfp_compare_fp_asc(const void *a, const void *b)
-{
-  const ArcTapFP *arctap_a = (const ArcTapFP *) a;
-  const ArcTapFP *arctap_b = (const ArcTapFP *) b;
+  const ArcTap *arctap_a = (const ArcTap *) a;
+  const ArcTap *arctap_b = (const ArcTap *) b;
   double fp_a = arctap_a->fp;
   double fp_b = arctap_b->fp;
   if(fabs(fp_a - fp_b) > 1e-6 && fp_a < fp_b) return -1;
   if(fabs(fp_a - fp_b) > 1e-6 && fp_a > fp_b) return 1;
   return 0;
+}
+
+int arctap_compare_id_eq(const void *a, const void *b)
+{
+  const ArcTap *arctap_a = (const ArcTap *) a;
+  const ArcTap *arctap_b = (const ArcTap *) b;
+  return arctap_a->id == arctap_b->id ? 0 : 1;
+}
+
+int arctap_render_compare_fp_asc(const void *a, const void *b)
+{
+  const ArcTapRender *arctap_render_a = (const ArcTapRender *) a;
+  const ArcTapRender *arctap_render_b = (const ArcTapRender *) b;
+  double fp_a = arctap_render_a->fp;
+  double fp_b = arctap_render_b->fp;
+  if(fabs(fp_a - fp_b) > 1e-6 && fp_a < fp_b) return -1;
+  if(fabs(fp_a - fp_b) > 1e-6 && fp_a > fp_b) return 1;
+  return 0;
+}
+
+int arctap_render_compare_id_eq(const void *a, const void *b)
+{
+  const ArcTapRender *arctap_render_a = (const ArcTapRender *) a;
+  const ArcTapRender *arctap_render_b = (const ArcTapRender *) b;
+  return arctap_render_a->arctap_id == arctap_render_b->arctap_id ? 0 : -1;
 }

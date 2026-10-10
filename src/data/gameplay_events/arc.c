@@ -34,6 +34,13 @@ int arc_compare_start_timing_asc(const void *a, const void *b)
   return arc_a->start_timing - arc_b->start_timing;
 }
 
+int arc_compare_id_eq(const void *a, const void *b)
+{
+  const struct Arc *arc_a = (const struct Arc *) a;
+  const struct Arc *arc_b = (const struct Arc *) b;
+  return arc_a->id == arc_b->id ? 0 : -1;
+}
+
 MeshRenderable generate_arccap_mesh(Texture2D *texture)
 {
   float half_size_x = 0.02f;
@@ -112,7 +119,7 @@ struct Arc *arc_get_firstmost_arc(struct Arc* arc)
   return arc;
 }
 
-void arc_parse_aff(List *arcs, const char* line, int *current_tg)
+void arc_parse_aff(List *arcs, List *arctaps, const char* line, int *current_tg, int *arc_counter)
 {
   char *fields[10];
   int n = 0;
@@ -128,9 +135,7 @@ void arc_parse_aff(List *arcs, const char* line, int *current_tg)
 
   if (n == 10)
   {
-    List arctaps; list_init(&arctaps, sizeof(ArcTap));
     struct Arc arc = {
-      .arctaps      = arctaps,
       .x1 = (float)atof(fields[2]), .y1 = (float)atof(fields[5]),
       .x2 = (float)atof(fields[3]), .y2 = (float)atof(fields[6]),
       .arc_res      = 1.0f,
@@ -142,7 +147,8 @@ void arc_parse_aff(List *arcs, const char* line, int *current_tg)
       .is_void      = strncmp(fields[9], "true", 4) == 0 ? true : false,
       .is_head      = true,
       .prev_arc     = NULL,
-      .next_arc     = NULL
+      .next_arc     = NULL,
+      .id = (*arc_counter)++
     };
     text_copy_bounded(arc.sfx, sizeof(arc.sfx), fields[8]);
 
@@ -151,8 +157,14 @@ void arc_parse_aff(List *arcs, const char* line, int *current_tg)
     for (int i = 0; i < arctap_timings.size; i++)
     {
       int *timing = (int *)list_get(&arctap_timings, i);
-      ArcTap arctap = { .arc = NULL, .width = 1.0f, .timing = *timing, .timing_group = *current_tg };
-      list_push(&arc.arctaps, &arctap);
+      ArcTap arctap = { 
+        .arc_id = arc.id,
+        .width = 1.0f,
+        .timing = *timing,
+        .timing_group = arc.timing_group,
+        .arc_start_timing = arc.start_timing
+      };
+      list_push(arctaps, &arctap);
     }
     list_free(&arctap_timings);
 
@@ -168,17 +180,17 @@ void arc_print(const void *elem)
          arc->x1, arc->x2, arc->type, arc->y1, arc->y2,
          arc->color, arc->sfx, arc->is_void);
 
-  bool has_arctaps = true;
-  for (int i = 0; i < arc->arctaps.size; i++)
-  {
-    if(i == 0) printf("[");
+  // bool has_arctaps = true;
+  // for (int i = 0; i < arc->arctaps.size; i++)
+  // {
+  //   if(i == 0) printf("[");
 
-    ArcTap *arctap = (ArcTap *)list_get((List *)&arc->arctaps, i);
-    printf("arctap(%d)", arctap->timing);
+  //   ArcTap *arctap = (ArcTap *)list_get((List *)&arc->arctaps, i);
+  //   printf("arctap(%d)", arctap->timing);
 
-    if (i < arc->arctaps.size - 1) printf(",");
-  }
-  if (arc->arctaps.size != 0) printf("]");
+  //   if (i < arc->arctaps.size - 1) printf(",");
+  // }
+  // if (arc->arctaps.size != 0) printf("]");
   printf(";\n");
 }
 
@@ -412,17 +424,21 @@ void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg
   for (int i = 0; i < segment_count; i++)
   {
     float increment = fminf(arc->end_timing - arc->start_timing - curr_timing, segment_length);
-    double start_fp = get_floor_position(timing_events, curr_timing + arc->start_timing);
-    double end_fp = get_floor_position(timing_events, curr_timing + increment + arc->start_timing);
+    ArcSegmentRender segment_render = {
+      .arc_id = arc->id,
+      .timing_group = arc->timing_group,
+      .start_fp = get_floor_position(timing_events, curr_timing + arc->start_timing),
+      .end_fp   = get_floor_position(timing_events, curr_timing + increment + arc->start_timing),
+      .start_timing = segment_timing,
+      .end_timing   = segment_timing + increment,
+      .arc_start_timing = arc->start_timing,
+      .arc_end_timing   = arc->end_timing,
+      .mesh_r   = generate_arc_body_mesh(chart_settings, timing_events, arc, texture, shader, curr_timing, increment),
+      .shadow_r = generate_arc_shadow_mesh(chart_settings, timing_events, arc, shader, curr_timing, increment),
+    };
+    list_push(&tg->arc_segments, &segment_render);
 
-    ArcSegment arc_segment = { .arc = arc, .start_fp = start_fp, .end_fp = end_fp };
-    arc_segment.mesh_r   = generate_arc_body_mesh  (chart_settings, timing_events, arc, texture, shader, curr_timing, increment);
-    arc_segment.shadow_r = generate_arc_shadow_mesh(chart_settings, timing_events, arc, shader, curr_timing, increment);
-    arc_segment.start_timing = segment_timing;
     segment_timing += increment;
-    arc_segment.end_timing = segment_timing;
-    list_push(&tg->arc_segments, &arc_segment);
-
     curr_timing += increment;
   }
 }
@@ -495,10 +511,10 @@ MeshRenderable generate_arc_head_mesh(Texture2D *texture, Shader *shader)
   return r;
 }
 
-int arc_segment_compare_start_fp_asc(const void *a, const void *b)
+int arc_segment_render_compare_start_fp_asc(const void *a, const void *b)
 {
-  const ArcSegment *segment_a = (const ArcSegment *) a;
-  const ArcSegment *segment_b = (const ArcSegment *) b;
+  const ArcSegmentRender *segment_a = (const ArcSegmentRender *) a;
+  const ArcSegmentRender *segment_b = (const ArcSegmentRender *) b;
   double sfp_a = segment_a->start_fp;
   double sfp_b = segment_b->start_fp;
   if (fabs(sfp_a - sfp_b) > 1e-6)
@@ -506,31 +522,20 @@ int arc_segment_compare_start_fp_asc(const void *a, const void *b)
   return 0;
 }
 
-int arc_segment_const_void_compare_start_fp_asc(const void *a, const void *b)
-{
-  const ArcSegment *segment_a = *(const ArcSegment *const *) a;
-  const ArcSegment *segment_b = *(const ArcSegment *const *) b;
-  double sfp_a = segment_a->start_fp;
-  double sfp_b = segment_b->start_fp;
-  if (fabs(sfp_a - sfp_b) > 1e-6)
-    return sfp_a < sfp_b ? -1 : 1;
-  return 0;
-}
-
-void arc_segment_build_tree(ItvTree *tree, List *list, int low, int high)
+void arc_segment_render_build_tree(ItvTree *tree, List *list, int low, int high)
 {
   if (low > high) return;
   int mid = (low + high) / 2;
-  ArcSegment *arc_segment = (ArcSegment *)list_get(list, mid);
-  Interval i = { .low = &arc_segment->start_fp, .high = &arc_segment->end_fp };
-  itv_tree_insert(tree, arc_segment, i);
-  arc_segment_build_tree(tree, list, low, mid - 1);
-  arc_segment_build_tree(tree, list, mid + 1, high);
+  ArcSegmentRender *segment_render = (ArcSegmentRender *)list_get(list, mid);
+  Interval i = { .low = &segment_render->start_fp, .high = &segment_render->end_fp };
+  itv_tree_insert(tree, segment_render, i);
+  arc_segment_render_build_tree(tree, list, low, mid - 1);
+  arc_segment_render_build_tree(tree, list, mid + 1, high);
 }
 
-void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos, float add_fade)
+void draw_arc_shadow(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader,
+                     float current_ms, float curr_bpm, double z_pos, float add_fade)
 {
-  struct Arc *arc = arc_segment->arc;
   float fade_ratio = arc->is_void ? 1.0f : ((z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE));
   Vector4 shadow_tint = ColorNormalize(Fade(color_from_rgba(NOTE_SHADOW_CL), Clamp(fade_ratio, 0.0f, ARC_SHADOW_ALPHA * add_fade)));
   bool arc_prop_validate = !tg->props.no_clip;
@@ -541,15 +546,14 @@ void draw_arc_shadow(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *a
   SetShaderValue(arc_shader->shader, arc_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
   SetShaderValue(arc_shader->shader, arc_shader->tintLow_loc , &shadow_tint, SHADER_UNIFORM_VEC4);
   SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, &shadow_tint, SHADER_UNIFORM_VEC4);
-  DrawMesh(arc_segment->shadow_r.mesh, arc_segment->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+  DrawMesh(segment_render->shadow_r.mesh, segment_render->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
 }
 
-void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, MeshRenderable *mesh_r,
+void draw_arc_head(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
                    float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp, float add_fade, bool colorblind)
 {
-  struct Arc *arc = arc_segment->arc;
   if (!arc->is_head) return;
-  if (fabs(arc_segment->start_fp - arc->start_fp) > 1e-6) return;
+  if (fabs(segment_render->start_fp - arc->start_fp) > 1e-6) return;
   double z_pos = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
 
   bool arc_prop_validate = !tg->props.no_clip;
@@ -583,10 +587,9 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc
   DrawMesh(mesh_r->mesh, mesh_r->material, tr);
 }
 
-void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *arc_shader, float current_ms, float curr_bpm, double z_pos, float add_fade, bool colorblind)
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader,
+                      float current_ms, float curr_bpm, double z_pos, float add_fade, bool colorblind)
 {
-  struct Arc *arc = arc_segment->arc;
-
   float fade_ratio = arc->is_void ? 1.0f : ((z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE));
   // Default trace tint
   Vector4 tint_low, tint_high;
@@ -610,14 +613,13 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegment *arc_segment, ArcShader *
   SetShaderValue(arc_shader->shader, arc_shader->tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
   SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
 
-  DrawMesh(arc_segment->mesh_r.mesh, arc_segment->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+  DrawMesh(segment_render->mesh_r.mesh, segment_render->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
 }
 
-void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, double z_pos, float add_fade, bool colorblind)
+void draw_height_indicator(ArcSegmentRender *segment_render, struct Arc *arc, Mesh *mesh, Material mat, double z_pos, float add_fade, bool colorblind)
 {
-  if (!should_draw_height_indicator(arc_segment)) return;
+  if (!should_draw_height_indicator(segment_render, arc)) return;
 
-  struct Arc *arc = arc_segment->arc;
   float fade_ratio = (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
   float arc_world_x = arc_x_to_world(arc->x1);
   float arc_world_y = arc_y_to_world(arc->y1);
@@ -630,19 +632,18 @@ void draw_height_indicator(ArcSegment *arc_segment, Mesh *mesh, Material mat, do
   rlEnableDepthMask();
 }
 
-void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale, float alpha, float current_ms)
+void draw_arccap(ArcSegmentRender *segment_render, struct Arc *arc, Mesh *mesh, Material mat, float scale, float alpha, float current_ms)
 {
-  struct Arc *arc = arc_segment->arc;
   float arccap_scale = arc->is_void ? ARCCAP_TRACE_SCALE : ARCCAP_ARC_SCALE;
   arccap_scale *= scale;
 
-  float arccap_start_x = arc_world_x_at(arc_segment->start_timing, arc);
-  float arccap_end_x   = arc_world_x_at(arc_segment->end_timing, arc);
-  float arccap_start_y = arc_world_y_at(arc_segment->start_timing, arc);
-  float arccap_end_y   = arc_world_y_at(arc_segment->end_timing, arc);
+  float arccap_start_x = arc_world_x_at(segment_render->start_timing, arc);
+  float arccap_end_x   = arc_world_x_at(segment_render->end_timing, arc);
+  float arccap_start_y = arc_world_y_at(segment_render->start_timing, arc);
+  float arccap_end_y   = arc_world_y_at(segment_render->end_timing, arc);
   float lerp = 0.0;
-  if (arc_segment->start_timing != arc_segment->end_timing)
-    lerp = (current_ms - arc_segment->start_timing) / (arc_segment->end_timing - arc_segment->start_timing);
+  if (segment_render->start_timing != segment_render->end_timing)
+    lerp = (current_ms - segment_render->start_timing) / (segment_render->end_timing - segment_render->start_timing);
   float lerp_x = Clamp(Lerp(arccap_start_x, arccap_end_x, lerp),
                        fminf(arccap_start_x, arccap_end_x),
                        fmaxf(arccap_start_x, arccap_end_x));
@@ -654,10 +655,9 @@ void draw_arccap(ArcSegment *arc_segment, Mesh *mesh, Material mat, float scale,
   DrawMesh(*mesh, mat, tr);
 }
 
-bool should_draw_height_indicator(ArcSegment *arc_segment)
+bool should_draw_height_indicator(ArcSegmentRender *segment_render, struct Arc *arc)
 {
-  struct Arc *arc = arc_segment->arc;
   return !arc->is_void &&
-         fabs(arc_segment->start_fp - arc->start_fp) < 1e-6 &&
+         fabs(segment_render->start_fp - arc->start_fp) < 1e-6 &&
          (arc->is_head || fabsf(arc->y1 - arc->y2) > 1e-6);
 }

@@ -1,6 +1,8 @@
 #include <math.h>
 #include "note_render_lists.h"
+#include "data/gameplay_events/arc.h"
 #include "data/gameplay_events/beatline.h"
+#include "data/gameplay_events/hold.h"
 #include "data/gameplay_events/tap.h"
 #include "data/gameplay_events/arctap.h"
 #include "data/keyframe/value_channel.h"
@@ -9,11 +11,11 @@
 void render_lists_init(NoteRenderLists *render_lists)
 {
   list_init(&render_lists->beatline_render_list, sizeof(BeatLine));
-  list_init(&render_lists->hold_render_list, sizeof(const void *));
-  list_init(&render_lists->tap_render_list, sizeof(TapFP));
-  list_init(&render_lists->arc_render_list, sizeof(const void *));
-  list_init(&render_lists->arccap_render_list, sizeof(const void *));
-  list_init(&render_lists->arctap_render_list, sizeof(ArcTapFP));
+  list_init(&render_lists->hold_render_list, sizeof(HoldRender));
+  list_init(&render_lists->tap_render_list, sizeof(TapRender));
+  list_init(&render_lists->arc_segment_render_list, sizeof(ArcSegmentRender));
+  list_init(&render_lists->arccap_render_list, sizeof(ArcSegmentRender));
+  list_init(&render_lists->arctap_render_list, sizeof(ArcTapRender));
 
   render_lists->enwidencamera_channel = value_channel_init();
   render_lists->enwidenlanes_channel = value_channel_init();
@@ -65,45 +67,70 @@ void render_lists_process(NoteRenderLists *render_lists, List *timing_groups, Ch
     // Holds
     double curr_itv_arr[] = { curr_fp + low_z_clip, curr_fp + high_z_clip };
     Interval curr_interval = { .low = &curr_itv_arr[0], .high = &curr_itv_arr[1] };
-    itv_tree_get_overlaps(&tg->holds_tree, &render_lists->hold_render_list, curr_interval);
+    List hold_overlaps; list_init(&hold_overlaps, sizeof(const void *));
+    itv_tree_get_overlaps(&tg->holds_tree, &hold_overlaps, curr_interval);
+    for (int j = 0; j < hold_overlaps.size; j++)
+    {
+      Hold *hold = *(Hold **)list_get(&hold_overlaps, j);
+      HoldRender hold_render = { .hold_id = hold->id, .timing_group = tg->value,
+                                 .start_fp = hold->start_fp, .end_fp = hold->end_fp };
+      list_push(&render_lists->hold_render_list, &hold_render);
+    }
+    list_free(&hold_overlaps);
 
     // Taps
-    TapFP tap_low_z_fp  = { .fp = curr_fp + low_z_clip };
-    TapFP tap_high_z_fp = { .fp = curr_fp + high_z_clip };
-    int tap_start_index = bisect_left(&tg->tap_fps, &tap_low_z_fp , tapfp_compare_fp_asc);
-    int tap_end_index   = bisect_left(&tg->tap_fps, &tap_high_z_fp, tapfp_compare_fp_asc);
+    Tap tap_low_z_fp  = { .fp = curr_fp + low_z_clip };
+    Tap tap_high_z_fp = { .fp = curr_fp + high_z_clip };
+    int tap_start_index = bisect_left(&tg->taps, &tap_low_z_fp , tap_compare_fp_asc);
+    int tap_end_index   = bisect_left(&tg->taps, &tap_high_z_fp, tap_compare_fp_asc);
     for (int j = tap_start_index; j < tap_end_index; j++)
     {
-      TapFP *tap_fp = (TapFP *)list_get(&tg->tap_fps, j);
-      list_push(&render_lists->tap_render_list, tap_fp);
+      Tap *tap = (Tap *)list_get(&tg->taps, j);
+      TapRender tap_render = { .tap_id = tap->id, .timing_group = tg->value, .fp = tap->fp };
+      list_push(&render_lists->tap_render_list, &tap_render);
     }
 
     // Arcs
     double curr_arc_itv_arr[]  = { curr_fp + low_z_clip, curr_fp + high_z_clip };
     Interval curr_arc_interval = { .low = &curr_arc_itv_arr[0], .high = &curr_arc_itv_arr[1] };
-    itv_tree_get_overlaps(&tg->arc_segments_tree, &render_lists->arc_render_list, curr_arc_interval);
+    List arc_segments_overlaps; list_init(&arc_segments_overlaps, sizeof(const void *));
+    itv_tree_get_overlaps(&tg->arc_segments_tree, &arc_segments_overlaps, curr_arc_interval);
+    for(int j = 0; j < arc_segments_overlaps.size; j++)
+    {
+      ArcSegmentRender *segment_render = *(ArcSegmentRender **)list_get(&arc_segments_overlaps, j);
+      list_push(&render_lists->arc_segment_render_list, segment_render);
+    }
+    list_free(&arc_segments_overlaps);
 
     // Following arccaps
     Interval arccap_interval = { .low = &curr_fp, .high = &curr_fp };
-    itv_tree_get_overlaps(&tg->arc_segments_tree, &render_lists->arccap_render_list, arccap_interval);
+    List arccaps_overlaps; list_init(&arccaps_overlaps, sizeof(const void *));
+    itv_tree_get_overlaps(&tg->arc_segments_tree, &arccaps_overlaps, arccap_interval);
+    for(int j = 0; j < arccaps_overlaps.size; j++)
+    {
+      ArcSegmentRender *segment_render = *(ArcSegmentRender **)list_get(&arccaps_overlaps, j);
+      list_push(&render_lists->arccap_render_list, segment_render);
+    }
+    list_free(&arccaps_overlaps);
 
     // Arctaps
-    ArcTapFP arctap_low_fp  = { .fp = curr_fp + low_z_clip };
-    ArcTapFP arctap_high_fp = { .fp = curr_fp + high_z_clip };
-    int arctap_start_index = bisect_left(&tg->arctap_fps, &arctap_low_fp , arctapfp_compare_fp_asc);
-    int arctap_end_index   = bisect_left(&tg->arctap_fps, &arctap_high_fp, arctapfp_compare_fp_asc);
+    ArcTap arctap_low_fp  = { .fp = curr_fp + low_z_clip };
+    ArcTap arctap_high_fp = { .fp = curr_fp + high_z_clip };
+    int arctap_start_index = bisect_left(&tg->arctaps, &arctap_low_fp , arctap_compare_fp_asc);
+    int arctap_end_index   = bisect_left(&tg->arctaps, &arctap_high_fp, arctap_compare_fp_asc);
     for (int j = arctap_start_index; j < arctap_end_index; j++)
     {
-      ArcTapFP *arctap_fp = (ArcTapFP *)list_get(&tg->arctap_fps, j);
-      list_push(&render_lists->arctap_render_list, arctap_fp);
+      ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, j);
+      ArcTapRender arctap_render = { .arctap_id = arctap->id, .timing_group = tg->value, .fp = arctap->fp };
+      list_push(&render_lists->arctap_render_list, &arctap_render);
     }
   }
 
   list_sort_by(&render_lists->beatline_render_list, beatline_compare_fp_asc);
-  list_sort_by(&render_lists->hold_render_list, arc_segment_const_void_compare_start_fp_asc);
-  list_sort_by(&render_lists->tap_render_list, tapfp_compare_fp_asc);
-  list_sort_by(&render_lists->arc_render_list, arc_segment_const_void_compare_start_fp_asc);
-  list_sort_by(&render_lists->arctap_render_list, arctapfp_compare_fp_asc);
+  list_sort_by(&render_lists->hold_render_list, hold_render_compare_start_fp_asc);
+  list_sort_by(&render_lists->tap_render_list, tap_render_compare_fp_asc);
+  list_sort_by(&render_lists->arc_segment_render_list, arc_segment_render_compare_start_fp_asc);
+  list_sort_by(&render_lists->arctap_render_list, arctap_render_compare_fp_asc);
 
   list_sort_by(&render_lists->enwidencamera_channel.keyframes, value_kf_compare_start_timing_asc);
   list_sort_by(&render_lists->enwidenlanes_channel.keyframes, value_kf_compare_start_timing_asc);
@@ -114,7 +141,7 @@ void render_lists_clear(NoteRenderLists *render_lists)
   list_clear(&render_lists->beatline_render_list);
   list_clear(&render_lists->hold_render_list);
   list_clear(&render_lists->tap_render_list);
-  list_clear(&render_lists->arc_render_list);
+  list_clear(&render_lists->arc_segment_render_list);
   list_clear(&render_lists->arccap_render_list);
   list_clear(&render_lists->arctap_render_list);
 
@@ -127,7 +154,7 @@ void render_lists_unload(NoteRenderLists *render_lists)
   list_free(&render_lists->beatline_render_list);
   list_free(&render_lists->hold_render_list);
   list_free(&render_lists->tap_render_list);
-  list_free(&render_lists->arc_render_list);
+  list_free(&render_lists->arc_segment_render_list);
   list_free(&render_lists->arccap_render_list);
   list_free(&render_lists->arctap_render_list);
 

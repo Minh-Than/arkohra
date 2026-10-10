@@ -62,8 +62,8 @@ MeshRenderable hold_load_mesh(Texture2D *texture)
 
 int hold_compare_start_fp_asc(const void *a, const void *b)
 {
-  Hold *hold_a = (Hold *) a;
-  Hold *hold_b = (Hold *) b;
+  const Hold *hold_a = (const Hold *) a;
+  const Hold *hold_b = (const Hold *) b;
   double sfp_a = hold_a->start_fp;
   double sfp_b = hold_b->start_fp;
   if (fabs(sfp_a - sfp_b) > 1e-6)
@@ -88,15 +88,11 @@ void hold_parse_aff(List *holds, const char* line, int *current_tg)
   }
 }
 
-int hold_const_void_compare_start_fp_asc(const void *a, const void *b)
+int hold_compare_id_eq(const void *a, const void *b)
 {
-  const Hold *hold_a = *(const Hold *const *) a;
-  const Hold *hold_b = *(const Hold *const *) b;
-  double sfp_a = hold_a->start_fp;
-  double sfp_b = hold_b->start_fp;
-  if (fabs(sfp_a - sfp_b) > 1e-6)
-    return sfp_a < sfp_b ? -1 : 1;
-  return 0;
+  const Hold *hold_a = (const Hold *) a;
+  const Hold *hold_b = (const Hold *) b;
+  return hold_a->id == hold_b->id ? 0 : -1;
 }
 
 void hold_build_tree(ItvTree *tree, List *list, int low, int high)
@@ -108,4 +104,15 @@ void hold_build_tree(ItvTree *tree, List *list, int low, int high)
   itv_tree_insert(tree, hold, i);
   hold_build_tree(tree, list, low, mid - 1);
   hold_build_tree(tree, list, mid + 1, high);
+}
+
+int hold_render_compare_start_fp_asc(const void *a, const void *b)
+{
+  const HoldRender *hold_a = (const HoldRender *) a;
+  const HoldRender *hold_b = (const HoldRender *) b;
+  double sfp_a = hold_a->start_fp;
+  double sfp_b = hold_b->start_fp;
+  if (fabs(sfp_a - sfp_b) > 1e-6)
+    return sfp_a < sfp_b ? -1 : 1;
+  return 0;
 }

@@ -31,12 +31,13 @@ void tg_props_print(TimingGroupProps *tg_props);
 typedef struct {
   int value;
   TimingGroupProps props;
-  List taps; List tap_fps;
+  List taps;
   List holds; ItvTree holds_tree;
   List arcs; List arc_segments; ItvTree arc_segments_tree;
-  List arctaps; List arctap_fps;
+  List arctaps;
   List timing_events;
   List beatlines;
+
   ValueChannel hidegroup_channel;
   ValueChannel groupalpha_channel;
   ValueChannel enwidencamera_channel;

@@ -10,7 +10,7 @@ typedef struct {
   List beatline_render_list;
   List hold_render_list;
   List tap_render_list;
-  List arc_render_list;
+  List arc_segment_render_list;
   List arccap_render_list;
   List arctap_render_list;
 
