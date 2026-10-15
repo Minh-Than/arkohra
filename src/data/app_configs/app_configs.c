@@ -32,40 +32,42 @@ float aspect_ratio_get_width(float height, AspectRatio ratio)
   }
 }
 
-AppConfigs app_configs_init(rini_data *d)
+AppConfigs app_configs_init()
 {
-  if (!rini_key_exists(d, "playfield_ratio"))   rini_set_value     (d, "playfield_ratio" ,    0, "Window aspect ratio");
-  if (!rini_key_exists(d, "scroll_speed"))      rini_set_float     (d, "scroll_speed"    , 3.0f, "Chart scrolling speed");
-  if (!rini_key_exists(d, "music_volume"))      rini_set_float     (d, "music_volume"    , 1.0f, "Chart music volume (0.0 - 1.0)");
-  if (!rini_key_exists(d, "hit_volume"))        rini_set_float     (d, "hit_volume"      , 0.2f, "Notes' sound effect volume (0.0 - 1.0)");
-  if (!rini_key_exists(d, "ffmpeg_path"))       rini_set_value_text(d, "ffmpeg_path"     ,   "", "FFMPEG Executable Path");
-  if (!rini_key_exists(d, "recent_project"))    rini_set_value_text(d, "recent_project"  ,   "", "Most recent chart path");
-  if (!rini_key_exists(d, "colorblind"))        rini_set_value     (d, "colorblind"      ,    0, "Is colorblind");
-
   AppConfigs configs = { 0 };
-  configs.playfield_ratio   = (AspectRatio)rini_get_value_fallback(*d, "playfield_ratio" , 0);
+  configs.rini_d = fetch_rini_config();
+  
+  if (!rini_key_exists(&configs.rini_d, "playfield_ratio")) rini_set_value     (&configs.rini_d, "playfield_ratio",    0, "Window aspect ratio");
+  if (!rini_key_exists(&configs.rini_d, "scroll_speed"))    rini_set_float     (&configs.rini_d, "scroll_speed"   , 3.0f, "Chart scrolling speed");
+  if (!rini_key_exists(&configs.rini_d, "music_volume"))    rini_set_float     (&configs.rini_d, "music_volume"   , 1.0f, "Chart music volume (0.0 - 1.0)");
+  if (!rini_key_exists(&configs.rini_d, "hit_volume"))      rini_set_float     (&configs.rini_d, "hit_volume"     , 0.2f, "Notes' sound effect volume (0.0 - 1.0)");
+  if (!rini_key_exists(&configs.rini_d, "ffmpeg_path"))     rini_set_value_text(&configs.rini_d, "ffmpeg_path"    ,   "", "FFMPEG Executable Path");
+  if (!rini_key_exists(&configs.rini_d, "recent_project"))  rini_set_value_text(&configs.rini_d, "recent_project" ,   "", "Most recent chart path");
+  if (!rini_key_exists(&configs.rini_d, "colorblind"))      rini_set_value     (&configs.rini_d, "colorblind"     ,    0, "Is colorblind");
+
+  configs.colorblind      =        (bool)rini_get_value_fallback(configs.rini_d, "colorblind"     , 0);
+  configs.scroll_speed    =              rini_get_float_fallback(configs.rini_d, "scroll_speed"   , 3.0f);
+  configs.music_volume    =              rini_get_float_fallback(configs.rini_d, "music_volume"   , 1.0f);
+  configs.hit_volume      =              rini_get_float_fallback(configs.rini_d, "hit_volume"     , 0.2f);
+  configs.playfield_ratio = (AspectRatio)rini_get_value_fallback(configs.rini_d, "playfield_ratio", 0);
   if (!aspect_ratio_is_valid(configs.playfield_ratio)) configs.playfield_ratio = ASPECT_16_9;
 
-  configs.scroll_speed     = rini_get_float_fallback(*d, "scroll_speed"    , 3.0f);
-  configs.music_volume     = rini_get_float_fallback(*d, "music_volume"    , 1.0f);
-  configs.hit_volume       = rini_get_float_fallback(*d, "hit_volume"      , 0.2f);
-  TextCopy(configs.ffmpeg_path   , rini_get_value_text_fallback(*d, "ffmpeg_path"   , ""));
-  TextCopy(configs.recent_project, rini_get_value_text_fallback(*d, "recent_project", ""));
-  configs.colorblind = (bool)rini_get_value_fallback(*d, "colorblind" , 0);
+  text_copy_bounded(configs.ffmpeg_path   , sizeof(configs.ffmpeg_path),    rini_get_value_text_fallback(configs.rini_d, "ffmpeg_path"   , ""));
+  text_copy_bounded(configs.recent_project, sizeof(configs.recent_project), rini_get_value_text_fallback(configs.rini_d, "recent_project", ""));
 
-  app_configs_write_to_file(&configs, d);
+  app_configs_write_to_file(&configs);
   return configs;
 }
 
-void app_configs_write_to_file(AppConfigs *app_configs, rini_data *d)
+void app_configs_write_to_file(AppConfigs *app_configs)
 {
-  rini_set_value     (d, "playfield_ratio" , app_configs->playfield_ratio , rini_get_value_description(*d, "app_window_scale"));
-  rini_set_float     (d, "scroll_speed"    , app_configs->scroll_speed    , rini_get_value_description(*d, "scroll_speed"));
-  rini_set_float     (d, "music_volume"    , app_configs->music_volume    , rini_get_value_description(*d, "music_volume"));
-  rini_set_float     (d, "hit_volume"      , app_configs->hit_volume      , rini_get_value_description(*d, "hit_volume"));
-  rini_set_value_text(d, "ffmpeg_path"     , app_configs->ffmpeg_path     , rini_get_value_description(*d, "ffmpeg_path"));
-  rini_set_value_text(d, "recent_project"  , app_configs->recent_project  , rini_get_value_description(*d, "recent_project"));
-  rini_set_value     (d, "colorblind"      , (int)app_configs->colorblind , rini_get_value_description(*d, "colorblind"));
+  rini_set_value     (&app_configs->rini_d, "playfield_ratio", app_configs->playfield_ratio, rini_get_value_description(app_configs->rini_d, "playfield_ratio"));
+  rini_set_float     (&app_configs->rini_d, "scroll_speed"   , app_configs->scroll_speed   , rini_get_value_description(app_configs->rini_d, "scroll_speed"));
+  rini_set_float     (&app_configs->rini_d, "music_volume"   , app_configs->music_volume   , rini_get_value_description(app_configs->rini_d, "music_volume"));
+  rini_set_float     (&app_configs->rini_d, "hit_volume"     , app_configs->hit_volume     , rini_get_value_description(app_configs->rini_d, "hit_volume"));
+  rini_set_value_text(&app_configs->rini_d, "ffmpeg_path"    , app_configs->ffmpeg_path    , rini_get_value_description(app_configs->rini_d, "ffmpeg_path"));
+  rini_set_value_text(&app_configs->rini_d, "recent_project" , app_configs->recent_project , rini_get_value_description(app_configs->rini_d, "recent_project"));
+  rini_set_value     (&app_configs->rini_d, "colorblind"     , (int)app_configs->colorblind, rini_get_value_description(app_configs->rini_d, "colorblind"));
 
   char app_dir [MAXPATHLEN];
   char ini_path[MAXPATHLEN];
@@ -80,5 +82,10 @@ void app_configs_write_to_file(AppConfigs *app_configs, rini_data *d)
   }
 
   snprintf(ini_path, MAXPATHLEN, "%s/config.ini", app_dir);
-  rini_save(*d, ini_path);
+  rini_save(app_configs->rini_d, ini_path);
+}
+
+void app_configs_unload(AppConfigs *app_configs)
+{
+  rini_unload(&app_configs->rini_d);
 }

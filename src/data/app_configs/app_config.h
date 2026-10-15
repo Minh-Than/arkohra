@@ -23,9 +23,11 @@ typedef struct
   float         scroll_speed, music_volume, hit_volume;
   AspectRatio   playfield_ratio;
   bool          kohra, colorblind;
+  rini_data     rini_d;
 } AppConfigs;
 
-AppConfigs app_configs_init(rini_data *d);
-void app_configs_write_to_file(AppConfigs *app_configs, rini_data *d);
+AppConfigs app_configs_init();
+void app_configs_write_to_file(AppConfigs *app_configs);
+void app_configs_unload(AppConfigs *app_configs);
 
 #endif // APP_CONFIG_H

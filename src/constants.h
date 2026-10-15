@@ -60,7 +60,7 @@ static const float ARCCAP_TRACE_SCALE = 7.0f;
 static const float ARCCAP_ARC_SCALE   = 13.0f;
 static const float ARCCAP_FAR_SCALE   = 2.5f;
 static const float ARCCAP_ALPHA       = 0.55f;
-static const float ARCTAP_SHADOW_ALPHA_LIGHT = 0.35f;
+static const float ARCTAP_SHADOW_ALPHA_LIGHT    = 0.35f;
 static const float ARCTAP_SHADOW_ALPHA_CONFLICT = 0.25f;
 
 static const unsigned char PST_DIFF_COLOR[3] = { 58 , 107, 120 };
@@ -69,23 +69,23 @@ static const unsigned char FTR_DIFF_COLOR[3] = { 72 , 43 , 84  };
 static const unsigned char BYD_DIFF_COLOR[3] = { 124, 28 , 48  };
 static const unsigned char ETR_DIFF_COLOR[3] = { 67 , 52 , 85  };
 
-static const unsigned char LIGHT_CONNECTOR_CL[3]   = { 104, 189, 211 };
-static const unsigned char CONFLICT_CONNECTOR_CL[3] = { 150, 85 , 142 };
-
-static const unsigned char BEATLINE_CL[4]       = { 130, 130, 130, 57 };
-static const unsigned char ARC_BLUE_LOW_CL[3]   = { 25 , 160, 235 };
-static const unsigned char ARC_BLUE_HIGH_CL[3]  = { 12 , 212, 212 };
-static const unsigned char ARC_PINK_LOW_CL[3]   = { 240, 105, 155 };
-static const unsigned char ARC_PINK_HIGH_CL[3]  = { 255, 150, 220 };
-static const unsigned char ARC_GREEN_LOW_CL[3]  = { 40 , 200, 30  };
-static const unsigned char ARC_GREEN_HIGH_CL[3] = { 35 , 255, 108 };
-static const unsigned char TRACE_CL[3]          = { 145, 120, 170 };
-static const unsigned char NOTE_SHADOW_LIGHT_CL[3]    = { 90 , 90 , 90 };
+static const unsigned char LIGHT_CONNECTOR_CL[3]      = { 104, 189, 211 };
+static const unsigned char CONFLICT_CONNECTOR_CL[3]   = { 150, 85 , 142 };
+static const unsigned char NOTE_SHADOW_LIGHT_CL[3]    = { 90 , 90 , 90  };
 static const unsigned char NOTE_SHADOW_CONFLICT_CL[3] = { 255, 255, 255 };
+
+static const unsigned char BEATLINE_CL[4]            = { 130, 130, 130, 57 };
+static const unsigned char ARC_BLUE_LOW_CL[3]        = { 25 , 160, 235 };
+static const unsigned char ARC_BLUE_HIGH_CL[3]       = { 12 , 212, 212 };
+static const unsigned char ARC_PINK_LOW_CL[3]        = { 240, 105, 155 };
+static const unsigned char ARC_PINK_HIGH_CL[3]       = { 255, 150, 220 };
+static const unsigned char ARC_GREEN_LOW_CL[3]       = { 40 , 200, 30  };
+static const unsigned char ARC_GREEN_HIGH_CL[3]      = { 35 , 255, 108 };
 static const unsigned char ARC_BLUE_BLIND_LOW_CL[3]  = { 37 , 139, 235 };
 static const unsigned char ARC_BLUE_BLIND_HIGH_CL[3] = { 12 , 167, 217 };
-static const unsigned char ARC_PINK_BLIND_LOW_CL[3]  = { 255, 203, 0 };
-static const unsigned char ARC_PINK_BLIND_HIGH_CL[3] = { 255, 245, 0 };
+static const unsigned char ARC_PINK_BLIND_LOW_CL[3]  = { 255, 203, 0   };
+static const unsigned char ARC_PINK_BLIND_HIGH_CL[3] = { 255, 245, 0   };
+static const unsigned char TRACE_CL[3]               = { 145, 120, 170 };
 
 static const unsigned short int CMD_PLT_Y          = 150;
 static const unsigned short int CMD_PLT_SIZE_X     = 450;

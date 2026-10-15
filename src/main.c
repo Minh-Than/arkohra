@@ -32,8 +32,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 
 int main()
 {
-  rini_data  rini_d      = fetch_rini_config();
-  AppConfigs app_configs = app_configs_init(&rini_d);
+  AppConfigs app_configs = app_configs_init();
 
   SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -46,9 +45,9 @@ int main()
   TextureGroup texture_group = textures_init();
   ChartReader  chart_reader  = { 0 };
   CachedFontProbes font_probes = cached_font_probes_init();
-  TrackService track_service = track_service_init(GLSL_VERSION);
-  NotesService notes_service = notes_service_init(GLSL_VERSION, &app_configs);
-  HudService   hud_service   = hud_service_init(GLSL_VERSION, &app_configs, &font_probes);
+  TrackService track_service =   track_service_init(GLSL_VERSION);
+  NotesService notes_service =   notes_service_init(GLSL_VERSION, &app_configs);
+  HudService   hud_service   =     hud_service_init(GLSL_VERSION, &app_configs, &font_probes);
   WindowGroup  window_group  = window_services_init(GLSL_VERSION, &app_configs, &font_probes);
   SelectionService selection_service = selection_service_init();
 
@@ -60,7 +59,7 @@ int main()
 
   Shader chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION),
                                    TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
-  int timing_loc = GetShaderLocation(chart_shader, "timing");
+  int timing_loc     = GetShaderLocation(chart_shader, "timing");
   int screenSize_loc = GetShaderLocation(chart_shader, "screenSize");
 
   RenderTexture2D target = LoadRenderTexture(GetRenderWidth(), GetRenderHeight());
@@ -109,10 +108,8 @@ int main()
 
           // Update chart reader
           if(chart_reader.initialized) chart_reader_unload(&chart_reader);
-          chart_reader = chart_reader_parse(&render_ctx.chart_settings,
-                                            &render_ctx.audio_clock,
-                                            &notes_service.arc_tex,
-                                            &notes_service.arc_shader.shader);
+          chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock,
+                                            &notes_service.arc_tex, &notes_service.arc_shader.shader);
           chart_settings_print(&render_ctx.chart_settings);
 
           const char *fs_path = TextIsEqual(render_ctx.chart_settings.shader_fs_path, "")
@@ -125,9 +122,9 @@ int main()
           } else
           {
             chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION),
-                                     TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
+                                      TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
           }
-          timing_loc = GetShaderLocation(chart_shader, "timing");
+          timing_loc     = GetShaderLocation(chart_shader, "timing");
           screenSize_loc = GetShaderLocation(chart_shader, "screenSize");
 
           track_service_apply_chart(&track_service, &render_ctx.chart_settings);
@@ -188,8 +185,8 @@ int main()
       // Pause audio before processing
       PauseMusicStream(music);
       audio_clock_pause(&render_ctx.audio_clock);
-      rini_d = fetch_rini_config();
-      app_configs = app_configs_init(&rini_d);
+
+      app_configs = app_configs_init();
       SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.playfield_ratio));
       recalibrate_camera(&render_ctx.camera);
       hud_service.playfield_ratio = app_configs.playfield_ratio;
@@ -206,10 +203,8 @@ int main()
 
       // Update chart reader to regenerate arc meshes
       if(chart_reader.initialized) chart_reader_unload(&chart_reader);
-      chart_reader = chart_reader_parse(&render_ctx.chart_settings,
-                                        &render_ctx.audio_clock,
-                                        &notes_service.arc_tex,
-                                        &notes_service.arc_shader.shader);
+      chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock,
+                                        &notes_service.arc_tex, &notes_service.arc_shader.shader);
     }
 
     // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA
@@ -286,7 +281,8 @@ int main()
   UnloadShader(chart_shader);
 
   // One last config writing just in case
-  app_configs_write_to_file(&app_configs, &rini_d);
+  app_configs_write_to_file(&app_configs);
+  app_configs_unload(&app_configs);
 
   // destroy the window and cleanup the OpenGL context
   CloseWindow();
