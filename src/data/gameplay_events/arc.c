@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -8,10 +7,10 @@
 #include "arc.h"
 #include "constants.h"
 #include "color_services.h"
+#include "resource_util.h"
 #include "data/custom_types/custom_types.h"
 #include "data/gameplay_events/arctap.h"
 #include "gameplay/arc_formula.h"
-#include "render/mesh_renderable.h"
 
 // ARC
 ArcType arctype_get_by_string(char *str)
@@ -41,7 +40,7 @@ int arc_compare_id_eq(const void *a, const void *b)
   return arc_a->id == arc_b->id ? 0 : -1;
 }
 
-MeshRenderable generate_arccap_mesh(Texture2D *texture)
+MeshRenderable arc_generate_arccap_mesh(Texture2D *texture)
 {
   float half_size_x = 0.02f;
   float half_size_y = 0.035f;
@@ -86,7 +85,7 @@ MeshRenderable generate_arccap_mesh(Texture2D *texture)
   return r;
 }
 
-MeshRenderable generate_arc_height_mesh(Texture2D *texture)
+MeshRenderable arc_generate_arc_height_mesh(Texture2D *texture)
 {
   Mesh height_indicator_mesh = GenMeshPlane(0.5f, 1, 1, 1);
   UploadMesh(&height_indicator_mesh, false);
@@ -179,23 +178,10 @@ void arc_print(const void *elem)
          arc->start_timing, arc->end_timing,
          arc->x1, arc->x2, arc->type, arc->y1, arc->y2,
          arc->color, arc->sfx, arc->is_void);
-
-  // bool has_arctaps = true;
-  // for (int i = 0; i < arc->arctaps.size; i++)
-  // {
-  //   if(i == 0) printf("[");
-
-  //   ArcTap *arctap = (ArcTap *)list_get((List *)&arc->arctaps, i);
-  //   printf("arctap(%d)", arctap->timing);
-
-  //   if (i < arc->arctaps.size - 1) printf(",");
-  // }
-  // if (arc->arctaps.size != 0) printf("]");
   printf(";\n");
 }
 
-MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timing_events, struct Arc *arc,
-                                      Texture2D *texture, Shader *shader, float curr_timing, float increment)
+MeshRenderable arc_segment_generate_mesh(Texture2D *texture, Shader *shader)
 {
   //   2 6
   //  /| |\
@@ -204,76 +190,30 @@ MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timin
   // |/   \|
   // 0     4
 
-  // Per mesh
   const int VERTICES_COUNT  = 8;
   const int TRIANGLE_COUNT  = 4;
   const int TEXCOORDS_COUNT = 8;
   const int INDICES_COUNT   = TRIANGLE_COUNT * 3;
 
-  // Initial vertices setup
-  float initial_v[VERTICES_COUNT * 3] = {
-    -0.0433f, -0.025f, -1.0f,   0.0f, 0.05f, -1.0f,   0.0f, 0.05f, -1.0f,  -0.0433f, -0.025f, -1.0f,  // 0, 1, 2, 3
-     0.0433f, -0.025f, -1.0f,   0.0f, 0.05f, -1.0f,   0.0f, 0.05f, -1.0f,   0.0433f, -0.025f, -1.0f,  // 4, 5, 6, 7
-  };
-  float arc_scale = arc->is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
-  for (int j = 0; j < VERTICES_COUNT * 3; j++) if (j % 3 != 2) { initial_v[j] *= arc_scale; }
-
-  // UV setup
-  float uv[TEXCOORDS_COUNT * 2] = {
-    0,1,  1.0f,1,  1.0f,0,  0,0,
-    0,1,  1.0f,1,  1.0f,0,  0,0,
-  };
-
-  struct Arc temp_arc = {
-    .x1 = arc->x1, .y1 = arc->y1,
-    .x2 = arc->x2, .y2 = arc->y2,
-    .start_timing  = 0,
-    .end_timing    = arc->end_timing - arc->start_timing,
-    .type          = arc->type
-  };
-
   MeshRenderable r = { 0 };
 
-  r.mesh.vertexCount   = VERTICES_COUNT;
-  r.mesh.triangleCount = TRIANGLE_COUNT;
-
+  r.mesh.vertexCount    = VERTICES_COUNT;
+  r.mesh.triangleCount  = TRIANGLE_COUNT;
+  
   r.mesh.vertices  =          (float *)malloc(VERTICES_COUNT  * 3 * sizeof(float));
   r.mesh.normals   =          (float *)malloc(VERTICES_COUNT  * 3 * sizeof(float));
   r.mesh.texcoords =          (float *)malloc(TEXCOORDS_COUNT * 2 * sizeof(float));
   r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * sizeof(unsigned short));
 
-  // Vertices for each face
-  for (int j = 0; j < VERTICES_COUNT; j++)
-  {
-    // condition match => front of arc
-    bool is_front_of_arc = j == 0 || j == 1 || j == 4 || j == 5;
-    float target_timing = is_front_of_arc ? curr_timing : curr_timing + increment;
-    bool zero_duration = (arc->end_timing == arc->start_timing);
-    float world_x = zero_duration
-      ? arc_x_to_world(is_front_of_arc ? arc->x1 : arc->x2)
-      : arc_world_x_at(target_timing, &temp_arc);
-    float world_y = zero_duration
-      ? arc_y_to_world(is_front_of_arc ? arc->y1 : arc->y2)
-      : arc_world_y_at(target_timing, &temp_arc);
-
-    // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
-    float segment_start_timing = curr_timing + arc->start_timing;
-    double z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
-                                          chart_settings->base_bpm,
-                                          chart_settings->scroll_speed);
-    double z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
-                                          chart_settings->base_bpm,
-                                          chart_settings->scroll_speed);
-    double world_z  = z_target - z_segment;
-
-    // each x-y-z per vertex
-    for (int k = 0; k < 3; k++)
-    {
-      float applied_final = k % 3 == 0 ? world_x : ( k % 3 == 1 ? world_y : world_z );
-      if (k % 3 == 2) r.mesh.vertices[j*3 + k] = initial_v[j*3 + k] * -applied_final; // Scale Z by scalar
-      else            r.mesh.vertices[j*3 + k] = initial_v[j*3 + k] +  applied_final; // Offset XY by addition
-    };
+  float v[VERTICES_COUNT * 3] = {
+    -0.0433f, -0.025f, 0.0f,   0.0f, 0.05f, 0.0f,   0.0f, 0.05f, 1.0f,  -0.0433f, -0.025f, 1.0f,  // 0, 1, 2, 3
+     0.0433f, -0.025f, 0.0f,   0.0f, 0.05f, 0.0f,   0.0f, 0.05f, 1.0f,   0.0433f, -0.025f, 1.0f,  // 4, 5, 6, 7
   };
+  float uv[TEXCOORDS_COUNT * 2] = {
+    0,1,  1.0f,1,  1.0f,0,  0,0,
+    0,1,  1.0f,1,  1.0f,0,  0,0,
+  };
+  for (int i = 0; i < VERTICES_COUNT * 3 ; i++) r.mesh.vertices[i]  = v[i];
 
   // Normals for each face (calculate only one to apply to all 4)
   for (int j = 0; j < VERTICES_COUNT / 4; j++) {
@@ -296,8 +236,7 @@ MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timin
       r.mesh.normals[normal_base +3 + k] = applied_final;
     };
   };
-
-  for (int t = 0; t < TEXCOORDS_COUNT * 2; t++) r.mesh.texcoords[t] = uv[t];
+  for (int i = 0; i < TEXCOORDS_COUNT * 2; i++) r.mesh.texcoords[i] = uv[i];
 
   // Separate starting index for the indices (dont take xyz into account)
   for (int face = 0; face < 2; face++)
@@ -322,8 +261,7 @@ MeshRenderable generate_arc_body_mesh(ChartSettings *chart_settings, List *timin
   return r;
 }
 
-MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *timing_events, struct Arc *arc,
-                                        Shader *shader, float curr_timing, float increment)
+MeshRenderable arc_generate_shadow_mesh(Shader *shader)
 {
   // 3--2
   // |  |
@@ -338,8 +276,8 @@ MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *tim
 
   // Initial vertices setup
   float initial_v[VERTICES_COUNT * 3] = {
-    -0.0433f, 0.0f, -1.0f,   0.0433f, 0.0f, -1.0f,
-     0.0433f, 0.0f, -1.0f,  -0.0433f, 0.0f, -1.0f,
+    -0.0433f, 0.0f, 0.0f,   0.0433f, 0.0f, 0.0f,
+     0.0433f, 0.0f, 1.0f,  -0.0433f, 0.0f, 1.0f,
   };
   float uv[TEXCOORDS_COUNT * 2] = {
     0.0f, 1.0f,
@@ -348,18 +286,6 @@ MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *tim
     0.0f, 0.0f,
   };
   unsigned short idx[INDICES_COUNT] = {0, 1, 2, 0, 2, 3};
-
-  float arc_scale = arc->is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
-  for (int v = 0; v < VERTICES_COUNT * 3; v++) if (v % 3 != 2) { initial_v[v] *= arc_scale; }
-
-  // NOTE: Create mesh at z=0 (in timing) to prevent texture/rendering from going apeshit
-  struct Arc temp_arc = {
-    .x1 = arc->x1, .y1 = arc->y1,
-    .x2 = arc->x2, .y2 = arc->y2,
-    .start_timing  = 0,
-    .end_timing    = arc->end_timing - arc->start_timing,
-    .type          = arc->type
-  };
 
   MeshRenderable r = { 0 };
 
@@ -370,35 +296,9 @@ MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *tim
   r.mesh.texcoords =          (float *)malloc(TEXCOORDS_COUNT * 2 * sizeof(float));
   r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT   * sizeof(unsigned short));
 
-  // Vertices for each face
-  for (int j = 0; j < VERTICES_COUNT; j++)
-  {
-    // condition match => front of arc
-    bool is_front_of_arc = j == 0 || j == 1;
-    float target_timing = is_front_of_arc ? curr_timing : curr_timing + increment;
-    float world_x = arc_world_x_at(target_timing, &temp_arc);
-
-    // Get the correct z scaling base on the arc data, then offset world_z back to origin by the arc's start_timing
-    float segment_start_timing = curr_timing + arc->start_timing;
-    double z_target  = floor_position_to_z(get_floor_position(timing_events, target_timing + arc->start_timing),
-                                          chart_settings->base_bpm,
-                                          chart_settings->scroll_speed);
-    double z_segment = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
-                                          chart_settings->base_bpm,
-                                          chart_settings->scroll_speed);
-    float world_z  = z_target - z_segment;
-
-    // each x-y-z per vertex
-    for (int k = 0; k < 3; k++)
-    {
-      float applied_final = k % 3 == 0 ? world_x : ( k % 3 == 1 ? 0.0f : world_z );
-      if (k % 3 == 2) r.mesh.vertices[j*3 + k] = initial_v[j*3 + k] * -applied_final; // Scale Z by scalar
-      else            r.mesh.vertices[j*3 + k] = initial_v[j*3 + k] +  applied_final; // Offset XY by addition
-    };
-  };
-
+  for (int i = 0  ; i < VERTICES_COUNT * 3 ; i++) r.mesh.vertices[i]  = initial_v[i];
   for (int t = 0  ; t < TEXCOORDS_COUNT * 2; t++) r.mesh.texcoords[t] = uv[t];
-  for (int ind = 0; ind < INDICES_COUNT; ind++) r.mesh.indices[ind] = idx[ind];
+  for (int ind = 0; ind < INDICES_COUNT  ; ind++) r.mesh.indices[ind] = idx[ind];
 
   UploadMesh(&r.mesh, false);
 
@@ -410,39 +310,7 @@ MeshRenderable generate_arc_shadow_mesh(ChartSettings *chart_settings, List *tim
   return r;
 }
 
-void generate_segment_meshes(ChartSettings *chart_settings, ChartTimingGroup *tg, struct Arc *arc, Texture2D *texture, Shader *shader)
-{
-  int arc_duration      = arc->end_timing - arc->start_timing;
-  float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res * tg->props.arc_res);
-  int segment_count     = (int)ceilf(arc_duration / segment_length);
-  segment_count         = (int)fmax(segment_count, 1);
-
-  List *timing_events = &tg->timing_events;
-  float segment_timing = arc->start_timing;
-  float curr_timing = 0.0f;
-  for (int i = 0; i < segment_count; i++)
-  {
-    float increment = fminf(arc->end_timing - arc->start_timing - curr_timing, segment_length);
-    ArcSegmentRender segment_render = {
-      .arc_id = arc->id,
-      .timing_group = arc->timing_group,
-      .start_fp = get_floor_position(timing_events, curr_timing + arc->start_timing),
-      .end_fp   = get_floor_position(timing_events, curr_timing + increment + arc->start_timing),
-      .start_timing = segment_timing,
-      .end_timing   = segment_timing + increment,
-      .arc_start_timing = arc->start_timing,
-      .arc_end_timing   = arc->end_timing,
-      .mesh_r   = generate_arc_body_mesh(chart_settings, timing_events, arc, texture, shader, curr_timing, increment),
-      .shadow_r = generate_arc_shadow_mesh(chart_settings, timing_events, arc, shader, curr_timing, increment),
-    };
-    list_push(&tg->arc_segments, &segment_render);
-
-    segment_timing += increment;
-    curr_timing += increment;
-  }
-}
-
-MeshRenderable generate_arc_head_mesh(Texture2D *texture, Shader *shader)
+MeshRenderable arc_generate_head_mesh(Texture2D *texture, Shader *shader)
 {
   //   2 5
   //   /|\   .
@@ -532,28 +400,41 @@ void arc_segment_render_build_tree(ItvTree *tree, List *list, int low, int high)
   arc_segment_render_build_tree(tree, list, mid + 1, high);
 }
 
-void draw_arc_shadow(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader,
+void draw_arc_shadow(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShadowShader *arc_shadow_shader, MeshRenderable *mesh_r,
                      float current_ms, float curr_bpm, double z_pos, float add_fade)
 {
+  SetShaderValue(arc_shadow_shader->shader, arc_shadow_shader->worldX1_loc, &segment_render->world_x1 , SHADER_UNIFORM_FLOAT);
+  SetShaderValue(arc_shadow_shader->shader, arc_shadow_shader->worldX2_loc, &segment_render->world_x2 , SHADER_UNIFORM_FLOAT);
+  float length_delta = (float)segment_render->z_delta;
+  SetShaderValue(arc_shadow_shader->shader, arc_shadow_shader->lengthDelta_loc, &length_delta, SHADER_UNIFORM_FLOAT);
+  float segment_scale = arc->is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
+  SetShaderValue(arc_shadow_shader->shader, arc_shadow_shader->scale_loc, &segment_scale, SHADER_UNIFORM_FLOAT);
+
   float fade_ratio = arc->is_void ? 1.0f : ((z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE));
+
   Vector4 shadow_tint = ColorNormalize(Fade(color_from_rgba(NOTE_SHADOW_LIGHT_CL), Clamp(fade_ratio, 0.0f, ARC_SHADOW_ALPHA * add_fade)));
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
   int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
-  SetShaderValue(arc_shader->shader, arc_shader->shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
-  SetShaderValue(arc_shader->shader, arc_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
-  SetShaderValue(arc_shader->shader, arc_shader->tintLow_loc , &shadow_tint, SHADER_UNIFORM_VEC4);
-  SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, &shadow_tint, SHADER_UNIFORM_VEC4);
-  DrawMesh(segment_render->shadow_r.mesh, segment_render->shadow_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+  SetShaderValue(arc_shadow_shader->shader, arc_shadow_shader->shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
+  SetShaderValue(arc_shadow_shader->shader, arc_shadow_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
+  SetShaderValue(arc_shadow_shader->shader, arc_shadow_shader->tintLow_loc , &shadow_tint, SHADER_UNIFORM_VEC4);
+  SetShaderValue(arc_shadow_shader->shader, arc_shadow_shader->tintHigh_loc, &shadow_tint, SHADER_UNIFORM_VEC4);
+  DrawMesh(mesh_r->mesh, mesh_r->material, MatrixTranslate(0.0f, 0.0f, z_pos));
 }
 
-void draw_arc_head(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
-                   float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp, float add_fade, bool colorblind)
+static void segment_set_shader_values(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader,
+                                       float current_ms, float curr_bpm, float add_fade, bool colorblind, double z_pos)
 {
-  if (!arc->is_head) return;
-  if (fabs(segment_render->start_fp - arc->start_fp) > 1e-6) return;
-  double z_pos = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
+  SetShaderValue(arc_shader->shader, arc_shader->worldX1_loc, &segment_render->world_x1 , SHADER_UNIFORM_FLOAT);
+  SetShaderValue(arc_shader->shader, arc_shader->worldY1_loc, &segment_render->world_y1 , SHADER_UNIFORM_FLOAT);
+  SetShaderValue(arc_shader->shader, arc_shader->worldX2_loc, &segment_render->world_x2 , SHADER_UNIFORM_FLOAT);
+  SetShaderValue(arc_shader->shader, arc_shader->worldY2_loc, &segment_render->world_y2 , SHADER_UNIFORM_FLOAT);
+  float length_delta = (float)segment_render->z_delta;
+  SetShaderValue(arc_shader->shader, arc_shader->lengthDelta_loc , &length_delta, SHADER_UNIFORM_FLOAT);
+  float segment_scale = arc->is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
+  SetShaderValue(arc_shader->shader, arc_shader->scale_loc , &segment_scale, SHADER_UNIFORM_FLOAT);
 
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
@@ -578,41 +459,28 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struc
   }
   SetShaderValue(arc_shader->shader, arc_shader->tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
   SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
-
-  float x_pos = arc_x_to_world(arc->x1);
-  float y_pos = arc_y_to_world(arc->y1);
-  float head_scale = arc->is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
-  Matrix tr = MatrixMultiply(MatrixScale(head_scale, head_scale, head_scale), MatrixTranslate(x_pos, y_pos, z_pos));
-  DrawMesh(mesh_r->mesh, mesh_r->material, tr);
 }
 
-void draw_arc_segment(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader,
+void draw_arc_head(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
+                   float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp, float add_fade, bool colorblind)
+{
+  if (!arc->is_head) return;
+  if (fabs(segment_render->start_fp - arc->start_fp) > 1e-6) return;
+
+  double z_pos = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
+  float  x_pos = arc_x_to_world(arc->x1);
+  float  y_pos = arc_y_to_world(arc->y1);
+  float  head_scale = arc->is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
+  segment_set_shader_values(tg, segment_render, arc, arc_shader, current_ms, curr_bpm, add_fade, colorblind, z_pos);
+  DrawMesh(mesh_r->mesh, mesh_r->material, MatrixMultiply(MatrixScale(1.0f, 1.0f, head_scale),
+                                                          MatrixTranslate(0.0f, 0.0f, z_pos)));
+}
+
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
                       float current_ms, float curr_bpm, double z_pos, float add_fade, bool colorblind)
 {
-  float fade_ratio = arc->is_void ? 1.0f : ((z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE));
-  // Default trace tint
-  Vector4 tint_low, tint_high;
-  tint_low = tint_high = ColorNormalize(Fade(color_from_rgba(TRACE_CL), Clamp(fade_ratio, 0.0f, TRACE_ALPHA * add_fade)));
-
-  if (!arc->is_void)
-  {
-    float final_alpha = ARC_ALPHA;
-    struct Arc* arc_frfr = arc_get_firstmost_arc(arc);
-    if (arc_frfr->start_timing - current_ms <= 0) final_alpha *= 0.72f;
-    final_alpha *= add_fade;
-    tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color, colorblind) , Clamp(fade_ratio, 0.0f, final_alpha)));
-    tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color, colorblind), Clamp(fade_ratio, 0.0f, final_alpha)));
-  }
-  bool arc_prop_validate = !tg->props.no_clip;
-  if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
-  int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms - 1 <= 0) ? 1 : 0;
-  int negative_bpm_shader = curr_bpm < 0.0f;
-  SetShaderValue(arc_shader->shader, arc_shader->shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
-  SetShaderValue(arc_shader->shader, arc_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
-  SetShaderValue(arc_shader->shader, arc_shader->tintLow_loc , &tint_low , SHADER_UNIFORM_VEC4);
-  SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, &tint_high, SHADER_UNIFORM_VEC4);
-
-  DrawMesh(segment_render->mesh_r.mesh, segment_render->mesh_r.material, MatrixTranslate(0.0f, 0.0f, z_pos));
+  segment_set_shader_values(tg, segment_render, arc, arc_shader, current_ms, curr_bpm, add_fade, colorblind, z_pos);
+  DrawMesh(mesh_r->mesh, mesh_r->material, MatrixTranslate(0.0f, 0.0f, z_pos));
 }
 
 void draw_height_indicator(ArcSegmentRender *segment_render, struct Arc *arc, Mesh *mesh, Material mat, double z_pos, float add_fade, bool colorblind)

@@ -2,7 +2,7 @@
 #define NOTES_SERVICE_H
 
 #include "data/app_configs/app_config.h"
-#include "raylib.h"
+#include "data/gameplay_events/arc_shadow_shader.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/arc_shader.h"
 #include "gameplay/chart_reader.h"
@@ -13,8 +13,10 @@
 
 typedef struct {
   Texture2D tap_tex, hold_tex, height_indicator_tex, arc_tex, arccap_tex, arctap_tex, arctap_shadow_tex;
-  MeshRenderable tap, hold, arccap, arc_head, height_indicator, arctap, arctap_shadow;
-  ArcShader arc_shader;
+  MeshRenderable tap, hold, arc_segment, arc_shadow, arccap, arc_head, height_indicator, arctap, arctap_shadow;
+
+  ArcShader       arc_shader;
+  ArcShadowShader arc_shadow_shader;
 
   SkinSide skin_side;
   bool colorblind;

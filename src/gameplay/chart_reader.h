@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include "data/chart_settings/chart_settings.h"
 #include "gameplay/audio_service.h"
-#include "raylib.h"
 #include "render/note_render_lists.h"
 
 typedef struct {
@@ -15,7 +14,7 @@ typedef struct {
   int tap_counter, hold_counter, arc_counter, arctap_counter;
 } ChartReader;
 
-ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_clock, Texture2D *arc_texture, Shader *arc_shader);
+ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_clock);
 void chart_reader_print(ChartReader *chart_reader);
 void chart_reader_unload(ChartReader *chart_reader);
 

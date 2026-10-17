@@ -1,5 +1,6 @@
 #include <math.h>
 #include <float.h>
+#include <stdio.h>
 #include "beatline.h"
 #include "data/gameplay_events/timing_event.h"
 #include "gameplay/arc_formula.h"

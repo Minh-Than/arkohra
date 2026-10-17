@@ -2,18 +2,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include "color_services.h"
 #include "constants.h"
-#include "data/custom_types/dynamic_list.h"
-#include "data/gameplay_events/arc.h"
-#include "data/gameplay_events/scenecontrol/scenecontrols.h"
-#include "data/keyframe/value_channel.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include "chart_reader.h"
-#include "data/chart_timing_groups/chart_timing_group.h"
+#include "data/custom_types/dynamic_list.h"
 #include "data/custom_types/custom_types.h"
+#include "data/chart_timing_groups/chart_timing_group.h"
+#include "data/gameplay_events/scenecontrol/scenecontrols.h"
+#include "data/keyframe/value_channel.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "gameplay/arc_formula.h"
 #include "render/note_render_lists.h"
@@ -65,7 +63,60 @@ static void post_process_channel(ValueChannel *channel)
   }
 }
 
-static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_clock, ChartReader *chart_reader, Texture2D *arc_texture, Shader *arc_shader)
+static void post_process_arg_segments(ChartSettings *chart_settings, ChartTimingGroup *tg, struct Arc *arc)
+{
+  List *timing_events  = &tg->timing_events;
+
+  int arc_duration      = arc->end_timing - arc->start_timing;
+  float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res * tg->props.arc_res);
+  int segment_count     = (int)ceilf(arc_duration / segment_length);
+  segment_count         = (int)fmax(segment_count, 1);
+
+  float segment_timing = arc->start_timing;
+  float curr_timing    = 0.0f;
+  for (int i = 0; i < segment_count; i++)
+  {
+    float increment     = fminf(arc->end_timing - arc->start_timing - curr_timing, segment_length);
+    bool zero_duration  = (arc->end_timing == arc->start_timing);
+    struct Arc temp_arc = {
+      .x1 = arc->x1, .y1 = arc->y1,
+      .x2 = arc->x2, .y2 = arc->y2,
+      .start_timing  = 0,
+      .end_timing    = arc->end_timing - arc->start_timing,
+      .type          = arc->type
+    };
+
+    float segment_start_timing = curr_timing + arc->start_timing;
+    double z_start = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
+                                         chart_settings->base_bpm,
+                                         chart_settings->scroll_speed);
+    double z_end   = floor_position_to_z(get_floor_position(timing_events, segment_start_timing + increment),
+                                         chart_settings->base_bpm,
+                                         chart_settings->scroll_speed);
+
+    ArcSegmentRender segment_render = {
+      .arc_id           = arc->id,
+      .timing_group     = arc->timing_group,
+      .start_fp         = get_floor_position(timing_events, curr_timing + arc->start_timing),
+      .end_fp           = get_floor_position(timing_events, curr_timing + increment + arc->start_timing),
+      .start_timing     = segment_timing,
+      .end_timing       = segment_timing + increment,
+      .arc_start_timing = arc->start_timing,
+      .arc_end_timing   = arc->end_timing,
+      .world_x1         = zero_duration ? arc_x_to_world(arc->x1) : arc_world_x_at(curr_timing, &temp_arc),
+      .world_y1         = zero_duration ? arc_y_to_world(arc->y1) : arc_world_y_at(curr_timing, &temp_arc),
+      .world_x2         = zero_duration ? arc_x_to_world(arc->x2) : arc_world_x_at(curr_timing + increment, &temp_arc),
+      .world_y2         = zero_duration ? arc_y_to_world(arc->y2) : arc_world_y_at(curr_timing + increment, &temp_arc),
+      .z_delta          = z_end - z_start,
+    };
+    list_push(&tg->arc_segments, &segment_render);
+
+    segment_timing += increment;
+    curr_timing += increment;
+  }
+}
+
+static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_clock, ChartReader *chart_reader)
 {
   for(int i = 0; i < chart_reader->timing_groups.size; i++)
   {
@@ -77,7 +128,6 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
     post_process_channel(&tg->groupalpha_channel);
     post_process_channel(&tg->enwidencamera_channel);
     post_process_channel(&tg->enwidenlanes_channel);
-
 
     // Beatlines
     if (tg->value == 0)
@@ -113,7 +163,7 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
           connected_arc->prev_arc = arc;
         }
       }
-      generate_segment_meshes(chart_settings, tg, arc, arc_texture, arc_shader);
+      post_process_arg_segments(chart_settings, tg, arc);
     };
     list_sort_by(&tg->arc_segments, arc_segment_render_compare_start_fp_asc);
     arc_segment_render_build_tree(&tg->arc_segments_tree, &tg->arc_segments, 0, tg->arc_segments.size - 1);
@@ -166,7 +216,7 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
   }
 }
 
-ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_clock, Texture2D *arc_texture, Shader *arc_shader)
+ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_clock)
 {
   ChartReader chart_reader = { 0 };
 
@@ -208,7 +258,7 @@ ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_
 
   if (lines != NULL) UnloadFileText(aff_data);
 
-  parse_post_process(chart_settings, audio_clock, &chart_reader, arc_texture, arc_shader);
+  parse_post_process(chart_settings, audio_clock, &chart_reader);
   chart_reader_print(&chart_reader);
 
   chart_reader.initialized = true;

@@ -108,8 +108,7 @@ int main()
 
           // Update chart reader
           if(chart_reader.initialized) chart_reader_unload(&chart_reader);
-          chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock,
-                                            &notes_service.arc_tex, &notes_service.arc_shader.shader);
+          chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock);
           chart_settings_print(&render_ctx.chart_settings);
 
           const char *fs_path = TextIsEqual(render_ctx.chart_settings.shader_fs_path, "")
@@ -203,8 +202,7 @@ int main()
 
       // Update chart reader to regenerate arc meshes
       if(chart_reader.initialized) chart_reader_unload(&chart_reader);
-      chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock,
-                                        &notes_service.arc_tex, &notes_service.arc_shader.shader);
+      chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock);
     }
 
     // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA
