@@ -1,15 +1,10 @@
 #include <float.h>
 #include "raylib.h"
 #include "raygui.h"
+#include "constants.h"
 #include "rgui_input_data.h"
 #include "data/app_configs/app_config.h"
 #include "data/fonts/fonts_service.h"
-
-#ifdef _WIN32
-#define PATH_SEPERATOR "\\"
-#else
-#define PATH_SEPERATOR "/"
-#endif
 
 RguiTextInput rgui_textinput_init(const char* value)
 {

@@ -22,6 +22,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "render/utils/drawing.h"
 #include "windows/command_palette/window.h"
 #include "windows/project_setting/window.h"
+#include "windows/rgui_input_data.h"
 #include "windows/window_services.h"
 
 #if defined(PLATFORM_DESKTOP)
@@ -66,6 +67,9 @@ int main()
   GenTextureMipmaps(&target.texture);
   SetTextureFilter(target.texture, TEXTURE_FILTER_TRILINEAR);
 
+  RguiFileInput open_proj_input = rgui_fileinput_init("");
+  list_push(&open_proj_input.extensions, ".json");
+
   InitAudioDevice();
 
   Music music = { 0 };
@@ -81,6 +85,11 @@ int main()
 
   while (!WindowShouldClose())
   {
+    if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&
+        IsKeyPressed(KEY_O))
+    {
+      open_proj_input.state.windowActive = true;
+    }
     if (IsFileDropped())
     {
       // Parse and repolulate chart settings
@@ -253,6 +262,8 @@ int main()
       // Debug FPS
       DrawFPS(5, 5);
 
+      GuiWindowFileDialog(&open_proj_input.state);
+
       // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA
       if (app_configs.kohra)
       {
@@ -264,7 +275,82 @@ int main()
 
     // end the frame and get ready for the next one  (display frame, poll input, etc...)
     EndDrawing();
+
+      if(open_proj_input.state.SelectFilePressed)
+      {
+        bool is_valid = false;
+        if (open_proj_input.extensions.size == 0) is_valid = true;
+        else
+        {
+          for (int i = 0; i < open_proj_input.extensions.size; i++)
+          {
+            const char* ext = (char *)list_get(&open_proj_input.extensions, i);
+            is_valid = IsFileExtension(open_proj_input.state.fileNameText, ext);
+            if (is_valid) break;
+          }
+        }
+        if(is_valid)
+          strcpy(open_proj_input.file, TextFormat("%s%s%s", open_proj_input.state.dirPathText, PATH_SEPERATOR, open_proj_input.state.fileNameText));
+
+        const char* project_file = open_proj_input.file;
+        if (TextIsEqual(GetFileName(project_file), "project.json"))
+        {
+          // Pause audio before processing
+          PauseMusicStream(music);
+          audio_clock_pause(&render_ctx.audio_clock);
+
+          if (chart_settings_load_from_project(&render_ctx.chart_settings, &app_configs, project_file))
+          {
+            // Stop audio entirely
+            render_ctx.audio_clock.total_audio_length = 0;
+            StopMusicStream(music);
+            UnloadMusicStream(music);
+            music = LoadMusicStream(render_ctx.chart_settings.audio_path);
+            music.looping = false;
+            render_ctx.audio_clock.total_audio_length = (int)roundf(GetMusicTimeLength(music) * 1000);
+            SetMusicPan(music, 0.0f);
+            SetMusicVolume(music, app_configs.music_volume);
+
+            selection_service_unload(&selection_service);
+
+            // Update chart reader
+            if(chart_reader.initialized) chart_reader_unload(&chart_reader);
+            chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock);
+            chart_settings_print(&render_ctx.chart_settings);
+
+            const char *fs_path = TextIsEqual(render_ctx.chart_settings.shader_fs_path, "")
+                                  ? TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION)
+                                  : render_ctx.chart_settings.shader_fs_path;
+            UnloadShader(chart_shader);
+            if (IsPathFile(fs_path) && IsFileExtension(fs_path, ".fs"))
+            {
+              chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION), fs_path);
+            } else
+            {
+              chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION),
+                                        TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
+            }
+            timing_loc     = GetShaderLocation(chart_shader, "timing");
+            screenSize_loc = GetShaderLocation(chart_shader, "screenSize");
+
+            track_service_apply_chart(&track_service, &render_ctx.chart_settings);
+            notes_service_apply_chart(&notes_service, &render_ctx.chart_settings);
+            hud_service_apply_chart  (&hud_service  , &render_ctx.chart_settings, &font_probes);
+
+            ProjSettingData *project_setting = (ProjSettingData *)window_group.project_setting.data;
+            proj_setting_apply_chart(project_setting, &render_ctx.chart_settings, &font_probes);
+
+            PlayMusicStream(music);
+            PauseMusicStream(music);
+            audio_clock_start(&render_ctx.audio_clock);
+            audio_clock_pause(&render_ctx.audio_clock);
+          }
+        }
+        open_proj_input.state.SelectFilePressed = false;
+      }
   }
+
+  rgui_fileinput_unload(&open_proj_input);
 
   // Unload stuffs
   StopMusicStream(music);

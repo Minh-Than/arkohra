@@ -3,6 +3,12 @@
 
 static const unsigned int BASE_APP_WINDOW_WIDTH = 1280;
 
+#ifdef _WIN32
+static const char* PATH_SEPERATOR = "\\";
+#else
+static const char* PATH_SEPERATOR = "/";
+#endif
+
 static const char* DEFAULT_BACKGROUND_PATH = "resources/gameplay/DefaultBackgrounds/arccreate-blender2_base_light.jpg";
 static const char* DEFAULT_JACKET_PATH     = "resources/gameplay/DefaultJacket.png";
 static const char* DEFAULT_CHART_SHADER_VS = "resources/shaders/glsl%i/chart_default.vs";
