@@ -36,38 +36,16 @@ NotesService notes_service_init(int glsl, AppConfigs *app_configs)
   );
   service.arc_shader = (ArcShader){
     .shader = arc_shader,
-    .worldX1_loc     = GetShaderLocation(arc_shader, "worldX1"),
-    .worldY1_loc     = GetShaderLocation(arc_shader, "worldY1"),
-    .worldX2_loc     = GetShaderLocation(arc_shader, "worldX2"),
-    .worldY2_loc     = GetShaderLocation(arc_shader, "worldY2"),
-    .lengthDelta_loc = GetShaderLocation(arc_shader, "lengthDelta"),
-    .scale_loc       = GetShaderLocation(arc_shader, "scale"),
     .shouldClip_loc  = GetShaderLocation(arc_shader, "shouldClip"),
     .negativeBPM_loc = GetShaderLocation(arc_shader, "negativeBPM"),
     .tintLow_loc     = GetShaderLocation(arc_shader, "tintLow"),
     .tintHigh_loc    = GetShaderLocation(arc_shader, "tintHigh")
   };
 
-  Shader arc_shadow_shader = LoadShader(
-      TextFormat("resources/shaders/glsl%i/arc_shadow_shader.vs", glsl),
-      TextFormat("resources/shaders/glsl%i/arc_shadow_shader.fs", glsl)
-  );
-  service.arc_shadow_shader = (ArcShadowShader){
-    .shader = arc_shadow_shader,
-    .worldX1_loc     = GetShaderLocation(arc_shadow_shader, "worldX1"),
-    .worldX2_loc     = GetShaderLocation(arc_shadow_shader, "worldX2"),
-    .lengthDelta_loc = GetShaderLocation(arc_shadow_shader, "lengthDelta"),
-    .scale_loc       = GetShaderLocation(arc_shadow_shader, "scale"),
-    .shouldClip_loc  = GetShaderLocation(arc_shadow_shader, "shouldClip"),
-    .negativeBPM_loc = GetShaderLocation(arc_shadow_shader, "negativeBPM"),
-    .tintLow_loc     = GetShaderLocation(arc_shadow_shader, "tintLow"),
-    .tintHigh_loc    = GetShaderLocation(arc_shadow_shader, "tintHigh")
-  };
-
   service.tap              = tap_load_mesh (&service.tap_tex);
   service.hold             = hold_load_mesh(&service.hold_tex);
   service.arc_segment      = arc_segment_generate_mesh(&service.arc_tex, &arc_shader);
-  service.arc_shadow       = arc_generate_shadow_mesh(&arc_shadow_shader);
+  service.arc_shadow       = arc_generate_shadow_mesh(&arc_shader);
   service.arccap           = arc_generate_arccap_mesh(&service.arccap_tex);
   service.height_indicator = arc_generate_arc_height_mesh(&service.height_indicator_tex);
   service.arctap           = arctap_load_mesh(&service.arctap_tex);
@@ -92,10 +70,21 @@ static Matrix get_segment_local_transform(ArcSegmentRender *segment_render, bool
   return tr;
 }
 
-static void process_collision(Ray ray, List *raycast_results, void *note, RawEventType type, Mesh *mesh, Matrix note_tr, Matrix local_tr)
+static Matrix get_segment_shadow_local_transform(ArcSegmentRender *segment_render, bool is_void)
 {
-  RayCollision collision = GetRayCollisionMesh(ray, *mesh, MatrixMultiply(local_tr,
-                                                                          MatrixMultiply(note_tr, rlGetMatrixTransform())));
+  float scale = is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
+  Matrix tr = {
+    .m0 = scale, .m4 = 0.0f, .m8  = segment_render->world_x2 - segment_render->world_x1, .m12 = segment_render->world_x1,
+    .m1 = 0.0f,  .m5 = 1.0f, .m9  = 0.0f                                               , .m13 = 0.0f,
+    .m2 = 0.0f,  .m6 = 0.0f, .m10 = (float)segment_render->z_delta                     , .m14 = 0.0f,
+    .m3 = 0.0f,  .m7 = 0.0f, .m11 = 0.0f                                               , .m15 = 1.0f,
+  };
+  return tr;
+}
+
+static void process_collision(Ray ray, List *raycast_results, void *note, RawEventType type, Mesh *mesh, Matrix note_tr)
+{
+  RayCollision collision = GetRayCollisionMesh(ray, *mesh, MatrixMultiply(note_tr, rlGetMatrixTransform()));
   if (!collision.hit) return;
   RaycastNote raycast_note = { .data = note, .collision = collision, .note_type = type };
   list_push(raycast_results, &raycast_note);
@@ -177,7 +166,7 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         Matrix tr = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
                                    MatrixMultiply(MatrixScale(1.0f, 1.0f, -z_scale),
                                                   MatrixTranslate(lane_to_world_x(hold->lane), 0.0f, z_pos)));
-        process_collision(rayclust, raycast_results, hold, HOLD, &notes_service->hold.mesh, tr, MatrixIdentity());
+        process_collision(rayclust, raycast_results, hold, HOLD, &notes_service->hold.mesh, tr);
 
         if (hidegroup_actives[tg->value]) continue;
 
@@ -208,7 +197,7 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         Matrix tr = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
                                    MatrixMultiply(MatrixScale(1.0f, 1.0f, z_scale),
                                                   MatrixTranslate(lane_to_world_x(tap->lane), 0.0f, z_pos)));
-        process_collision(rayclust, raycast_results, tap, TAP, &notes_service->tap.mesh, tr, MatrixIdentity());
+        process_collision(rayclust, raycast_results, tap, TAP, &notes_service->tap.mesh, tr);
 
         if (hidegroup_actives[tg->value]) continue;
 
@@ -282,7 +271,8 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         float curr_bpm = curr_bpms[tg->value];
         float alpha    = groupalpha_fade[tg->value];
         double z_pos   = floor_position_to_z(segment_render->start_fp - curr_fp, base_bpm, scroll_speed);
-        draw_arc_shadow(tg, segment_render, arc, &notes_service->arc_shadow_shader, &notes_service->arc_shadow, current_ms, curr_bpm, z_pos, alpha);
+        Matrix tr      = MatrixMultiply(get_segment_shadow_local_transform(segment_render, arc->is_void), MatrixTranslate(0.0f, 0.0f, z_pos));
+        draw_arc_shadow(tg, arc, &notes_service->arc_shader, &notes_service->arc_shadow, current_ms, curr_bpm, z_pos, alpha, tr);
       }
 
       // Following arccaps
@@ -359,8 +349,8 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
 
         double curr_fp = curr_fps[tg->value];
         double z_pos  = floor_position_to_z(segment_render->start_fp - curr_fp, base_bpm, scroll_speed);
-        Matrix tr = MatrixTranslate(0.0f, 0.0f, z_pos);
-        process_collision(rayclust, raycast_results, arc, ARC, &notes_service->arc_segment.mesh, tr, get_segment_local_transform(segment_render, arc->is_void));
+        Matrix tr = MatrixMultiply(get_segment_local_transform(segment_render, arc->is_void), MatrixTranslate(0.0f, 0.0f, z_pos));
+        process_collision(rayclust, raycast_results, arc, ARC, &notes_service->arc_segment.mesh, tr);
 
         if (hidegroup_actives[tg->value]) continue;
 
@@ -368,11 +358,13 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         float alpha = groupalpha_fade[tg->value];
         if (!tg->props.no_height_indicator &&
             !(!tg->props.no_clip && tg->props.no_input && arc->start_timing - current_ms < 0))
+        {
           draw_height_indicator(segment_render, arc, &notes_service->height_indicator.mesh, notes_service->height_indicator.material,
                                 z_pos, alpha, notes_service->colorblind);
+        }
         if (!tg->props.no_clip && arc->is_void && arc->end_timing < current_ms) continue;
-        draw_arc_segment(tg, segment_render, arc, &notes_service->arc_shader, &notes_service->arc_segment,
-                         current_ms, curr_bpm, z_pos, alpha, notes_service->colorblind);
+        draw_arc_segment(tg, arc, &notes_service->arc_shader, &notes_service->arc_segment,
+                         current_ms, curr_bpm, z_pos, alpha, notes_service->colorblind, tr);
       }
 
       // Arc heads
@@ -386,12 +378,14 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
 
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_head) continue;
+        if (!arc->is_head) continue;
+        if (fabs(segment_render->start_fp - arc->start_fp) > 1e-6) continue;
         if (tg->props.no_input && arc->start_timing - current_ms < 0) continue;
 
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
         float alpha = groupalpha_fade[tg->value];
-        draw_arc_head(tg, segment_render, arc, &notes_service->arc_shader, &notes_service->arc_head,
+        draw_arc_head(tg, arc, &notes_service->arc_shader, &notes_service->arc_head,
                       current_ms, curr_bpm, base_bpm, scroll_speed, curr_fp, alpha, notes_service->colorblind);
       }
 
@@ -412,7 +406,7 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
         Matrix tr = MatrixTranslate(arc_world_x_at(arctap->timing, arc),
                                     arc_world_y_at(arctap->timing, arc),
                                     z_pos);
-        process_collision(rayclust, raycast_results, arctap, ARCTAP, &notes_service->arctap.mesh, tr, MatrixIdentity());
+        process_collision(rayclust, raycast_results, arctap, ARCTAP, &notes_service->arctap.mesh, tr);
 
         if (hidegroup_actives[tg->value]) continue;
         if (tg->props.no_input && arctap->timing - current_ms < 0) continue;
@@ -478,5 +472,4 @@ void notes_service_unload(NotesService *notes_service)
   UnloadTexture(notes_service->arctap_shadow_tex);
 
   UnloadShader(notes_service->arc_shader.shader);
-  UnloadShader(notes_service->arc_shadow_shader.shader);
 }
