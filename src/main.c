@@ -155,6 +155,8 @@ int main()
     window_services_handle_inputs(&window_group);
     selection_service_handle_inputs(&selection_service, &track_service, &window_group, chart_reader.initialized);
 
+    track_services_update_scroll_offset(&track_service, &render_ctx, &chart_reader);
+
     if (target.texture.width != GetRenderWidth() || target.texture.height != GetRenderHeight())
     {
       UnloadRenderTexture(target);
@@ -232,8 +234,7 @@ int main()
       // Gameplay scene
       // Order: Base track -> Notes -> Sky Input/Label -> HUD -> Windows
       track_service_render_base_track(&track_service, &render_ctx, &chart_reader.render_lists);
-      notes_service_render(&notes_service, &track_service, &render_ctx, &chart_reader,
-                           &selection_service.raycast_results);
+      notes_service_render(&notes_service, &render_ctx, &chart_reader, &selection_service.raycast_results);
       track_service_render_sky_input(&track_service, &render_ctx, &chart_reader.render_lists);
       hud_services_render(&hud_service, &render_ctx);
 
@@ -276,78 +277,78 @@ int main()
     // end the frame and get ready for the next one  (display frame, poll input, etc...)
     EndDrawing();
 
-      if(open_proj_input.state.SelectFilePressed)
+    if(open_proj_input.state.SelectFilePressed)
+    {
+      bool is_valid = false;
+      if (open_proj_input.extensions.size == 0) is_valid = true;
+      else
       {
-        bool is_valid = false;
-        if (open_proj_input.extensions.size == 0) is_valid = true;
-        else
+        for (int i = 0; i < open_proj_input.extensions.size; i++)
         {
-          for (int i = 0; i < open_proj_input.extensions.size; i++)
-          {
-            const char* ext = (char *)list_get(&open_proj_input.extensions, i);
-            is_valid = IsFileExtension(open_proj_input.state.fileNameText, ext);
-            if (is_valid) break;
-          }
+          const char* ext = (char *)list_get(&open_proj_input.extensions, i);
+          is_valid = IsFileExtension(open_proj_input.state.fileNameText, ext);
+          if (is_valid) break;
         }
-        if(is_valid)
-          strcpy(open_proj_input.file, TextFormat("%s%s%s", open_proj_input.state.dirPathText, PATH_SEPERATOR, open_proj_input.state.fileNameText));
-
-        const char* project_file = open_proj_input.file;
-        if (TextIsEqual(GetFileName(project_file), "project.json"))
-        {
-          // Pause audio before processing
-          PauseMusicStream(music);
-          audio_clock_pause(&render_ctx.audio_clock);
-
-          if (chart_settings_load_from_project(&render_ctx.chart_settings, &app_configs, project_file))
-          {
-            // Stop audio entirely
-            render_ctx.audio_clock.total_audio_length = 0;
-            StopMusicStream(music);
-            UnloadMusicStream(music);
-            music = LoadMusicStream(render_ctx.chart_settings.audio_path);
-            music.looping = false;
-            render_ctx.audio_clock.total_audio_length = (int)roundf(GetMusicTimeLength(music) * 1000);
-            SetMusicPan(music, 0.0f);
-            SetMusicVolume(music, app_configs.music_volume);
-
-            selection_service_unload(&selection_service);
-
-            // Update chart reader
-            if(chart_reader.initialized) chart_reader_unload(&chart_reader);
-            chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock);
-            chart_settings_print(&render_ctx.chart_settings);
-
-            const char *fs_path = TextIsEqual(render_ctx.chart_settings.shader_fs_path, "")
-                                  ? TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION)
-                                  : render_ctx.chart_settings.shader_fs_path;
-            UnloadShader(chart_shader);
-            if (IsPathFile(fs_path) && IsFileExtension(fs_path, ".fs"))
-            {
-              chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION), fs_path);
-            } else
-            {
-              chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION),
-                                        TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
-            }
-            timing_loc     = GetShaderLocation(chart_shader, "timing");
-            screenSize_loc = GetShaderLocation(chart_shader, "screenSize");
-
-            track_service_apply_chart(&track_service, &render_ctx.chart_settings);
-            notes_service_apply_chart(&notes_service, &render_ctx.chart_settings);
-            hud_service_apply_chart  (&hud_service  , &render_ctx.chart_settings, &font_probes);
-
-            ProjSettingData *project_setting = (ProjSettingData *)window_group.project_setting.data;
-            proj_setting_apply_chart(project_setting, &render_ctx.chart_settings, &font_probes);
-
-            PlayMusicStream(music);
-            PauseMusicStream(music);
-            audio_clock_start(&render_ctx.audio_clock);
-            audio_clock_pause(&render_ctx.audio_clock);
-          }
-        }
-        open_proj_input.state.SelectFilePressed = false;
       }
+      if(is_valid)
+        strcpy(open_proj_input.file, TextFormat("%s%s%s", open_proj_input.state.dirPathText, PATH_SEPERATOR, open_proj_input.state.fileNameText));
+
+      const char* project_file = open_proj_input.file;
+      if (TextIsEqual(GetFileName(project_file), "project.json"))
+      {
+        // Pause audio before processing
+        PauseMusicStream(music);
+        audio_clock_pause(&render_ctx.audio_clock);
+
+        if (chart_settings_load_from_project(&render_ctx.chart_settings, &app_configs, project_file))
+        {
+          // Stop audio entirely
+          render_ctx.audio_clock.total_audio_length = 0;
+          StopMusicStream(music);
+          UnloadMusicStream(music);
+          music = LoadMusicStream(render_ctx.chart_settings.audio_path);
+          music.looping = false;
+          render_ctx.audio_clock.total_audio_length = (int)roundf(GetMusicTimeLength(music) * 1000);
+          SetMusicPan(music, 0.0f);
+          SetMusicVolume(music, app_configs.music_volume);
+
+          selection_service_unload(&selection_service);
+
+          // Update chart reader
+          if(chart_reader.initialized) chart_reader_unload(&chart_reader);
+          chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock);
+          chart_settings_print(&render_ctx.chart_settings);
+
+          const char *fs_path = TextIsEqual(render_ctx.chart_settings.shader_fs_path, "")
+                                ? TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION)
+                                : render_ctx.chart_settings.shader_fs_path;
+          UnloadShader(chart_shader);
+          if (IsPathFile(fs_path) && IsFileExtension(fs_path, ".fs"))
+          {
+            chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION), fs_path);
+          } else
+          {
+            chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION),
+                                      TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
+          }
+          timing_loc     = GetShaderLocation(chart_shader, "timing");
+          screenSize_loc = GetShaderLocation(chart_shader, "screenSize");
+
+          track_service_apply_chart(&track_service, &render_ctx.chart_settings);
+          notes_service_apply_chart(&notes_service, &render_ctx.chart_settings);
+          hud_service_apply_chart  (&hud_service  , &render_ctx.chart_settings, &font_probes);
+
+          ProjSettingData *project_setting = (ProjSettingData *)window_group.project_setting.data;
+          proj_setting_apply_chart(project_setting, &render_ctx.chart_settings, &font_probes);
+
+          PlayMusicStream(music);
+          PauseMusicStream(music);
+          audio_clock_start(&render_ctx.audio_clock);
+          audio_clock_pause(&render_ctx.audio_clock);
+        }
+      }
+      open_proj_input.state.SelectFilePressed = false;
+    }
   }
 
   rgui_fileinput_unload(&open_proj_input);

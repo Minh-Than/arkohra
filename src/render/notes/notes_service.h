@@ -8,7 +8,6 @@
 #include "render/mesh_renderable.h"
 #include "render/render_service.h"
 #include "render/texture/skin_side.h"
-#include "render/track/track_service.h"
 
 typedef struct {
   Texture2D tap_tex, hold_tex, height_indicator_tex, arc_tex, arccap_tex, arctap_tex, arctap_shadow_tex;
@@ -20,8 +19,7 @@ typedef struct {
 }NotesService;
 
 NotesService notes_service_init(int glsl, AppConfigs *app_configs);
-void notes_service_render(NotesService *notes_service, TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader,
-                          List *raycast_results);
+void notes_service_render(NotesService *notes_service, RenderContext *render_ctx, ChartReader *chart_reader, List *raycast_results);
 void notes_service_apply_chart(NotesService *notes_service, ChartSettings *chart_settings);
 void notes_service_unload(NotesService *notes_service);
 

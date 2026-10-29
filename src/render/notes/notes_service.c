@@ -90,8 +90,7 @@ static void process_collision(Ray ray, List *raycast_results, void *note, RawEve
   list_push(raycast_results, &raycast_note);
 }
 
-void notes_service_render(NotesService *notes_service, TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader,
-                          List *raycast_results)
+void notes_service_render(NotesService *notes_service, RenderContext *render_ctx, ChartReader *chart_reader, List *raycast_results)
 {
   if (!chart_reader->initialized) return;
 
@@ -118,16 +117,6 @@ void notes_service_render(NotesService *notes_service, TrackService *track_servi
   List *arc_segment_list = &render_lists->arc_segment_render_list;
   List *arccap_list      = &render_lists->arccap_render_list;
   List *arctap_list      = &render_lists->arctap_render_list;
-
-  if (render_ctx->audio_clock.is_playing)
-  {
-    // Playfield: Track & Single Line Scrolling
-    static float scroll_offset = 0.0f;
-    float scroll_constant = curr_bpms[0] / base_bpm;
-    scroll_offset += GetFrameTime() * render_ctx->chart_settings.scroll_speed * scroll_constant;
-    SetShaderValue(track_service->track_shader, track_service->track_scrollOffset_loc, &scroll_offset, SHADER_UNIFORM_FLOAT);
-    SetShaderValue(track_service->single_line_shader, track_service->single_line_scrollOffset_loc, &scroll_offset, SHADER_UNIFORM_FLOAT);
-  }
 
   Camera3D final_camera = get_enwidened_camera(render_ctx->camera, &render_lists->enwidencamera_channel, current_ms);
   Ray rayclust = GetScreenToWorldRay(GetMousePosition(), final_camera);

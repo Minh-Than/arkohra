@@ -3,7 +3,9 @@
 #include "rlgl.h"
 #include "constants.h"
 #include "track_service.h"
+#include "data/gameplay_events/timing_event.h"
 #include "data/keyframe/value_channel.h"
+#include "gameplay/arc_formula.h"
 #include "gameplay/camera/camera_service.h"
 #include "render/mesh_renderable.h"
 
@@ -208,8 +210,7 @@ TrackService track_service_init(int glsl)
   service.sky_label = (MeshRenderable){.mesh = sky_label_mesh, .material = sky_label_material};
   renderable_set_transforms(
     &service.sky_label,
-    (Matrix[]){
-      MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), MatrixTranslate(0.0f, 0.17f, 0.0f))},
+    (Matrix[]){ MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), MatrixTranslate(0.0f, 0.17f, 0.0f)) },
     1
   );
 
@@ -217,6 +218,28 @@ TrackService track_service_init(int glsl)
   service.skin_track = service.skin_side = SK_LIGHT;
   service.sl_type = SL_NONE;
   return service;
+}
+
+void track_services_update_scroll_offset(TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader)
+{
+  static float scroll_offset = 0.0f;
+  if (!render_ctx->audio_clock.is_playing) return;
+
+  List *timing_groups = &chart_reader->timing_groups;
+  if (!timing_groups) return;
+
+  ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, 0);
+  if (!tg) return;
+  
+  float current_ms = audio_clock_get_time_ms(&render_ctx->audio_clock) - render_ctx->chart_settings.audio_offset;
+  TimingEvent *curr_event = get_event_at(&tg->timing_events, current_ms);
+
+  float curr_bpm = curr_event != NULL ? curr_event->bpm : render_ctx->chart_settings.base_bpm;
+  float scroll_constant = curr_bpm / render_ctx->chart_settings.base_bpm;
+  scroll_offset += GetFrameTime() * render_ctx->chart_settings.scroll_speed * scroll_constant;
+
+  SetShaderValue(track_service->track_shader      , track_service->track_scrollOffset_loc      , &scroll_offset, SHADER_UNIFORM_FLOAT);
+  SetShaderValue(track_service->single_line_shader, track_service->single_line_scrollOffset_loc, &scroll_offset, SHADER_UNIFORM_FLOAT);
 }
 
 void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx, NoteRenderLists *note_render_lists)
@@ -265,11 +288,9 @@ void track_service_render_base_track(TrackService *track_service, RenderContext 
       *crit_color = Fade(*crit_color, enwidenlanes_value);
       renderable_draw(&track_service->extra_critical_line);
 
-      rlDisableBackfaceCulling();
       Color *extra_lane_edge_color = &track_service->extra_lane_edge.material.maps[MATERIAL_MAP_DIFFUSE].color;
       *extra_lane_edge_color = Fade(*extra_lane_edge_color, enwidenlanes_value);
       renderable_draw(&track_service->extra_lane_edge);
-      rlEnableBackfaceCulling();
       rlEnableDepthTest();
     rlPopMatrix();
 
@@ -298,7 +319,6 @@ void track_service_render_sky_input(TrackService *track_service, RenderContext *
   ValueChannel *enwidencamera_channel = &note_render_lists->enwidencamera_channel;
   float current_ms = audio_clock_get_time_ms(&render_ctx->audio_clock) - render_ctx->chart_settings.audio_offset;
   float interpolation = value_channel_interpolate(enwidencamera_channel, current_ms);
-  float skyDeltaY = 2.745f;
 
   // Sky input line - label
   Camera3D final_camera = get_enwidened_camera(render_ctx->camera, enwidencamera_channel, current_ms);
@@ -306,13 +326,11 @@ void track_service_render_sky_input(TrackService *track_service, RenderContext *
     rlDisableDepthTest();
     rlPushMatrix();
       rlScalef(FUCKASS_SCALE, 1.0f, 1.0f);
-      rlTranslatef(0.0f, 5.5f + interpolation * skyDeltaY, 0.0f);
+      rlRotatef(180.0f, 0.0, 1.0f, 0.0f);
+      rlTranslatef(0.0f, 5.5f + interpolation * SKY_DELTA_Y, 0.0f);
 
       renderable_draw(&track_service->sky_input_line);
-
-      rlDisableBackfaceCulling();
-        renderable_draw(&track_service->sky_label);
-      rlEnableBackfaceCulling();
+      renderable_draw(&track_service->sky_label);
     rlPopMatrix();
     rlEnableDepthTest();
   EndMode3D();

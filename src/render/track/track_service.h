@@ -1,6 +1,7 @@
 #ifndef TRACK_SERVICE_H
 #define TRACK_SERVICE_H
 
+#include "gameplay/chart_reader.h"
 #include "raylib.h"
 #include "render/mesh_renderable.h"
 #include "render/note_render_lists.h"
@@ -22,6 +23,7 @@ typedef struct {
 
 TrackService track_service_init(int glsl);
 void set_mesh_transforms(MeshRenderable *renderable, Matrix *transforms, int count);
+void track_services_update_scroll_offset(TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader);
 void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx, NoteRenderLists *note_render_lists);
 void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx, NoteRenderLists *note_render_lists);
 void track_service_apply_chart(TrackService *track_service, ChartSettings *chart_settings);
