@@ -155,7 +155,7 @@ int main()
     window_services_handle_inputs(&window_group);
     selection_service_handle_inputs(&selection_service, &track_service, &window_group, chart_reader.initialized);
 
-    track_services_update_scroll_offset(&track_service, &render_ctx, &chart_reader);
+    track_service_update_scroll_offset(&track_service, &render_ctx, &chart_reader);
 
     if (target.texture.width != GetRenderWidth() || target.texture.height != GetRenderHeight())
     {

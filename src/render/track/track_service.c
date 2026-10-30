@@ -220,7 +220,7 @@ TrackService track_service_init(int glsl)
   return service;
 }
 
-void track_services_update_scroll_offset(TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader)
+void track_service_update_scroll_offset(TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader)
 {
   static float scroll_offset = 0.0f;
   if (!render_ctx->audio_clock.is_playing) return;
