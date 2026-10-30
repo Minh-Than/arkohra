@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <float.h>
 #include "raylib.h"
 #include "raygui.h"

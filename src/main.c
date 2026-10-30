@@ -258,7 +258,7 @@ int main()
       // Windows
       cmd_palette_draw (&window_group.command_palette, (CmdPltData *)window_group.command_palette.data);
       proj_setting_draw(&window_group.project_setting, (ProjSettingData *)window_group.project_setting.data,
-                        &app_configs, &render_ctx, &font_probes);
+                        &app_configs, &render_ctx, &chart_reader.timing_groups, &font_probes);
 
       // Debug FPS
       DrawFPS(5, 5);
@@ -276,6 +276,12 @@ int main()
 
     // end the frame and get ready for the next one  (display frame, poll input, etc...)
     EndDrawing();
+
+    // Temp place to update AppConfigs values to others live if needed
+    {
+      if (app_configs.colorblind != notes_service.colorblind)
+        notes_service.colorblind = app_configs.colorblind;
+    }
 
     if(open_proj_input.state.SelectFilePressed)
     {

@@ -46,12 +46,14 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
                  &gen_set_panel->scroll, &gen_set_panel->scroll_rect);
 
   int label_xs = 96;
-  BeginScissorMode(gen_set_panel->scroll_rect.x, gen_set_panel->scroll_rect.y, gen_set_panel->scroll_rect.width, gen_set_panel->scroll_rect.height);
+  BeginScissorMode(gen_set_panel->scroll_rect.x, gen_set_panel->scroll_rect.y, gen_set_panel->scroll_rect.width + 8, gen_set_panel->scroll_rect.height);
+
+  int scroll_padding = (int)gen_set_panel->scroll_rect.height >= total_content_h ? 16 : 28;
 
   // Audio
   int audio_panel_x = content_x + 8    + (int)gen_set_panel->scroll.x;
   int audio_panel_y = scroll_y  + 12*2 + (int)gen_set_panel->scroll.y + gameplay_panel_h;
-  int audio_panel_w = scroll_w  - 28;
+  int audio_panel_w = scroll_w  - scroll_padding;
   GuiGroupBox ((Rectangle){audio_panel_x, audio_panel_y, audio_panel_w, audio_panel_h}, "[ AUDIO ]");
 
   int audio_field_x = audio_panel_x + 8;
@@ -73,7 +75,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   // WARNING: the dropdown area are treated in rendering the same way, meaning anything drawn after WILL BE DRAWN ON TOP OF IT
   int gameplay_panel_x = content_x + 8    + (int)gen_set_panel->scroll.x;
   int gameplay_panel_y = scroll_y  + 12*1 + (int)gen_set_panel->scroll.y;
-  int gameplay_panel_w = scroll_w  - 28;
+  int gameplay_panel_w = scroll_w  - scroll_padding;
   GuiGroupBox ((Rectangle){gameplay_panel_x, gameplay_panel_y, gameplay_panel_w, gameplay_panel_h}, "[ GAMEPLAY ]");
 
   int gameplay_field_x = gameplay_panel_x + 8;

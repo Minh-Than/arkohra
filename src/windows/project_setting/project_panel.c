@@ -51,12 +51,14 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
                  NULL, (Rectangle){0, 0, scroll_w, total_content_h},
                  &project_panel->scroll, &project_panel->scroll_rect);
 
-  BeginScissorMode(project_panel->scroll_rect.x, project_panel->scroll_rect.y, project_panel->scroll_rect.width, project_panel->scroll_rect.height);
+  BeginScissorMode(project_panel->scroll_rect.x, project_panel->scroll_rect.y, project_panel->scroll_rect.width + 8, project_panel->scroll_rect.height);
+
+  int scroll_padding = (int)project_panel->scroll_rect.height >= total_content_h ? 16 : 28;
 
   // Information
   int info_panel_x = content_x + 8    + (int)project_panel->scroll.x;
   int info_panel_y = scroll_y  + 12*1 + (int)project_panel->scroll.y;
-  int info_panel_w = scroll_w  - 28;
+  int info_panel_w = scroll_w  - scroll_padding;
   int label_xs = 96;
   GuiGroupBox ((Rectangle){info_panel_x, info_panel_y, info_panel_w, info_panel_h}, "[ INFORMATION ]");
 
@@ -96,13 +98,13 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
         project_panel->is_text_edited = true; // RELOAD FONT
     }
     // rgui_textinput_draw_font() ends scissor mode
-    BeginScissorMode(project_panel->scroll_rect.x, project_panel->scroll_rect.y, project_panel->scroll_rect.width, project_panel->scroll_rect.height);
+    BeginScissorMode(project_panel->scroll_rect.x, project_panel->scroll_rect.y, project_panel->scroll_rect.width + 8, project_panel->scroll_rect.height);
   }
 
   // Gameplay
   int gameplay_panel_x = content_x + 8    + (int)project_panel->scroll.x;
   int gameplay_panel_y = scroll_y  + 12*2 + (int)project_panel->scroll.y + info_panel_h;
-  int gameplay_panel_w = scroll_w  - 28;
+  int gameplay_panel_w = scroll_w  - scroll_padding;
   GuiGroupBox ((Rectangle){gameplay_panel_x, gameplay_panel_y, gameplay_panel_w, gameplay_panel_h}, "[ GAMEPLAY ]");
 
   int gameplay_field_x = gameplay_panel_x + 8;
@@ -174,7 +176,7 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
   // Files
   int files_panel_x = content_x + 8    + (int)project_panel->scroll.x;
   int files_panel_y = scroll_y  + 12*3 + (int)project_panel->scroll.y + info_panel_h + gameplay_panel_h;
-  int files_panel_w = scroll_w  - 28;
+  int files_panel_w = scroll_w  - scroll_padding;
   GuiGroupBox ((Rectangle){files_panel_x, files_panel_y, files_panel_w, files_panel_h}, "[ FILES ]");
 
   int files_field_x = files_panel_x + 8;
@@ -207,7 +209,7 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
   GuiWindowFileDialog(&project_panel->jacket.state);
   GuiWindowFileDialog(&project_panel->background.state);
   GuiWindowFileDialog(&project_panel->bg_video.state);
-  BeginScissorMode(project_panel->scroll_rect.x, project_panel->scroll_rect.y, project_panel->scroll_rect.width, project_panel->scroll_rect.height);
+  BeginScissorMode(project_panel->scroll_rect.x, project_panel->scroll_rect.y, project_panel->scroll_rect.width + 8, project_panel->scroll_rect.height);
 
   EndScissorMode();
   EndShaderMode();

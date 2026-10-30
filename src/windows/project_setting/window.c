@@ -2,6 +2,7 @@
 #include "raygui.h"
 #include "raylib.h"
 #include "data/fonts/fonts_service.h"
+#include "windows/project_setting/events_panel.h"
 #include "windows/window_inst.h"
 #include "../project_setting/window.h"
 
@@ -11,6 +12,7 @@ ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs, CachedFontP
   data.setting_options_active = SETTING_GENERAL;
 
   data.project_panel = project_panel_init();
+  data.events_panel = events_panel_init();
   data.gen_set_panel = general_setting_panel_init(app_configs);
 
   data.sdf_shader = LoadShader(0, TextFormat("resources/shaders/glsl%i/sdf.fs", glsl));
@@ -27,7 +29,8 @@ ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs, CachedFontP
   return data;
 }
 
-void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs, RenderContext *render_ctx, CachedFontProbes *font_probes)
+void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs, RenderContext *render_ctx,
+                       List *timing_groups, CachedFontProbes *font_probes)
 {
   if (!window_inst->is_visible) return;
 
@@ -49,7 +52,7 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
       project_panel_draw(window_inst, &data->project_panel, app_configs, render_ctx, data->sdf_shader, &data->font_fallbacks);
       break;
     case SETTING_EVENTS:
-      GuiLabel((Rectangle){content_x, toggle_y + 32, 50, 10}, "Balls");
+      events_panel_draw(window_inst, &data->events_panel, data->sdf_shader, timing_groups);
       break;
     case SETTING_GENERAL:
       general_setting_panel_draw(window_inst, &data->gen_set_panel, app_configs, render_ctx, data->sdf_shader, &data->font_fallbacks);
