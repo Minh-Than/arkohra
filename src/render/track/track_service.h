@@ -22,7 +22,6 @@ typedef struct {
 } TrackService;
 
 TrackService track_service_init(int glsl);
-void set_mesh_transforms(MeshRenderable *renderable, Matrix *transforms, int count);
 void track_service_update_scroll_offset(TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader);
 void track_service_render_base_track(TrackService *track_service, RenderContext *render_ctx, NoteRenderLists *note_render_lists);
 void track_service_render_sky_input(TrackService *track_service, RenderContext *render_ctx, NoteRenderLists *note_render_lists);
