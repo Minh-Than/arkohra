@@ -154,6 +154,7 @@ int main()
     camera_handle_main_window_resize(&render_ctx.camera, app_configs.playfield_ratio);
     window_services_handle_inputs(&window_group);
     selection_service_handle_inputs(&selection_service, &track_service, &window_group, chart_reader.initialized);
+    window_services_window_check_oob(&window_group);
 
     track_service_update_scroll_offset(&track_service, &render_ctx, &chart_reader);
 

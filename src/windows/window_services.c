@@ -53,6 +53,12 @@ void window_services_handle_inputs(WindowGroup *window_group)
   }
 }
 
+void window_services_window_check_oob(WindowGroup *window_group)
+{
+  if (!IsWindowResized()) return;
+  window_inst_oob_reposition(&window_group->project_setting);
+}
+
 void windows_services_unload(WindowGroup *window_group)
 {
   window_inst_unload(&window_group->command_palette);

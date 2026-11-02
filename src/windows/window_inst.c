@@ -111,6 +111,19 @@ void window_inst_drag_resize(WindowInst *window_inst, int min_width, int min_hei
                (Vector2){ handle.x - 2, handle.y + 8 }, GRAY);
 }
 
+void window_inst_oob_reposition(WindowInst *window_inst)
+{
+  Rectangle window_app_rect  = { .x = 0.0f, .y = 0.0f,
+                                 .width = GetScreenWidth(), .height = GetScreenHeight() };
+  Rectangle window_inst_rect = { .x = window_inst->x, .y = window_inst->y,
+                                 .width = window_inst->width, .height = window_inst->height };
+  if (!CheckCollisionRecs(window_app_rect, window_inst_rect))
+  {
+    window_inst->x = 0.0f;
+    window_inst->y = 0.0f;
+  }
+}
+
 void window_inst_unload(WindowInst *window_inst)
 {
   free(window_inst->data);

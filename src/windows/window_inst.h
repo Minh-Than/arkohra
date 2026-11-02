@@ -26,6 +26,7 @@ void window_inst_open(WindowInst *window_inst);
 void window_inst_close(WindowInst *window_inst);
 void window_inst_toggle(WindowInst *window_inst);
 void window_inst_drag_resize(WindowInst *window_inst, int min_width, int min_height);
+void window_inst_oob_reposition(WindowInst *window_inst);
 void window_inst_unload(WindowInst *window_inst);
 
 #endif // WINDOW_INST_H
