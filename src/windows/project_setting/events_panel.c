@@ -54,12 +54,13 @@ static void draw_timing_groups_panel_list(List *timing_groups, WindowInst *windo
 
   // TODO: Editable values (self-harm)
   int timings_panel_y = groups_panel_y + 24 + events_panel->tg_scroll.y;
+  int scroll_bar_offset = total_height < timing_events_rect.height ? 0 : 12;
   if (timing_groups->size > 0)
   {
-    GuiDummyRec((Rectangle){groups_panel_x + 1, timings_panel_y + 30*events_panel->curr_tg, groups_panel_w - 14, 30}, NULL);
+    GuiDummyRec((Rectangle){groups_panel_x + 1, timings_panel_y + 30*events_panel->curr_tg, groups_panel_w - scroll_bar_offset - 2, 30}, NULL);
     for (int i = 0; i < timing_groups->size - 1; i++)
     {
-      GuiLine((Rectangle){groups_panel_x, timings_panel_y + 30*i + 15, groups_panel_w - 13, 30}, NULL);
+      GuiLine((Rectangle){groups_panel_x, timings_panel_y + 30*i + 15, groups_panel_w - scroll_bar_offset - 1, 30}, NULL);
     }
     for (int i = 0; i < timing_groups->size; i++)
     {
@@ -77,8 +78,8 @@ static void draw_timing_groups_panel_list(List *timing_groups, WindowInst *windo
 }
 
 static void draw_timings_panel_list(ChartTimingGroup *tg, WindowInst *window_inst, EventsPanel *events_panel,
-                                         int events_panel_x, int events_panel_y, int events_panel_w, int events_panel_h,
-                                         int content_x, int scroll_y, int scroll_w, int scroll_h)
+                                    int events_panel_x, int events_panel_y, int events_panel_w, int events_panel_h,
+                                    int content_x, int scroll_y, int scroll_w, int scroll_h)
 {
   Rectangle timing_events_rect = { .x = events_panel_x, .y = events_panel_y, .width = events_panel_w, .height = events_panel_h - 30};
   Rectangle scissoring_rect = GetCollisionRec(timing_events_rect, window_inst_get_rect(window_inst));
@@ -97,10 +98,11 @@ static void draw_timings_panel_list(ChartTimingGroup *tg, WindowInst *window_ins
 
   // TODO: Editable values (self-harm)
   int timings_panel_y = events_panel_y + 24 + events_panel->event_scroll.y;
+  int scroll_bar_offset = total_height < timing_events_rect.height ? 0 : 12;
   if (tg != NULL)
   {
     for (int i = 0; i < tg->timing_events.size - 1; i++)
-      GuiLine((Rectangle){events_panel_x + 8, timings_panel_y + 30*i + 15, events_panel_w - 28, 30}, NULL);
+      GuiLine((Rectangle){events_panel_x + 8, timings_panel_y + 30*i + 15, events_panel_w - scroll_bar_offset - 16, 30}, NULL);
     for (int i = 0; i < tg->timing_events.size; i++)
     {
       TimingEvent *event = (TimingEvent *)list_get(&tg->timing_events, i);
@@ -248,34 +250,32 @@ void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, Shade
                  "Timings;Events", &events_panel->events_option_active);
 
   events_panel_y += 24 + 8;
+  ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, events_panel->curr_tg);
   switch (events_panel->events_option_active)
   {
     case EVENTS_PANEL_TIMINGS:
     {
-      ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, events_panel->curr_tg);
       draw_timings_panel_list(tg, window_inst, events_panel,
                               events_panel_x, events_panel_y, events_panel_w, events_panel_h,
                               content_x, scroll_y, scroll_w, scroll_h);
-      BeginScissorMode(events_panel->scroll_rect.x, events_panel->scroll_rect.y,
-                       events_panel->scroll_rect.width + 8, events_panel->scroll_rect.height);
       break;
     }
     case EVENTS_PANEL_EVENTS:
     {
-      ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, events_panel->curr_tg);
       draw_events_panel_list(tg, events_panel->sc_option, window_inst, events_panel,
                              events_panel_x, events_panel_y, events_panel_w, events_panel_h,
                              content_x, scroll_y, scroll_w, scroll_h);
-      BeginScissorMode(events_panel->scroll_rect.x, events_panel->scroll_rect.y,
-                       events_panel->scroll_rect.width + 8, events_panel->scroll_rect.height);
-
-      events_panel_y -= 24 + 8;
-      if (rgui_selectinput_dropdown(&events_panel->scenecontrol, (Rectangle){events_panel_x + events_panel_w - 120, events_panel_y, 120, 24}))
-      {
-        events_panel->sc_option = events_panel->scenecontrol.option;
-      }
-      events_panel_y += 24 + 8;
       break;
+    }
+  }
+  BeginScissorMode(events_panel->scroll_rect.x, events_panel->scroll_rect.y,
+                   events_panel->scroll_rect.width + 8, events_panel->scroll_rect.height);
+
+  if (events_panel->events_option_active == EVENTS_PANEL_EVENTS)
+  {
+    if (rgui_selectinput_dropdown(&events_panel->scenecontrol, (Rectangle){events_panel_x + events_panel_w - 120, events_panel_y - 24 - 8, 120, 24}))
+    {
+      events_panel->sc_option = events_panel->scenecontrol.option;
     }
   }
 
