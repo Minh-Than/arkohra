@@ -38,7 +38,7 @@ static void draw_timing_groups_panel_list(List *timing_groups, WindowInst *windo
                                          int groups_panel_x, int groups_panel_y, int groups_panel_w, int groups_panel_h,
                                          int content_x, int scroll_y, int scroll_w, int scroll_h)
 {
-  Rectangle timing_events_rect = { groups_panel_x, groups_panel_y, groups_panel_w, groups_panel_h};
+  Rectangle timing_events_rect = { .x = groups_panel_x, .y = groups_panel_y, .width = groups_panel_w, .height = groups_panel_h };
   Rectangle scissoring_rect = GetCollisionRec(timing_events_rect, (Rectangle){content_x, scroll_y, scroll_w, scroll_h});
   if (scissoring_rect.width == 0 || scissoring_rect.height == 0) return;
 
@@ -81,12 +81,11 @@ static void draw_timings_panel_list(ChartTimingGroup *tg, WindowInst *window_ins
                                     int events_panel_x, int events_panel_y, int events_panel_w, int events_panel_h,
                                     int content_x, int scroll_y, int scroll_w, int scroll_h)
 {
-  Rectangle timing_events_rect = { .x = events_panel_x, .y = events_panel_y, .width = events_panel_w, .height = events_panel_h - 30};
+  Rectangle timing_events_rect = { .x = events_panel_x, .y = events_panel_y, .width = events_panel_w, .height = events_panel_h - 30 };
   Rectangle scissoring_rect = GetCollisionRec(timing_events_rect, window_inst_get_rect(window_inst));
   if (scissoring_rect.width == 0 || scissoring_rect.height == 0) return;
 
   int total_height = tg != NULL ? tg->timing_events.size * 30 : 0;
-  char result[256]; builtin_sc_option_get_label_text(events_panel->scenecontrol.option, result, 256);
   GuiScrollPanel(timing_events_rect, "[ TIMINGS ]",
                  (Rectangle){0, 0, scroll_w - 28, total_height},
                  &events_panel->event_scroll, &events_panel->event_scroll_rect);
