@@ -125,5 +125,6 @@ void proj_setting_reload_font(ProjSettingData *proj_setting, CachedFontProbes *f
 void proj_setting_apply_chart(ProjSettingData *project_setting, ChartSettings *chart_settings, CachedFontProbes *font_probes)
 {
   project_panel_apply_chart(&project_setting->project_panel, chart_settings);
+  events_panel_apply_chart(&project_setting->events_panel);
   proj_setting_reload_font(project_setting, font_probes);
 }

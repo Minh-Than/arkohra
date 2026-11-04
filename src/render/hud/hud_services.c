@@ -48,7 +48,7 @@ void hud_services_render(HudService *hud_service, RenderContext *render_ctx)
 
   float width_ratio         = (float)GetScreenWidth()  / BASE_APP_WINDOW_WIDTH;
   float height_ratio        = (float)GetScreenHeight() / aspect_ratio_get_height(BASE_APP_WINDOW_WIDTH, hud_service->playfield_ratio);
-  float hud_dynamic_scaling = Clamp(fminf(width_ratio, height_ratio * 1.8f), 0.7f, 1.4f) * INFO_PANEL_SCALE;
+  float hud_dynamic_scaling = Clamp(fminf(width_ratio * 1.1f, height_ratio * 1.7f), 0.8f, 2.0f) * INFO_PANEL_SCALE;
   float info_panel_width    = hud_service->info_panel.width  * hud_dynamic_scaling;
   float info_panel_height   = hud_service->info_panel.height * hud_dynamic_scaling;
   float jacket_bg_width     = hud_service->jacket_bg.width   * hud_dynamic_scaling;

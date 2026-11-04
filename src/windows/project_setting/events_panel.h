@@ -21,14 +21,17 @@ enum BuiltinSCOption {
 typedef struct {
   int events_option_active;
   enum BuiltinSCOption sc_option;
+  int curr_tg;
 
   RguiSelectInput scenecontrol;
 
-  Rectangle scroll_rect;
-  Vector2 scroll;
+  Rectangle scroll_rect, tg_scroll_rect, event_scroll_rect;
+  Vector2 scroll, tg_scroll, event_scroll;
+
 } EventsPanel;
 
 EventsPanel events_panel_init();
 void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, Shader sdf_shader, List *timing_groups);
+void events_panel_apply_chart(EventsPanel *events_panel);
 
 #endif // EVENTS_PANEL_H
