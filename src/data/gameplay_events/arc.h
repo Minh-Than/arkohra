@@ -57,7 +57,6 @@ typedef struct {
   float arc_start_timing, arc_end_timing;
 
   float world_x1, world_y1, world_x2, world_y2;
-  double z_delta;
 } ArcSegmentRender;
 
 MeshRenderable arc_segment_generate_mesh(Texture2D *texture, Shader *shader);

@@ -3,6 +3,7 @@ Cloned from quickstart `https://github.com/raylib-extras/raylib-quickstart` by J
 To view a copy of this license, visit https://creativecommons.org/publicdomain/zero/1.0/
 */
 
+#include "gameplay/arc_formula.h"
 #include "raylib.h"
 #include "raygui.h"
 #include "raymath.h"
@@ -278,10 +279,20 @@ int main()
     // end the frame and get ready for the next one  (display frame, poll input, etc...)
     EndDrawing();
 
-    // Temp place to update AppConfigs values to others live if needed
+    // Temp place to update AppConfigs values to other places if needed
     {
-      if (app_configs.colorblind != notes_service.colorblind)
+      if(app_configs.colorblind != notes_service.colorblind)
         notes_service.colorblind = app_configs.colorblind;
+      if(chart_reader.initialized)
+      {
+        if(app_configs.scroll_speed != render_ctx.chart_settings.scroll_speed)
+        {
+          ChartSettings *chart_settings = &render_ctx.chart_settings;
+          chart_settings->scroll_speed = app_configs.scroll_speed;
+          chart_reader.low_z_clip  = z_to_floor_position(   9.0, chart_settings->base_bpm, chart_settings->scroll_speed);
+          chart_reader.high_z_clip = z_to_floor_position(-100.0, chart_settings->base_bpm, chart_settings->scroll_speed);
+        }
+      }
     }
 
     if(open_proj_input.state.SelectFilePressed)

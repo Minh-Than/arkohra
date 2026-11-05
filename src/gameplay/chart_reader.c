@@ -67,10 +67,10 @@ static void post_process_arg_segments(ChartSettings *chart_settings, ChartTiming
 {
   List *timing_events  = &tg->timing_events;
 
-  int arc_duration      = arc->end_timing - arc->start_timing;
-  float segment_length  = calculate_arc_segment_length(arc_duration, arc->arc_res * tg->props.arc_res);
-  int segment_count     = (int)ceilf(arc_duration / segment_length);
-  segment_count         = (int)fmax(segment_count, 1);
+  int arc_duration     = arc->end_timing - arc->start_timing;
+  float segment_length = calculate_arc_segment_length(arc_duration, arc->arc_res * tg->props.arc_res);
+  int segment_count    = (int)ceilf(arc_duration / segment_length);
+  segment_count        = (int)fmax(segment_count, 1);
 
   float segment_timing = arc->start_timing;
   float curr_timing    = 0.0f;
@@ -86,19 +86,14 @@ static void post_process_arg_segments(ChartSettings *chart_settings, ChartTiming
       .type          = arc->type
     };
 
-    float segment_start_timing = curr_timing + arc->start_timing;
-    double z_start = floor_position_to_z(get_floor_position(timing_events, segment_start_timing),
-                                         chart_settings->base_bpm,
-                                         chart_settings->scroll_speed);
-    double z_end   = floor_position_to_z(get_floor_position(timing_events, segment_start_timing + increment),
-                                         chart_settings->base_bpm,
-                                         chart_settings->scroll_speed);
+    double start_fp = get_floor_position(timing_events, curr_timing + arc->start_timing);
+    double end_fp   = get_floor_position(timing_events, curr_timing + arc->start_timing + increment);
 
     ArcSegmentRender segment_render = {
       .arc_id           = arc->id,
       .timing_group     = arc->timing_group,
-      .start_fp         = get_floor_position(timing_events, curr_timing + arc->start_timing),
-      .end_fp           = get_floor_position(timing_events, curr_timing + arc->start_timing + increment),
+      .start_fp         = start_fp,
+      .end_fp           = end_fp,
       .start_timing     = segment_timing,
       .end_timing       = segment_timing + increment,
       .arc_start_timing = arc->start_timing,
@@ -107,12 +102,11 @@ static void post_process_arg_segments(ChartSettings *chart_settings, ChartTiming
       .world_y1         = zero_duration ? arc_y_to_world(arc->y1) : arc_world_y_at(curr_timing            , &temp_arc),
       .world_x2         = zero_duration ? arc_x_to_world(arc->x2) : arc_world_x_at(curr_timing + increment, &temp_arc),
       .world_y2         = zero_duration ? arc_y_to_world(arc->y2) : arc_world_y_at(curr_timing + increment, &temp_arc),
-      .z_delta          = z_end - z_start,
     };
     list_push(&tg->arc_segments, &segment_render);
 
     segment_timing += increment;
-    curr_timing += increment;
+    curr_timing    += increment;
   }
 }
 
@@ -172,16 +166,16 @@ static void parse_post_process(ChartSettings *chart_settings, AudioClock *audio_
     for (int j = 0; j < tg->arctaps.size; j++)
     {
       ArcTap *arctap = (ArcTap *)list_get(&tg->arctaps, j);
-      arctap->id = chart_reader->arctap_counter++;
-      arctap->fp = get_floor_position(&tg->timing_events, arctap->timing);
+      arctap->id     = chart_reader->arctap_counter++;
+      arctap->fp     = get_floor_position(&tg->timing_events, arctap->timing);
     }
     list_sort_by(&tg->arctaps, arctap_compare_fp_asc);
 
     // Holds
     for (int j = 0; j < tg->holds.size; j++)
     {
-      Hold *hold = (Hold *)list_get(&tg->holds, j);
-      hold->id  = chart_reader->hold_counter++;
+      Hold *hold     = (Hold *)list_get(&tg->holds, j);
+      hold->id       = chart_reader->hold_counter++;
       hold->start_fp = get_floor_position(&tg->timing_events, hold->start_timing);
       hold->end_fp   = get_floor_position(&tg->timing_events, hold->end_timing);
     }

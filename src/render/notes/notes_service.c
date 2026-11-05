@@ -58,25 +58,29 @@ NotesService notes_service_init(int glsl, AppConfigs *app_configs)
   return service;
 }
 
-static Matrix get_segment_local_transform(ArcSegmentRender *segment_render, bool is_void)
+static Matrix get_segment_local_transform(ArcSegmentRender *segment_render, ChartSettings *chart_settings, bool is_void)
 {
+  double z_start = floor_position_to_z(segment_render->start_fp, chart_settings->base_bpm, chart_settings->scroll_speed);
+  double z_end   = floor_position_to_z(segment_render->end_fp  , chart_settings->base_bpm, chart_settings->scroll_speed);
   float scale = is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
   Matrix tr = {
     .m0 = scale, .m4 = 0.0f,  .m8  = segment_render->world_x2 - segment_render->world_x1, .m12 = segment_render->world_x1,
     .m1 = 0.0f,  .m5 = scale, .m9  = segment_render->world_y2 - segment_render->world_y1, .m13 = segment_render->world_y1,
-    .m2 = 0.0f,  .m6 = 0.0f,  .m10 = (float)segment_render->z_delta                     , .m14 = 0.0f,
+    .m2 = 0.0f,  .m6 = 0.0f,  .m10 = (float)(z_end - z_start)                           , .m14 = 0.0f,
     .m3 = 0.0f,  .m7 = 0.0f,  .m11 = 0.0f                                               , .m15 = 1.0f,
   };
   return tr;
 }
 
-static Matrix get_segment_shadow_local_transform(ArcSegmentRender *segment_render, bool is_void)
+static Matrix get_segment_shadow_local_transform(ArcSegmentRender *segment_render, ChartSettings *chart_settings, bool is_void)
 {
+  double z_start = floor_position_to_z(segment_render->start_fp, chart_settings->base_bpm, chart_settings->scroll_speed);
+  double z_end   = floor_position_to_z(segment_render->end_fp  , chart_settings->base_bpm, chart_settings->scroll_speed);
   float scale = is_void ? TRACE_MESH_SCALE : ARC_MESH_SCALE;
   Matrix tr = {
     .m0 = scale, .m4 = 0.0f, .m8  = segment_render->world_x2 - segment_render->world_x1, .m12 = segment_render->world_x1,
     .m1 = 0.0f,  .m5 = 1.0f, .m9  = 0.0f                                               , .m13 = 0.0f,
-    .m2 = 0.0f,  .m6 = 0.0f, .m10 = (float)segment_render->z_delta                     , .m14 = 0.0f,
+    .m2 = 0.0f,  .m6 = 0.0f, .m10 = (float)(z_end - z_start)                           , .m14 = 0.0f,
     .m3 = 0.0f,  .m7 = 0.0f, .m11 = 0.0f                                               , .m15 = 1.0f,
   };
   return tr;
@@ -260,7 +264,7 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
         float curr_bpm = curr_bpms[tg->value];
         float alpha    = groupalpha_fade[tg->value];
         double z_pos   = floor_position_to_z(segment_render->start_fp - curr_fp, base_bpm, scroll_speed);
-        Matrix tr      = MatrixMultiply(get_segment_shadow_local_transform(segment_render, arc->is_void), MatrixTranslate(0.0f, 0.0f, z_pos));
+        Matrix tr      = MatrixMultiply(get_segment_shadow_local_transform(segment_render, chart_settings, arc->is_void), MatrixTranslate(0.0f, 0.0f, z_pos));
         draw_arc_shadow(tg, arc, &notes_service->arc_shader, &notes_service->arc_shadow, current_ms, curr_bpm, z_pos, alpha, tr);
       }
 
@@ -338,7 +342,7 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
 
         double curr_fp = curr_fps[tg->value];
         double z_pos  = floor_position_to_z(segment_render->start_fp - curr_fp, base_bpm, scroll_speed);
-        Matrix tr = MatrixMultiply(get_segment_local_transform(segment_render, arc->is_void), MatrixTranslate(0.0f, 0.0f, z_pos));
+        Matrix tr = MatrixMultiply(get_segment_local_transform(segment_render, chart_settings, arc->is_void), MatrixTranslate(0.0f, 0.0f, z_pos));
         process_collision(rayclust, raycast_results, arc, ARC, &notes_service->arc_segment.mesh, tr);
 
         if (hidegroup_actives[tg->value]) continue;

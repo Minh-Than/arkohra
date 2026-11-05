@@ -86,7 +86,10 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   Rectangle gameplay_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs, input_field_h };
 
   GuiLabel(gameplay_label_rect, "Chart Speed");
-  rgui_floatinput_textbox(&gen_set_panel->scroll_speed, gameplay_field_rect, PROJ_FLOAT_DECIMALS);
+  if(rgui_floatinput_textbox(&gen_set_panel->scroll_speed, gameplay_field_rect, PROJ_FLOAT_DECIMALS))
+  {
+    app_configs->scroll_speed = gen_set_panel->scroll_speed.value;
+  }
 
   gameplay_label_rect.y += input_field_gap*2;
   gameplay_field_rect.y += input_field_gap*2;
