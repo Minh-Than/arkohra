@@ -400,12 +400,12 @@ void arc_segment_render_build_tree(ItvTree *tree, List *list, int low, int high)
   arc_segment_render_build_tree(tree, list, mid + 1, high);
 }
 
-static void segment_set_shader_values(ChartTimingGroup *tg, struct Arc *arc, ArcShader *arc_shader,
+static void segment_set_shader_values(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader,
                                        float current_ms, float curr_bpm, Vector4 *tint_low, Vector4 *tint_high)
 {
   bool arc_prop_validate = !tg->props.no_clip;
   if (!arc->is_void) arc_prop_validate = arc_prop_validate && tg->props.no_input;
-  int should_clip_shader = (arc_prop_validate && arc->start_timing - current_ms <= 0) ? 1 : 0;
+  int should_clip_shader = (arc_prop_validate && segment_render->start_timing - current_ms <= 0) ? 1 : 0;
   int negative_bpm_shader = curr_bpm < 0.0f;
   SetShaderValue(arc_shader->shader, arc_shader->shouldClip_loc , &should_clip_shader , SHADER_UNIFORM_INT);
   SetShaderValue(arc_shader->shader, arc_shader->negativeBPM_loc, &negative_bpm_shader, SHADER_UNIFORM_INT);
@@ -413,16 +413,16 @@ static void segment_set_shader_values(ChartTimingGroup *tg, struct Arc *arc, Arc
   SetShaderValue(arc_shader->shader, arc_shader->tintHigh_loc, tint_high, SHADER_UNIFORM_VEC4);
 }
 
-void draw_arc_shadow(ChartTimingGroup *tg, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
+void draw_arc_shadow(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
                      float current_ms, float curr_bpm, double z_pos, float add_fade, Matrix tr)
 {
   float fade_ratio = arc->is_void ? 1.0f : ((z_pos - SKY_STOP_FADE) / (SHADOW_START_FADE - SKY_STOP_FADE));
   Vector4 shadow_tint = ColorNormalize(Fade(color_from_rgba(NOTE_SHADOW_LIGHT_CL), Clamp(fade_ratio, 0.0f, ARC_SHADOW_ALPHA * add_fade)));
-  segment_set_shader_values(tg, arc, arc_shader, current_ms, curr_bpm, &shadow_tint, &shadow_tint);
+  segment_set_shader_values(tg, segment_render, arc, arc_shader, current_ms, curr_bpm, &shadow_tint, &shadow_tint);
   DrawMesh(mesh_r->mesh, mesh_r->material, tr);
 }
 
-void draw_arc_head(ChartTimingGroup *tg, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
+void draw_arc_head(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
                    float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp, float add_fade, bool colorblind)
 {
   double z_pos = floor_position_to_z(arc->start_fp - curr_fp, base_bpm, scroll_speed);
@@ -444,12 +444,12 @@ void draw_arc_head(ChartTimingGroup *tg, struct Arc *arc, ArcShader *arc_shader,
     tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color, colorblind) , Clamp(fade_ratio, 0.0f, final_alpha)));
     tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color, colorblind), Clamp(fade_ratio, 0.0f, final_alpha)));
   }
-  segment_set_shader_values(tg, arc, arc_shader, current_ms, curr_bpm, &tint_low, &tint_high);
+  segment_set_shader_values(tg, segment_render, arc, arc_shader, current_ms, curr_bpm, &tint_low, &tint_high);
   DrawMesh(mesh_r->mesh, mesh_r->material, MatrixMultiply(MatrixScale(head_scale, head_scale, head_scale),
                                                           MatrixTranslate(x_pos, y_pos, z_pos)));
 }
 
-void draw_arc_segment(ChartTimingGroup *tg, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
+void draw_arc_segment(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
                       float current_ms, float curr_bpm, double z_pos, float add_fade, bool colorblind, Matrix tr)
 {
   float fade_ratio = arc->is_void ? 1.0f : (z_pos - SKY_STOP_FADE) / (SKY_START_FADE - SKY_STOP_FADE);
@@ -467,7 +467,7 @@ void draw_arc_segment(ChartTimingGroup *tg, struct Arc *arc, ArcShader *arc_shad
     tint_low  = ColorNormalize(Fade(arc_get_color_low(arc->color, colorblind) , Clamp(fade_ratio, 0.0f, final_alpha)));
     tint_high = ColorNormalize(Fade(arc_get_color_high(arc->color, colorblind), Clamp(fade_ratio, 0.0f, final_alpha)));
   }
-  segment_set_shader_values(tg, arc, arc_shader, current_ms, curr_bpm, &tint_low, &tint_high);
+  segment_set_shader_values(tg, segment_render, arc, arc_shader, current_ms, curr_bpm, &tint_low, &tint_high);
   DrawMesh(mesh_r->mesh, mesh_r->material, tr);
 }
 

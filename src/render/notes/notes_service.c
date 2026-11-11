@@ -265,7 +265,7 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
         float alpha    = groupalpha_fade[tg->value];
         double z_pos   = floor_position_to_z(segment_render->start_fp - curr_fp, base_bpm, scroll_speed);
         Matrix tr      = MatrixMultiply(get_segment_shadow_local_transform(segment_render, chart_settings, arc->is_void), MatrixTranslate(0.0f, 0.0f, z_pos));
-        draw_arc_shadow(tg, arc, &notes_service->arc_shader, &notes_service->arc_shadow, current_ms, curr_bpm, z_pos, alpha, tr);
+        draw_arc_shadow(tg, segment_render, arc, &notes_service->arc_shader, &notes_service->arc_shadow, current_ms, curr_bpm, z_pos, alpha, tr);
       }
 
       // Following arccaps
@@ -356,7 +356,7 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
                                 z_pos, alpha, notes_service->colorblind);
         }
         if (!tg->props.no_clip && arc->is_void && arc->end_timing < current_ms) continue;
-        draw_arc_segment(tg, arc, &notes_service->arc_shader, &notes_service->arc_segment,
+        draw_arc_segment(tg, segment_render, arc, &notes_service->arc_shader, &notes_service->arc_segment,
                          current_ms, curr_bpm, z_pos, alpha, notes_service->colorblind, tr);
       }
 
@@ -378,7 +378,7 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
         double curr_fp =  curr_fps[tg->value];
         float curr_bpm = curr_bpms[tg->value];
         float alpha = groupalpha_fade[tg->value];
-        draw_arc_head(tg, arc, &notes_service->arc_shader, &notes_service->arc_head,
+        draw_arc_head(tg, segment_render, arc, &notes_service->arc_shader, &notes_service->arc_head,
                       current_ms, curr_bpm, base_bpm, scroll_speed, curr_fp, alpha, notes_service->colorblind);
       }
 
