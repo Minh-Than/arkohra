@@ -9,11 +9,11 @@ typedef struct
 {
   WindowInst command_palette;
   WindowInst project_setting;
-} WindowGroup;
+} WindowService;
 
-WindowGroup window_services_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes);
-void window_services_handle_inputs(WindowGroup *window_group);
-void window_services_window_check_oob(WindowGroup *window_group);
-void windows_services_unload(WindowGroup *window_group);
+WindowService window_services_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes);
+void window_services_handle_inputs(WindowService *window_service);
+void window_services_window_check_oob(WindowService *window_service);
+void windows_services_unload(WindowService *window_service);
 
 #endif // WINDOW_SERVICES_H

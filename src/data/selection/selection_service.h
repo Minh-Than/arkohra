@@ -13,7 +13,7 @@ typedef struct {
 } SelectionService;
 
 SelectionService selection_service_init();
-void selection_service_handle_inputs(SelectionService *selection_service, TrackService *track_service, WindowGroup *window_services, bool is_chart_initiailzed);
+void selection_service_handle_inputs(SelectionService *selection_service, TrackService *track_service, WindowService *window_services, bool is_chart_initiailzed);
 void selection_service_unload(SelectionService *selection_service);
 
 #endif // SELECTION_SERVICE_H

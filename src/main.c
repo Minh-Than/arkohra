@@ -34,9 +34,10 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
     #define GLSL_VERSION 100
 #endif
 
+// TODO: Is there a better way/place for this?
 static void process_imported_project(const char* project_file, Music *music,
                                      AppConfigs *app_configs, CachedFontProbes *font_probes,
-                                     TrackService *track_service, NotesService *notes_service, HudService *hud_service, WindowGroup *window_group,
+                                     TrackService *track_service, NotesService *notes_service, HudService *hud_service, WindowService *window_service,
                                      ChartReader *chart_reader, RenderContext *render_ctx, SelectionService *selection_service,
                                      Shader *chart_shader, int *timing_loc, int *screenSize_loc)
 {
@@ -80,7 +81,7 @@ static void process_imported_project(const char* project_file, Music *music,
       notes_service_apply_chart(notes_service, &render_ctx->chart_settings);
       hud_service_apply_chart  (hud_service  , &render_ctx->chart_settings, font_probes);
 
-      ProjSettingData *project_setting = (ProjSettingData *)window_group->project_setting.data;
+      ProjSettingData *project_setting = (ProjSettingData *)window_service->project_setting.data;
       proj_setting_apply_chart(project_setting, &render_ctx->chart_settings, font_probes);
 
       PlayMusicStream(*music);
@@ -102,22 +103,24 @@ int main()
              "arkohra");
   SetExitKey(KEY_NULL);
 
-  // Now a special case a kohra
-  TextureGroup texture_group = textures_init();
-  ChartReader  chart_reader  = { 0 };
-  CachedFontProbes font_probes = cached_font_probes_init();
-  TrackService track_service =   track_service_init(GLSL_VERSION);
-  NotesService notes_service =   notes_service_init(GLSL_VERSION, &app_configs);
-  HudService   hud_service   =     hud_service_init(GLSL_VERSION, &app_configs, &font_probes);
-  WindowGroup  window_group  = window_services_init(GLSL_VERSION, &app_configs, &font_probes);
+  CachedFontProbes font_probes       = cached_font_probes_init();
+  TrackService track_service         = track_service_init  (GLSL_VERSION);
+  NotesService notes_service         = notes_service_init  (GLSL_VERSION, &app_configs);
+  HudService hud_service             = hud_service_init    (GLSL_VERSION, &app_configs, &font_probes);
+  WindowService window_service       = window_services_init(GLSL_VERSION, &app_configs, &font_probes);
   SelectionService selection_service = selection_service_init();
+  TextureGroup texture_group = textures_init(); // For now contains kohra
 
-  RenderContext render_ctx = {
-    .camera         = camera_init_playfield(),
-    .chart_settings = chart_settings_init(&app_configs),
-    .audio_clock    = { 0 },
-  };
+  // TODO: ChartReader + RenderContext as a whole feels too random
+  ChartReader chart_reader  = { 0 };
+  RenderContext render_ctx = render_context_init(&app_configs);
 
+
+  // TODO: Figure out where to put these elsewhere more sensible:
+  // - chart shader + uniform locations
+  // - gameplay render texture
+  // - music thing
+  // - project file dialog input (drawing + handling)
   Shader chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION),
                                    TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
   int timing_loc     = GetShaderLocation(chart_shader, "timing");
@@ -152,21 +155,20 @@ int main()
     }
     if (IsFileDropped())
     {
-      // Parse and repolulate chart settings
       FilePathList dropped_file = LoadDroppedFiles();
       char *project_file = dropped_file.paths[0];
       process_imported_project(project_file, &music,
                                &app_configs, &font_probes,
-                               &track_service, &notes_service, &hud_service, &window_group,
+                               &track_service, &notes_service, &hud_service, &window_service,
                                &chart_reader, &render_ctx, &selection_service,
                                &chart_shader, &timing_loc, &screenSize_loc);
       UnloadDroppedFiles(dropped_file);
     }
 
     camera_handle_main_window_resize(&render_ctx.camera, app_configs.playfield_ratio);
-    window_services_handle_inputs(&window_group);
-    selection_service_handle_inputs(&selection_service, &track_service, &window_group, chart_reader.initialized);
-    window_services_window_check_oob(&window_group);
+    window_services_handle_inputs(&window_service);
+    selection_service_handle_inputs(&selection_service, &track_service, &window_service, chart_reader.initialized);
+    window_services_window_check_oob(&window_service);
 
     track_service_update_scroll_offset(&track_service, &render_ctx, &chart_reader);
 
@@ -251,8 +253,8 @@ int main()
       EndShaderMode();
 
       // Windows
-      cmd_palette_draw (&window_group.command_palette, (CmdPltData *)window_group.command_palette.data);
-      proj_setting_draw(&window_group.project_setting, (ProjSettingData *)window_group.project_setting.data,
+      cmd_palette_draw (&window_service.command_palette, (CmdPltData *)window_service.command_palette.data);
+      proj_setting_draw(&window_service.project_setting, (ProjSettingData *)window_service.project_setting.data,
                         &app_configs, &chart_reader.timing_groups, &font_probes);
 
       // Debug FPS
@@ -315,7 +317,7 @@ int main()
       const char* project_file = open_proj_input.file;
       process_imported_project(project_file, &music,
                                &app_configs, &font_probes,
-                               &track_service, &notes_service, &hud_service, &window_group,
+                               &track_service, &notes_service, &hud_service, &window_service,
                                &chart_reader, &render_ctx, &selection_service,
                                &chart_shader, &timing_loc, &screenSize_loc);
       open_proj_input.state.SelectFilePressed = false;
@@ -324,15 +326,18 @@ int main()
 
   rgui_fileinput_unload(&open_proj_input);
 
-  // Unload stuffs
   StopMusicStream(music);
   UnloadMusicStream(music);
   CloseAudioDevice();
 
+  // Unload stuffs
   chart_reader_unload(&chart_reader);
+  track_service_unload(&track_service);
+  notes_service_unload(&notes_service);
+  hud_service_unload(&hud_service);
   textures_unload(&texture_group);
-  windows_services_unload(&window_group);
-  cached_font_probes_free(&font_probes);
+  windows_services_unload(&window_service);
+  cached_font_probes_unload(&font_probes);
   selection_service_unload(&selection_service);
   UnloadShader(chart_shader);
 

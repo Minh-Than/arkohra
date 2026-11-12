@@ -110,7 +110,7 @@ FontProbe font_probe_load(const char *path)
   return p;
 }
 
-void font_probe_free(FontProbe *p)
+void font_probe_unload(FontProbe *p)
 {
   if (p->data) UnloadFileData(p->data);
   p->data = NULL;
@@ -297,13 +297,13 @@ CachedFontProbes cached_font_probes_init()
   return probes;
 }
 
-void cached_font_probes_free(CachedFontProbes *font_probes)
+void cached_font_probes_unload(CachedFontProbes *font_probes)
 {
-  font_probe_free(&font_probes->saira_reg);
-  font_probe_free(&font_probes->saira_med);
-  font_probe_free(&font_probes->noto_reg);
-  font_probe_free(&font_probes->noto_sc_reg);
-  font_probe_free(&font_probes->noto_jp_reg);
-  font_probe_free(&font_probes->noto_kr_reg);
-  font_probe_free(&font_probes->noto_math_reg);
+  font_probe_unload(&font_probes->saira_reg);
+  font_probe_unload(&font_probes->saira_med);
+  font_probe_unload(&font_probes->noto_reg);
+  font_probe_unload(&font_probes->noto_sc_reg);
+  font_probe_unload(&font_probes->noto_jp_reg);
+  font_probe_unload(&font_probes->noto_kr_reg);
+  font_probe_unload(&font_probes->noto_math_reg);
 }

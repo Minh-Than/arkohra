@@ -1,8 +1,8 @@
+#include "raylib.h"
 #include "selection_service.h"
 #include "data/custom_types/dynamic_list.h"
 #include "data/gameplay_events/gameplay_events.h"
 #include "data/selection/raycast_note.h"
-#include "raylib.h"
 #include "windows/window_inst.h"
 
 struct SelectedNoteHolder {
@@ -123,7 +123,7 @@ static void selection_service_update_note_state(SelectionService *selection_serv
   printf("selected count: %zu\n", selection_service->selected_notes.size);
 }
 
-void selection_service_handle_inputs(SelectionService *selection_service, TrackService *track_service, WindowGroup *window_services, bool is_chart_initiailzed)
+void selection_service_handle_inputs(SelectionService *selection_service, TrackService *track_service, WindowService *window_services, bool is_chart_initiailzed)
 {
   if (!is_chart_initiailzed) return;
   bool has_update = false;

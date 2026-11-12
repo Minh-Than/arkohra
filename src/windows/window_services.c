@@ -6,7 +6,7 @@
 #include "windows/project_setting/window.h"
 #include "windows/window_inst.h"
 
-WindowGroup window_services_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes)
+WindowService window_services_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes)
 {
   // Command Palette
   WindowInst command_palette   = window_inst_init(WINDOW_COMMAND_PALETTE,
@@ -24,46 +24,46 @@ WindowGroup window_services_init(int glsl, AppConfigs *app_configs, CachedFontPr
   *proj_setting_data                 = proj_setting_init(glsl, app_configs, font_probes);
   project_setting.data               = proj_setting_data;
 
-  WindowGroup group = {
+  WindowService service = {
     .command_palette = command_palette,
     .project_setting = project_setting
   };
 
-  return group;
+  return service;
 }
 
-void window_services_handle_inputs(WindowGroup *window_group)
+void window_services_handle_inputs(WindowService *window_service)
 {
   if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&
       (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
       IsKeyPressed(KEY_P))
-    window_inst_toggle(&window_group->command_palette);
+    window_inst_toggle(&window_service->command_palette);
 
   if ((IsKeyPressed(KEY_ESCAPE) || (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
-                                    !window_inst_bounded_cursor(&window_group->command_palette)) &&
-        window_group->command_palette.is_visible)
+                                    !window_inst_bounded_cursor(&window_service->command_palette)) &&
+        window_service->command_palette.is_visible)
      )
-    window_inst_close(&window_group->command_palette);
+    window_inst_close(&window_service->command_palette);
 
   if ((IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) &&
       IsKeyPressed(KEY_COMMA))
   {
-    window_inst_close(&window_group->command_palette);
-    window_inst_toggle(&window_group->project_setting);
+    window_inst_close(&window_service->command_palette);
+    window_inst_toggle(&window_service->project_setting);
   }
 }
 
-void window_services_window_check_oob(WindowGroup *window_group)
+void window_services_window_check_oob(WindowService *window_services)
 {
   if (!IsWindowResized()) return;
-  window_inst_oob_reposition(&window_group->project_setting);
+  window_inst_oob_reposition(&window_services->project_setting);
 }
 
-void windows_services_unload(WindowGroup *window_group)
+void windows_services_unload(WindowService *window_services)
 {
-  window_inst_unload(&window_group->command_palette);
+  window_inst_unload(&window_services->command_palette);
 
-  ProjSettingData *proj_setting_data = (ProjSettingData *)window_group->project_setting.data;
+  ProjSettingData *proj_setting_data = (ProjSettingData *)window_services->project_setting.data;
   proj_setting_unload(proj_setting_data);
-  window_inst_unload(&window_group->project_setting);
+  window_inst_unload(&window_services->project_setting);
 }

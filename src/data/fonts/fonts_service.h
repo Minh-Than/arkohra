@@ -13,7 +13,7 @@ typedef struct {
 } FontProbe;
 
 FontProbe font_probe_load(const char *path);
-void font_probe_free(FontProbe *p);
+void font_probe_unload(FontProbe *p);
 
 Font font_generate_sdf(const unsigned char *font_file_data, int font_file_size, int base_size, int *codepoints, int glyph_count);
 bool font_file_has_codepoint(const char *path, int cp);
@@ -39,6 +39,6 @@ typedef struct {
 } CachedFontProbes;
 
 CachedFontProbes cached_font_probes_init();
-void cached_font_probes_free(CachedFontProbes *font_probes);
+void cached_font_probes_unload(CachedFontProbes *font_probes);
 
 #endif // FONTS_SERVICE_H
