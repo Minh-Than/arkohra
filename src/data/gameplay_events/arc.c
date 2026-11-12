@@ -334,10 +334,6 @@ MeshRenderable arc_generate_head_mesh(Texture2D *texture, Shader *shader)
   r.mesh.texcoords =          (float *)malloc(TEXCOORDS_COUNT * 2 * sizeof(float));
   r.mesh.indices   = (unsigned short *)malloc(INDICES_COUNT * sizeof(unsigned short));
 
-  double start_fp = 0;
-  double end_fp = 0;
-  float world_x_head, world_y_head;
-
   float head_v[VERTICES_COUNT * 3] = {
     -0.0433f, -0.025f, 0.0f,    0.0f, -0.03f, 0.07f,    0.0f, 0.05f, 0.0f,
      0.0433f, -0.025f, 0.0f,    0.0f, -0.03f, 0.07f,    0.0f, 0.05f, 0.0f,

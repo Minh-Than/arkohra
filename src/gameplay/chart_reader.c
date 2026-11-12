@@ -253,9 +253,8 @@ ChartReader chart_reader_parse(ChartSettings *chart_settings, AudioClock *audio_
   if (lines != NULL) UnloadFileText(aff_data);
 
   parse_post_process(chart_settings, audio_clock, &chart_reader);
-  chart_reader_print(&chart_reader);
-
   chart_reader.initialized = true;
+  // chart_reader_print(&chart_reader);
   return chart_reader;
 }
 

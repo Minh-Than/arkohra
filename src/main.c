@@ -3,6 +3,7 @@ Cloned from quickstart `https://github.com/raylib-extras/raylib-quickstart` by J
 To view a copy of this license, visit https://creativecommons.org/publicdomain/zero/1.0/
 */
 
+#include "data/fonts/fonts_service.h"
 #include "gameplay/arc_formula.h"
 #include "raylib.h"
 #include "raygui.h"
@@ -31,6 +32,63 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #else   // PLATFORM_ANDROID, PLATFORM_WEB
     #define GLSL_VERSION 100
 #endif
+
+static void process_imported_project(const char* project_file, Music *music,
+                                     AppConfigs *app_configs, CachedFontProbes *font_probes,
+                                     TrackService *track_service, NotesService *notes_service, HudService *hud_service, WindowGroup *window_group,
+                                     ChartReader *chart_reader, RenderContext *render_ctx, SelectionService *selection_service,
+                                     Shader *chart_shader, int *timing_loc, int *screenSize_loc)
+{
+  if (TextIsEqual(GetFileName(project_file), "project.json"))
+  {
+    // Pause audio before processing
+    PauseMusicStream(*music);
+    audio_clock_pause(&render_ctx->audio_clock);
+
+    if (chart_settings_load_from_project(&render_ctx->chart_settings, app_configs, project_file))
+    {
+      // Stop audio entirely
+      render_ctx->audio_clock.total_audio_length = 0;
+      StopMusicStream(*music);
+      UnloadMusicStream(*music);
+      *music = LoadMusicStream(render_ctx->chart_settings.audio_path);
+      music->looping = false;
+      render_ctx->audio_clock.total_audio_length = (int)roundf(GetMusicTimeLength(*music) * 1000);
+      SetMusicPan(*music, 0.0f);
+      SetMusicVolume(*music, app_configs->music_volume);
+
+      selection_service_unload(selection_service);
+
+      // Update chart reader
+      if(chart_reader->initialized) chart_reader_unload(chart_reader);
+      *chart_reader = chart_reader_parse(&render_ctx->chart_settings, &render_ctx->audio_clock);
+      // chart_settings_print(&render_ctx->chart_settings);
+
+      const char *fs_path = TextIsEqual(render_ctx->chart_settings.shader_fs_path, "")
+                            ? TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION)
+                            : render_ctx->chart_settings.shader_fs_path;
+      if (!(IsPathFile(fs_path) && IsFileExtension(fs_path, ".fs")))
+        fs_path = TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION);
+
+      UnloadShader(*chart_shader);
+      *chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION), fs_path);
+      *timing_loc     = GetShaderLocation(*chart_shader, "timing");
+      *screenSize_loc = GetShaderLocation(*chart_shader, "screenSize");
+
+      track_service_apply_chart(track_service, &render_ctx->chart_settings);
+      notes_service_apply_chart(notes_service, &render_ctx->chart_settings);
+      hud_service_apply_chart  (hud_service  , &render_ctx->chart_settings, font_probes);
+
+      ProjSettingData *project_setting = (ProjSettingData *)window_group->project_setting.data;
+      proj_setting_apply_chart(project_setting, &render_ctx->chart_settings, font_probes);
+
+      PlayMusicStream(*music);
+      PauseMusicStream(*music);
+      audio_clock_start(&render_ctx->audio_clock);
+      audio_clock_pause(&render_ctx->audio_clock);
+    }
+  }
+}
 
 int main()
 {
@@ -96,59 +154,11 @@ int main()
       // Parse and repolulate chart settings
       FilePathList dropped_file = LoadDroppedFiles();
       char *project_file = dropped_file.paths[0];
-      if (TextIsEqual(GetFileName(project_file), "project.json"))
-      {
-        // Pause audio before processing
-        PauseMusicStream(music);
-        audio_clock_pause(&render_ctx.audio_clock);
-
-        if (chart_settings_load_from_project(&render_ctx.chart_settings, &app_configs, project_file))
-        {
-          // Stop audio entirely
-          render_ctx.audio_clock.total_audio_length = 0;
-          StopMusicStream(music);
-          UnloadMusicStream(music);
-          music = LoadMusicStream(render_ctx.chart_settings.audio_path);
-          music.looping = false;
-          render_ctx.audio_clock.total_audio_length = (int)roundf(GetMusicTimeLength(music) * 1000);
-          SetMusicPan(music, 0.0f);
-          SetMusicVolume(music, app_configs.music_volume);
-
-          selection_service_unload(&selection_service);
-
-          // Update chart reader
-          if(chart_reader.initialized) chart_reader_unload(&chart_reader);
-          chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock);
-          chart_settings_print(&render_ctx.chart_settings);
-
-          const char *fs_path = TextIsEqual(render_ctx.chart_settings.shader_fs_path, "")
-                                ? TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION)
-                                : render_ctx.chart_settings.shader_fs_path;
-          UnloadShader(chart_shader);
-          if (IsPathFile(fs_path) && IsFileExtension(fs_path, ".fs"))
-          {
-            chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION), fs_path);
-          } else
-          {
-            chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION),
-                                      TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
-          }
-          timing_loc     = GetShaderLocation(chart_shader, "timing");
-          screenSize_loc = GetShaderLocation(chart_shader, "screenSize");
-
-          track_service_apply_chart(&track_service, &render_ctx.chart_settings);
-          notes_service_apply_chart(&notes_service, &render_ctx.chart_settings);
-          hud_service_apply_chart  (&hud_service  , &render_ctx.chart_settings, &font_probes);
-
-          ProjSettingData *project_setting = (ProjSettingData *)window_group.project_setting.data;
-          proj_setting_apply_chart(project_setting, &render_ctx.chart_settings, &font_probes);
-
-          PlayMusicStream(music);
-          PauseMusicStream(music);
-          audio_clock_start(&render_ctx.audio_clock);
-          audio_clock_pause(&render_ctx.audio_clock);
-        }
-      }
+      process_imported_project(project_file, &music,
+                               &app_configs, &font_probes,
+                               &track_service, &notes_service, &hud_service, &window_group,
+                               &chart_reader, &render_ctx, &selection_service,
+                               &chart_shader, &timing_loc, &screenSize_loc);
       UnloadDroppedFiles(dropped_file);
     }
 
@@ -285,12 +295,12 @@ int main()
         notes_service.colorblind = app_configs.colorblind;
       if(chart_reader.initialized)
       {
-        if(app_configs.scroll_speed != render_ctx.chart_settings.scroll_speed)
+        if(fabsf(app_configs.scroll_speed - render_ctx.chart_settings.scroll_speed) > 1e-6)
         {
           ChartSettings *chart_settings = &render_ctx.chart_settings;
-          chart_settings->scroll_speed = app_configs.scroll_speed;
-          chart_reader.low_z_clip  = z_to_floor_position(   9.0, chart_settings->base_bpm, chart_settings->scroll_speed);
-          chart_reader.high_z_clip = z_to_floor_position(-100.0, chart_settings->base_bpm, chart_settings->scroll_speed);
+          chart_settings->scroll_speed  = app_configs.scroll_speed;
+          chart_reader.low_z_clip       = z_to_floor_position(   9.0, chart_settings->base_bpm, chart_settings->scroll_speed);
+          chart_reader.high_z_clip      = z_to_floor_position(-100.0, chart_settings->base_bpm, chart_settings->scroll_speed);
         }
       }
     }
@@ -312,59 +322,11 @@ int main()
         strcpy(open_proj_input.file, TextFormat("%s%s%s", open_proj_input.state.dirPathText, PATH_SEPERATOR, open_proj_input.state.fileNameText));
 
       const char* project_file = open_proj_input.file;
-      if (TextIsEqual(GetFileName(project_file), "project.json"))
-      {
-        // Pause audio before processing
-        PauseMusicStream(music);
-        audio_clock_pause(&render_ctx.audio_clock);
-
-        if (chart_settings_load_from_project(&render_ctx.chart_settings, &app_configs, project_file))
-        {
-          // Stop audio entirely
-          render_ctx.audio_clock.total_audio_length = 0;
-          StopMusicStream(music);
-          UnloadMusicStream(music);
-          music = LoadMusicStream(render_ctx.chart_settings.audio_path);
-          music.looping = false;
-          render_ctx.audio_clock.total_audio_length = (int)roundf(GetMusicTimeLength(music) * 1000);
-          SetMusicPan(music, 0.0f);
-          SetMusicVolume(music, app_configs.music_volume);
-
-          selection_service_unload(&selection_service);
-
-          // Update chart reader
-          if(chart_reader.initialized) chart_reader_unload(&chart_reader);
-          chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock);
-          chart_settings_print(&render_ctx.chart_settings);
-
-          const char *fs_path = TextIsEqual(render_ctx.chart_settings.shader_fs_path, "")
-                                ? TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION)
-                                : render_ctx.chart_settings.shader_fs_path;
-          UnloadShader(chart_shader);
-          if (IsPathFile(fs_path) && IsFileExtension(fs_path, ".fs"))
-          {
-            chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION), fs_path);
-          } else
-          {
-            chart_shader = LoadShader(TextFormat(DEFAULT_CHART_SHADER_VS, GLSL_VERSION),
-                                      TextFormat(DEFAULT_CHART_SHADER_FS, GLSL_VERSION));
-          }
-          timing_loc     = GetShaderLocation(chart_shader, "timing");
-          screenSize_loc = GetShaderLocation(chart_shader, "screenSize");
-
-          track_service_apply_chart(&track_service, &render_ctx.chart_settings);
-          notes_service_apply_chart(&notes_service, &render_ctx.chart_settings);
-          hud_service_apply_chart  (&hud_service  , &render_ctx.chart_settings, &font_probes);
-
-          ProjSettingData *project_setting = (ProjSettingData *)window_group.project_setting.data;
-          proj_setting_apply_chart(project_setting, &render_ctx.chart_settings, &font_probes);
-
-          PlayMusicStream(music);
-          PauseMusicStream(music);
-          audio_clock_start(&render_ctx.audio_clock);
-          audio_clock_pause(&render_ctx.audio_clock);
-        }
-      }
+      process_imported_project(project_file, &music,
+                               &app_configs, &font_probes,
+                               &track_service, &notes_service, &hud_service, &window_group,
+                               &chart_reader, &render_ctx, &selection_service,
+                               &chart_shader, &timing_loc, &screenSize_loc);
       open_proj_input.state.SelectFilePressed = false;
     }
   }
