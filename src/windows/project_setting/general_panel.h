@@ -4,7 +4,6 @@
 #include "data/app_configs/app_config.h"
 #include "data/custom_types/dynamic_list.h"
 #include "raylib.h"
-#include "render/render_service.h"
 #include "windows/rgui_input_data.h"
 #include "windows/window_inst.h"
 
@@ -24,7 +23,6 @@ typedef struct {
 
 GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs);
 void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *gen_set_panel,
-                                AppConfigs *app_configs, RenderContext *render_ctx,
-                                Shader sdf_shader, List *font_fallbacks);
+                                AppConfigs *app_configs, Shader sdf_shader, List *font_fallbacks);
 
 #endif // GENERAL_SETTING_PANEL_H

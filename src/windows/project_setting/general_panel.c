@@ -24,8 +24,7 @@ GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
 }
 
 void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *gen_set_panel,
-                                AppConfigs *app_configs, RenderContext *render_ctx,
-                                Shader sdf_shader, List *font_fallbacks)
+                                AppConfigs *app_configs, Shader sdf_shader, List *font_fallbacks)
 {
   int content_x = window_inst->x + 8;
   int toggle_y  = (int)window_inst->y + 32;
@@ -106,8 +105,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   if (rgui_selectinput_dropdown(&gen_set_panel->aspect_ratio, gameplay_field_rect))
   {
     app_configs->playfield_ratio = gen_set_panel->aspect_ratio.option;
-    SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs->playfield_ratio));
-    recalibrate_camera(&render_ctx->camera);
+    app_configs->should_recalibrate_camera = true;
   }
   EndShaderMode();
 

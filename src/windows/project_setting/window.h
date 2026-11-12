@@ -6,7 +6,6 @@
 #include "raylib.h"
 #include "data/app_configs/app_config.h"
 #include "data/chart_settings/chart_settings.h"
-#include "render/render_service.h"
 #include "windows/project_setting/general_panel.h"
 #include "windows/project_setting/events_panel.h"
 #include "windows/project_setting/project_panel.h"
@@ -31,7 +30,7 @@ typedef struct
 } ProjSettingData;
 
 ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes);
-void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs, RenderContext *render_ctx,
+void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs,
                        List *timing_groups, CachedFontProbes *font_probes);
 void proj_setting_unload(ProjSettingData *proj_setting);
 void proj_setting_reload_font(ProjSettingData *proj_setting, CachedFontProbes *font_probes);

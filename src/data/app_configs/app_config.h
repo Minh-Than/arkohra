@@ -24,6 +24,8 @@ typedef struct
   AspectRatio   playfield_ratio;
   bool          kohra, colorblind;
   rini_data     rini_d;
+
+  bool should_recalibrate_camera;
 } AppConfigs;
 
 AppConfigs app_configs_init();

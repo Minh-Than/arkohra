@@ -25,6 +25,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "windows/command_palette/window.h"
 #include "windows/project_setting/window.h"
 #include "windows/rgui_input_data.h"
+#include "windows/window_inst.h"
 #include "windows/window_services.h"
 
 #if defined(PLATFORM_DESKTOP)
@@ -204,28 +205,20 @@ int main()
         (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
         IsKeyPressed(KEY_R))
     {
-      // Pause audio before processing
-      PauseMusicStream(music);
-      audio_clock_pause(&render_ctx.audio_clock);
-
       app_configs = app_configs_init();
-      SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.playfield_ratio));
-      recalibrate_camera(&render_ctx.camera);
-      hud_service.playfield_ratio = app_configs.playfield_ratio;
-      render_ctx.chart_settings.scroll_speed = app_configs.scroll_speed;
-      notes_service.colorblind = app_configs.colorblind;
+      app_configs.should_recalibrate_camera = true;
+
       SetMusicVolume(music, app_configs.music_volume);
 
-      bool is_setting_open = window_group.project_setting.is_visible;
-      windows_services_unload(&window_group);
-      window_group = window_services_init(GLSL_VERSION, &app_configs, &font_probes);
-      if (is_setting_open && !window_group.project_setting.is_visible) window_inst_toggle(&window_group.project_setting);
+      hud_service.playfield_ratio = app_configs.playfield_ratio;
+      notes_service.colorblind = app_configs.colorblind;
+
+      ChartSettings *chart_settings  = &render_ctx.chart_settings;
+      chart_settings->scroll_speed   = app_configs.scroll_speed;
+      chart_reader.low_z_clip        = z_to_floor_position(   9.0, chart_settings->base_bpm, chart_settings->scroll_speed);
+      chart_reader.high_z_clip       = z_to_floor_position(-100.0, chart_settings->base_bpm, chart_settings->scroll_speed);
 
       selection_service_unload(&selection_service);
-
-      // Update chart reader to regenerate arc meshes
-      if(chart_reader.initialized) chart_reader_unload(&chart_reader);
-      chart_reader = chart_reader_parse(&render_ctx.chart_settings, &render_ctx.audio_clock);
     }
 
     // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA
@@ -270,7 +263,7 @@ int main()
       // Windows
       cmd_palette_draw (&window_group.command_palette, (CmdPltData *)window_group.command_palette.data);
       proj_setting_draw(&window_group.project_setting, (ProjSettingData *)window_group.project_setting.data,
-                        &app_configs, &render_ctx, &chart_reader.timing_groups, &font_probes);
+                        &app_configs, &chart_reader.timing_groups, &font_probes);
 
       // Debug FPS
       DrawFPS(5, 5);
@@ -302,6 +295,12 @@ int main()
           chart_reader.low_z_clip       = z_to_floor_position(   9.0, chart_settings->base_bpm, chart_settings->scroll_speed);
           chart_reader.high_z_clip      = z_to_floor_position(-100.0, chart_settings->base_bpm, chart_settings->scroll_speed);
         }
+      }
+      if(app_configs.should_recalibrate_camera)
+      {
+        SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.playfield_ratio));
+        recalibrate_camera(&render_ctx.camera);
+        app_configs.should_recalibrate_camera = false;
       }
     }
 

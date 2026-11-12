@@ -2,10 +2,10 @@
 #define PROJECT_PANEL_H
 
 #include <stdbool.h>
+#include "data/chart_settings/chart_settings.h"
 #include "raylib.h"
 #include "data/app_configs/app_config.h"
 #include "data/custom_types/dynamic_list.h"
-#include "render/render_service.h"
 #include "windows/rgui_input_data.h"
 #include "windows/window_inst.h"
 
@@ -42,8 +42,7 @@ typedef struct {
 
 ProjectPanel project_panel_init();
 void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
-                        AppConfigs *app_configs, RenderContext *render_ctx,
-                        Shader sdf_shader, List *font_fallbacks);
+                        AppConfigs *app_configs, Shader sdf_shader, List *font_fallbacks);
 void project_panel_add_missing_codepoints(ProjectPanel *project_panel, List *codepoints, List *font_fallbacks);
 void project_panel_add_str_to_codepoints(ProjectPanel *project_panel, List *codepoints);
 void project_panel_apply_chart(ProjectPanel *project_panel, ChartSettings *chart_settings);

@@ -29,8 +29,7 @@ ProjectPanel project_panel_init()
 }
 
 void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
-                        AppConfigs *app_configs, RenderContext *render_ctx,
-                        Shader sdf_shader, List *font_fallbacks)
+                        AppConfigs *app_configs, Shader sdf_shader, List *font_fallbacks)
 {
   int content_x = window_inst->x + 8;
   int toggle_y  = (int)window_inst->y + 32;
