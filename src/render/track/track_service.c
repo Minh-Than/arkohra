@@ -223,7 +223,6 @@ TrackService track_service_init(int glsl)
 void track_service_update_scroll_offset(TrackService *track_service, RenderContext *render_ctx, ChartReader *chart_reader)
 {
   static float scroll_offset = 0.0f;
-  if (render_ctx->chart_settings.sl_type == SL_NONE) return;
   if (!chart_reader->initialized) return;
   if (!render_ctx->audio_clock.is_playing) return;
 
@@ -241,6 +240,8 @@ void track_service_update_scroll_offset(TrackService *track_service, RenderConte
   scroll_offset += GetFrameTime() * render_ctx->chart_settings.scroll_speed * scroll_constant;
 
   SetShaderValue(track_service->track_shader      , track_service->track_scrollOffset_loc      , &scroll_offset, SHADER_UNIFORM_FLOAT);
+
+  if (render_ctx->chart_settings.sl_type == SL_NONE) return;
   SetShaderValue(track_service->single_line_shader, track_service->single_line_scrollOffset_loc, &scroll_offset, SHADER_UNIFORM_FLOAT);
 }
 
