@@ -207,17 +207,7 @@ int main()
     {
       app_configs = app_configs_init();
       app_configs.should_recalibrate_camera = true;
-
       SetMusicVolume(music, app_configs.music_volume);
-
-      hud_service.playfield_ratio = app_configs.playfield_ratio;
-      notes_service.colorblind = app_configs.colorblind;
-
-      ChartSettings *chart_settings  = &render_ctx.chart_settings;
-      chart_settings->scroll_speed   = app_configs.scroll_speed;
-      chart_reader.low_z_clip        = z_to_floor_position(   9.0, chart_settings->base_bpm, chart_settings->scroll_speed);
-      chart_reader.high_z_clip       = z_to_floor_position(-100.0, chart_settings->base_bpm, chart_settings->scroll_speed);
-
       selection_service_unload(&selection_service);
     }
 
@@ -286,6 +276,8 @@ int main()
     {
       if(app_configs.colorblind != notes_service.colorblind)
         notes_service.colorblind = app_configs.colorblind;
+      if (app_configs.playfield_ratio != hud_service.playfield_ratio)
+        hud_service.playfield_ratio = app_configs.playfield_ratio;
       if(chart_reader.initialized)
       {
         if(fabsf(app_configs.scroll_speed - render_ctx.chart_settings.scroll_speed) > 1e-6)
