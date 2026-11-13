@@ -122,3 +122,10 @@ int rgui_selectinput_dropdown(RguiSelectInput *input, Rectangle rect)
 
   return result;
 }
+
+int rgui_selectinput_toggles(RguiSelectInput *input, Rectangle rect)
+{
+  int result = GuiToggleGroup(rect, input->list, &input->option);
+
+  return result;
+}

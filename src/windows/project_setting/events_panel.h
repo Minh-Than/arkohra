@@ -19,10 +19,8 @@ enum BuiltinSCOption {
 };
 
 typedef struct {
-  int events_option_active;
-  enum BuiltinSCOption sc_option;
   int curr_tg;
-
+  RguiSelectInput timings_events;
   RguiSelectInput scenecontrol;
 
   Rectangle scroll_rect, tg_scroll_rect, event_scroll_rect;

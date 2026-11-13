@@ -25,11 +25,10 @@ static void builtin_sc_option_get_label_text(enum BuiltinSCOption option, char *
 EventsPanel events_panel_init()
 {
   EventsPanel data = { 0 };
-  data.events_option_active = EVENTS_PANEL_TIMINGS;
-  data.sc_option = EVENTS_PANEL_HIDEGROUP;
   data.scroll_rect = data.tg_scroll_rect = data.event_scroll_rect = (Rectangle){ 0, 0 };
   data.scroll = data.tg_scroll = data.event_scroll = Vector2Zero();
-  data.scenecontrol = rgui_selectinput_init("hidegroup;groupalpha;enwidencamera;enwidenlanes", data.sc_option);
+  data.scenecontrol = rgui_selectinput_init("hidegroup;groupalpha;enwidencamera;enwidenlanes", EVENTS_PANEL_HIDEGROUP);
+  data.timings_events = rgui_selectinput_init("Timings;Events", EVENTS_PANEL_TIMINGS);
 
   return data;
 }
@@ -135,7 +134,7 @@ static void draw_events_panel_list(ChartTimingGroup *tg, enum BuiltinSCOption sc
   Rectangle scissoring_rect = GetCollisionRec(timing_events_rect, window_inst_get_rect(window_inst));
   if (scissoring_rect.width == 0 || scissoring_rect.height == 0) return;
 
-  int total_height = tg != NULL ? get_builtin_sc_size(events_panel->sc_option, tg) * 30 : 0;
+  int total_height = tg != NULL ? get_builtin_sc_size(events_panel->scenecontrol.option, tg) * 30 : 0;
   char result[16]; builtin_sc_option_get_label_text(events_panel->scenecontrol.option, result, 256);
   GuiScrollPanel(timing_events_rect, TextFormat("[ EVENTS - %s ]", result),
                  (Rectangle){0, 0, scroll_w - 28, total_height},
@@ -251,12 +250,11 @@ void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, bool 
   int events_panel_x = content_x + 8   + (int)events_panel->scroll.x;
   int events_panel_y = scroll_y  + 8*2 + (int)events_panel->scroll.y + groups_panel_h;
   int events_panel_w = scroll_w  - scroll_padding;
-  GuiToggleGroup((Rectangle){events_panel_x, events_panel_y, 56, 24},
-                 "Timings;Events", &events_panel->events_option_active);
+  rgui_selectinput_toggles(&events_panel->timings_events, (Rectangle){events_panel_x, events_panel_y, 56, 24});
 
   events_panel_y += 24 + 8;
   ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, events_panel->curr_tg);
-  switch (events_panel->events_option_active)
+  switch (events_panel->timings_events.option)
   {
     case EVENTS_PANEL_TIMINGS:
     {
@@ -267,7 +265,7 @@ void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, bool 
     }
     case EVENTS_PANEL_EVENTS:
     {
-      draw_events_panel_list(tg, events_panel->sc_option, window_inst, events_panel,
+      draw_events_panel_list(tg, events_panel->scenecontrol.option, window_inst, events_panel,
                              events_panel_x, events_panel_y, events_panel_w, events_panel_h,
                              content_x, scroll_y, scroll_w, scroll_h);
       break;
@@ -276,13 +274,9 @@ void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, bool 
   BeginScissorMode(events_panel->scroll_rect.x, events_panel->scroll_rect.y,
                    events_panel->scroll_rect.width + 8, events_panel->scroll_rect.height);
 
-  if (events_panel->events_option_active == EVENTS_PANEL_EVENTS)
-  {
-    if (rgui_selectinput_dropdown(&events_panel->scenecontrol, (Rectangle){events_panel_x + events_panel_w - 120, events_panel_y - 24 - 8, 120, 24}))
-    {
-      events_panel->sc_option = events_panel->scenecontrol.option;
-    }
-  }
+  if (events_panel->timings_events.option == EVENTS_PANEL_EVENTS)
+    rgui_selectinput_dropdown(&events_panel->scenecontrol,
+                              (Rectangle){events_panel_x + events_panel_w - 120, events_panel_y - 24 - 8, 120, 24});
 
   EndScissorMode();
   EndShaderMode();
