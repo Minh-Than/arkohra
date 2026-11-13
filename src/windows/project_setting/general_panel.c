@@ -1,4 +1,5 @@
 #include <float.h>
+#include <limits.h>
 #include "constants.h"
 #include "raygui.h"
 #include "raymath.h"
@@ -12,8 +13,8 @@ GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
 
   snprintf(data.scroll_speed.text, sizeof(data.scroll_speed.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->scroll_speed);
   data.scroll_speed = rgui_floatinput_init(data.scroll_speed.text);
-  snprintf(data.screen_scale.text, sizeof(data.screen_scale.text), "%.*f", 4, 1.0f);
-  data.screen_scale = rgui_floatinput_init(data.screen_scale.text);
+  snprintf(data.screen_width.text, sizeof(data.screen_width.text), "%d", app_configs->screen_width);
+  data.screen_width = rgui_intinput_init(data.screen_width.text);
   data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->playfield_ratio);
   data.colorblind = app_configs->colorblind;
 
@@ -99,15 +100,15 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
 
   gameplay_label_rect.y += input_field_gap*2;
   gameplay_field_rect.y += input_field_gap*2;
-  GuiLabel(gameplay_label_rect, "Screen Scale");
-  if(rgui_floatinput_textbox(&gen_set_panel->screen_scale, gameplay_field_rect, 4, MINIMUM_SCREEN_SCALE, MAXIMUM_SCREEN_SCALE))
+  GuiLabel(gameplay_label_rect, "Screen Width (px)");
+  if(rgui_intinput_textbox(&gen_set_panel->screen_width, gameplay_field_rect, MINIMUM_SCREEN_WIDTH, MAXIMUM_SCREEN_WIDTH))
   {
-    app_configs->screen_scale = gen_set_panel->screen_scale.value;
+    app_configs->screen_width = gen_set_panel->screen_width.value;
     app_configs->should_apply_screen_scale = true;
   }
   gameplay_label_rect.y += 20;
   gameplay_field_rect.y += 20;
-  GuiLabel(gameplay_field_rect, TextFormat("Allowed input range: %.2f - %.2f", MINIMUM_SCREEN_SCALE, MAXIMUM_SCREEN_SCALE));
+  GuiLabel(gameplay_field_rect, TextFormat("Allowed input range: %d - %d", MINIMUM_SCREEN_WIDTH, MAXIMUM_SCREEN_WIDTH));
   gameplay_label_rect.y -= 5;
   gameplay_field_rect.y -= 5;
 

@@ -19,8 +19,9 @@ float aspect_ratio_get_width(float height, AspectRatio ratio);
 
 typedef struct
 {
+  int           screen_width;
   char          ffmpeg_path[MAXPATHLEN], recent_project[MAXPATHLEN];
-  float         scroll_speed, screen_scale, music_volume, hit_volume;
+  float         scroll_speed, music_volume, hit_volume;
   AspectRatio   playfield_ratio;
   bool          kohra, colorblind;
   rini_data     rini_d;

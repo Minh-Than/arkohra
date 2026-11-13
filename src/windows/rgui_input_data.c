@@ -24,17 +24,17 @@ RguiIntInput rgui_intinput_init(const char* value)
   return input;
 }
 
-int rgui_intinput_textbox(RguiIntInput *input, Rectangle rect)
+int rgui_intinput_textbox(RguiIntInput *input, Rectangle rect, float min, float max)
 {
   int result = GuiTextBox(rect, input->text, sizeof(input->text), input->edit);
   if (result)
   {
     input->edit = !input->edit;
-    input->value = text_to_int_validated(input->text, input->value, INT_MIN, INT_MAX);
+    input->value = text_to_int_validated(input->text, input->value, min, max);
     snprintf(input->text, sizeof(input->text), "%d", input->value);
   } else
   {
-    input->value = text_to_int_validated(input->text, input->value, INT_MIN, INT_MAX);
+    input->value = text_to_int_validated(input->text, input->value, min, max);
   }
 
   return result;

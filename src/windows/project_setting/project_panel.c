@@ -1,4 +1,5 @@
 #include <float.h>
+#include <limits.h>
 #include "raygui.h"
 #include "raymath.h"
 #include "constants.h"
@@ -138,12 +139,12 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
   gameplay_label_rect.y += input_field_gap;
   gameplay_field_rect.y += input_field_gap;
   GuiLabel(gameplay_label_rect, "Chart Offset");
-  rgui_intinput_textbox(&project_panel->chart_offset, gameplay_field_rect);
+  rgui_intinput_textbox(&project_panel->chart_offset, gameplay_field_rect, INT_MIN, INT_MAX);
 
   gameplay_label_rect.y += input_field_gap;
   gameplay_field_rect.y += input_field_gap;
   GuiLabel(gameplay_label_rect, "Judge Density");
-  rgui_intinput_textbox(&project_panel->judge_density, gameplay_field_rect);
+  rgui_intinput_textbox(&project_panel->judge_density, gameplay_field_rect, INT_MIN, INT_MAX);
 
   gameplay_label_rect.y += input_field_gap;
   gameplay_field_rect.y += input_field_gap;
@@ -155,10 +156,12 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
   GuiLabel(gameplay_label_rect, "Preview Segment");
   rgui_intinput_textbox(&project_panel->preview_from,
                         (Rectangle){ gameplay_input_x, gameplay_field_y + input_field_gap*5,
-                                     ((float)info_panel_w / 2) - label_xs + 38, input_field_h });
+                                     ((float)info_panel_w / 2) - label_xs + 38, input_field_h },
+                        INT_MIN, INT_MAX);
   rgui_intinput_textbox(&project_panel->preview_to,
                         (Rectangle){ gameplay_input_x + ((float)info_panel_w / 2) - label_xs + 44, gameplay_field_y + input_field_gap*5,
-                                     ((float)info_panel_w / 2) - label_xs + 36, input_field_h });
+                                     ((float)info_panel_w / 2) - label_xs + 36, input_field_h },
+                        INT_MIN, INT_MAX);
 
   gameplay_label_rect.y += input_field_gap;
   gameplay_field_rect.y += input_field_gap;

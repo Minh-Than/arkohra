@@ -97,8 +97,8 @@ int main()
   AppConfigs app_configs = app_configs_init();
 
   SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
-  InitWindow(BASE_APP_WINDOW_WIDTH,
-             aspect_ratio_get_height((float)BASE_APP_WINDOW_WIDTH, app_configs.playfield_ratio),
+  InitWindow(app_configs.screen_width,
+             aspect_ratio_get_height((float)app_configs.screen_width, app_configs.playfield_ratio),
              "arkohra");
   SetExitKey(KEY_NULL);
 
@@ -297,8 +297,7 @@ int main()
       }
       if(app_configs.should_apply_screen_scale)
       {
-        int width = (int)(BASE_APP_WINDOW_WIDTH * app_configs.screen_scale);
-        SetWindowSize(width, (int)aspect_ratio_get_height((float)width, app_configs.playfield_ratio));
+        SetWindowSize(app_configs.screen_width, (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.playfield_ratio));
         recalibrate_camera(&render_ctx.camera);
         app_configs.should_apply_screen_scale = false;
       }

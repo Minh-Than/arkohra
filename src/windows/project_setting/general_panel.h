@@ -11,7 +11,7 @@ typedef struct {
   // Gameplay
   RguiFloatInput scroll_speed;
   RguiSelectInput aspect_ratio;
-  RguiFloatInput screen_scale;
+  RguiIntInput screen_width;
   bool colorblind;
 
   // Audio

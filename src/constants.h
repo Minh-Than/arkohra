@@ -14,10 +14,10 @@ static const char* DEFAULT_JACKET_PATH     = "resources/gameplay/DefaultJacket.p
 static const char* DEFAULT_CHART_SHADER_VS = "resources/shaders/glsl%i/chart_default.vs";
 static const char* DEFAULT_CHART_SHADER_FS = "resources/shaders/glsl%i/chart_default.fs";
 
+static const int MINIMUM_SCREEN_WIDTH = 960;
+static const int MAXIMUM_SCREEN_WIDTH = 3480;
 static const float MINIMUM_SCROLL_SPEED = 0.01f;
 static const float MAXIMUM_SCROLL_SPEED = 10.0f;
-static const float MINIMUM_SCREEN_SCALE = 0.75f;
-static const float MAXIMUM_SCREEN_SCALE = 2.0f;
 static const float MINIMUM_AUDIO_VOLUME = 0.0f;
 static const float MAXIMUM_AUDIO_VOLUME = 1.0f;
 
