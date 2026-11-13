@@ -48,16 +48,16 @@ RguiFloatInput rgui_floatinput_init(const char* value)
   return input;
 }
 
-int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal)
+int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal, float min, float max)
 {
   int result = GuiTextBox(rect, input->text, sizeof(input->text), input->edit);
   if (result)
   {
     input->edit = !input->edit;
-    input->value = text_to_float_validated(input->text, input->value, -FLT_MAX, FLT_MAX);
+    input->value = text_to_float_validated(input->text, input->value, min, max);
     snprintf(input->text, sizeof(input->text), "%.*f", decimal, input->value);
   } else
-    input->value = text_to_float_validated(input->text, input->value, -FLT_MAX, FLT_MAX);
+    input->value = text_to_float_validated(input->text, input->value, min, max);
 
   return result;
 }

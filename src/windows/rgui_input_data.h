@@ -39,7 +39,7 @@ typedef struct {
 } RguiFloatInput;
 
 RguiFloatInput rgui_floatinput_init(const char* value);
-int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal);
+int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal, float min, float max);
 
 typedef struct {
   List extensions;

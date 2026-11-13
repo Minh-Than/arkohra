@@ -1,3 +1,5 @@
+#include "constants.h"
+#include "raymath.h"
 #include "rlgl.h"
 #include "resource_util.h"
 #include "app_config.h"
@@ -38,16 +40,18 @@ AppConfigs app_configs_init()
   
   if (!rini_key_exists(&configs.rini_d, "playfield_ratio")) rini_set_value     (&configs.rini_d, "playfield_ratio",    0, "Window aspect ratio");
   if (!rini_key_exists(&configs.rini_d, "scroll_speed"))    rini_set_float     (&configs.rini_d, "scroll_speed"   , 3.0f, "Chart scrolling speed");
+  if (!rini_key_exists(&configs.rini_d, "screen_scale"))    rini_set_float     (&configs.rini_d, "screen_scale"   , 1.0f, "Screen size scaling");
   if (!rini_key_exists(&configs.rini_d, "music_volume"))    rini_set_float     (&configs.rini_d, "music_volume"   , 1.0f, "Chart music volume (0.0 - 1.0)");
   if (!rini_key_exists(&configs.rini_d, "hit_volume"))      rini_set_float     (&configs.rini_d, "hit_volume"     , 0.2f, "Notes' sound effect volume (0.0 - 1.0)");
   if (!rini_key_exists(&configs.rini_d, "ffmpeg_path"))     rini_set_value_text(&configs.rini_d, "ffmpeg_path"    ,   "", "FFMPEG Executable Path");
   if (!rini_key_exists(&configs.rini_d, "recent_project"))  rini_set_value_text(&configs.rini_d, "recent_project" ,   "", "Most recent chart path");
   if (!rini_key_exists(&configs.rini_d, "colorblind"))      rini_set_value     (&configs.rini_d, "colorblind"     ,    0, "Is colorblind");
 
+  configs.scroll_speed    =        Clamp(rini_get_float_fallback(configs.rini_d, "scroll_speed", 3.0f), MINIMUM_SCROLL_SPEED, MAXIMUM_SCROLL_SPEED);
+  configs.screen_scale    =        Clamp(rini_get_float_fallback(configs.rini_d, "screen_scale", 1.0f), MINIMUM_SCREEN_SCALE, MAXIMUM_SCREEN_SCALE);
+  configs.music_volume    =        Clamp(rini_get_float_fallback(configs.rini_d, "music_volume", 1.0f), MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
+  configs.hit_volume      =        Clamp(rini_get_float_fallback(configs.rini_d, "hit_volume"  , 0.2f), MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
   configs.colorblind      =        (bool)rini_get_value_fallback(configs.rini_d, "colorblind"     , 0);
-  configs.scroll_speed    =              rini_get_float_fallback(configs.rini_d, "scroll_speed"   , 3.0f);
-  configs.music_volume    =              rini_get_float_fallback(configs.rini_d, "music_volume"   , 1.0f);
-  configs.hit_volume      =              rini_get_float_fallback(configs.rini_d, "hit_volume"     , 0.2f);
   configs.playfield_ratio = (AspectRatio)rini_get_value_fallback(configs.rini_d, "playfield_ratio", 0);
   if (!aspect_ratio_is_valid(configs.playfield_ratio)) configs.playfield_ratio = ASPECT_16_9;
 
@@ -62,6 +66,7 @@ void app_configs_write_to_file(AppConfigs *app_configs)
 {
   rini_set_value     (&app_configs->rini_d, "playfield_ratio", app_configs->playfield_ratio, rini_get_value_description(app_configs->rini_d, "playfield_ratio"));
   rini_set_float     (&app_configs->rini_d, "scroll_speed"   , app_configs->scroll_speed   , rini_get_value_description(app_configs->rini_d, "scroll_speed"));
+  rini_set_float     (&app_configs->rini_d, "screen_scale"   , app_configs->screen_scale   , rini_get_value_description(app_configs->rini_d, "screen_scale"));
   rini_set_float     (&app_configs->rini_d, "music_volume"   , app_configs->music_volume   , rini_get_value_description(app_configs->rini_d, "music_volume"));
   rini_set_float     (&app_configs->rini_d, "hit_volume"     , app_configs->hit_volume     , rini_get_value_description(app_configs->rini_d, "hit_volume"));
   rini_set_value_text(&app_configs->rini_d, "ffmpeg_path"    , app_configs->ffmpeg_path    , rini_get_value_description(app_configs->rini_d, "ffmpeg_path"));

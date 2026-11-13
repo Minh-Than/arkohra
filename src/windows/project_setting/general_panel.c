@@ -1,5 +1,5 @@
+#include <float.h>
 #include "constants.h"
-#include "gameplay/camera/camera_service.h"
 #include "raygui.h"
 #include "raymath.h"
 #include "general_panel.h"
@@ -12,6 +12,8 @@ GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
 
   snprintf(data.scroll_speed.text, sizeof(data.scroll_speed.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->scroll_speed);
   data.scroll_speed = rgui_floatinput_init(data.scroll_speed.text);
+  snprintf(data.screen_scale.text, sizeof(data.screen_scale.text), "%.*f", 4, 1.0f);
+  data.screen_scale = rgui_floatinput_init(data.screen_scale.text);
   data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->playfield_ratio);
   data.colorblind = app_configs->colorblind;
 
@@ -34,7 +36,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
 
   BeginShaderMode(sdf_shader);
 
-  int gameplay_panel_h = 110;
+  int gameplay_panel_h = 168;
   int audio_panel_h = 80;
 
   int input_field_h = 24;
@@ -63,12 +65,12 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   Rectangle audio_field_rect = { audio_input_x, audio_field_y, audio_panel_w - 16 - label_xs, input_field_h };
 
   GuiLabel(audio_label_rect, "Music Volume");
-  rgui_floatinput_textbox(&gen_set_panel->music_volume, audio_field_rect, PROJ_FLOAT_DECIMALS);
+  rgui_floatinput_textbox(&gen_set_panel->music_volume, audio_field_rect, PROJ_FLOAT_DECIMALS, -FLT_MAX, FLT_MAX);
 
   audio_label_rect.y += input_field_gap;
   audio_field_rect.y += input_field_gap;
   GuiLabel(audio_label_rect, "Effect Volume");
-  rgui_floatinput_textbox(&gen_set_panel->effect_volume, audio_field_rect, PROJ_FLOAT_DECIMALS);
+  rgui_floatinput_textbox(&gen_set_panel->effect_volume, audio_field_rect, PROJ_FLOAT_DECIMALS, -FLT_MAX, FLT_MAX);
 
   // Gameplay
   // WARNING: the dropdown area are treated in rendering the same way, meaning anything drawn after WILL BE DRAWN ON TOP OF IT
@@ -85,21 +87,40 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   Rectangle gameplay_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs, input_field_h };
 
   GuiLabel(gameplay_label_rect, "Chart Speed");
-  if(rgui_floatinput_textbox(&gen_set_panel->scroll_speed, gameplay_field_rect, PROJ_FLOAT_DECIMALS))
+  if(rgui_floatinput_textbox(&gen_set_panel->scroll_speed, gameplay_field_rect, PROJ_FLOAT_DECIMALS, MINIMUM_SCROLL_SPEED, MAXIMUM_SCROLL_SPEED))
   {
     app_configs->scroll_speed = gen_set_panel->scroll_speed.value;
   }
+  gameplay_label_rect.y += 20;
+  gameplay_field_rect.y += 20;
+  GuiLabel(gameplay_field_rect, TextFormat("Allowed input range: %.2f - %.2f", MINIMUM_SCROLL_SPEED, MAXIMUM_SCROLL_SPEED));
+  gameplay_label_rect.y -= 5;
+  gameplay_field_rect.y -= 5;
 
   gameplay_label_rect.y += input_field_gap*2;
   gameplay_field_rect.y += input_field_gap*2;
+  GuiLabel(gameplay_label_rect, "Screen Scale");
+  if(rgui_floatinput_textbox(&gen_set_panel->screen_scale, gameplay_field_rect, 4, MINIMUM_SCREEN_SCALE, MAXIMUM_SCREEN_SCALE))
+  {
+    app_configs->screen_scale = gen_set_panel->screen_scale.value;
+    app_configs->should_apply_screen_scale = true;
+  }
+  gameplay_label_rect.y += 20;
+  gameplay_field_rect.y += 20;
+  GuiLabel(gameplay_field_rect, TextFormat("Allowed input range: %.2f - %.2f", MINIMUM_SCREEN_SCALE, MAXIMUM_SCREEN_SCALE));
+  gameplay_label_rect.y -= 5;
+  gameplay_field_rect.y -= 5;
+
+  gameplay_label_rect.y += input_field_gap;
+  gameplay_field_rect.y += input_field_gap;
   if(GuiCheckBox((Rectangle){ gameplay_field_x, gameplay_label_rect.y, input_field_h, input_field_h},
               "Use Colorblind Arc Colors", &gen_set_panel->colorblind))
   {
     app_configs->colorblind = gen_set_panel->colorblind;
   }
 
-  gameplay_label_rect.y -= input_field_gap;
-  gameplay_field_rect.y -= input_field_gap;
+  gameplay_label_rect.y -= input_field_gap*2 + 15;
+  gameplay_field_rect.y -= input_field_gap*2 + 15;
   GuiLabel(gameplay_label_rect, "Aspect Ratio");
   EndScissorMode();
   if (rgui_selectinput_dropdown(&gen_set_panel->aspect_ratio, gameplay_field_rect))
@@ -107,6 +128,10 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
     app_configs->playfield_ratio = gen_set_panel->aspect_ratio.option;
     app_configs->should_recalibrate_camera = true;
   }
+
+  gameplay_label_rect.y += input_field_gap*2;
+  gameplay_field_rect.y += input_field_gap*2;
+
   EndShaderMode();
 
 }

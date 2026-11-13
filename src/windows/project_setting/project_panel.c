@@ -1,3 +1,4 @@
+#include <float.h>
 #include "raygui.h"
 #include "raymath.h"
 #include "constants.h"
@@ -116,7 +117,7 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
   GuiLabel(gameplay_label_rect, "Base BPM");
   int base_bpm_checkbox_x = gameplay_input_x + info_panel_w - 16 - label_xs - is_sync_sub_x + 8;
   Rectangle base_bpm_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs - is_sync_sub_x - 8, input_field_h };
-  rgui_floatinput_textbox(&project_panel->base_bpm, base_bpm_field_rect, PROJ_BASE_BPM_DECIMALS);
+  rgui_floatinput_textbox(&project_panel->base_bpm, base_bpm_field_rect, PROJ_BASE_BPM_DECIMALS, -FLT_MAX, FLT_MAX);
   GuiCheckBox((Rectangle){base_bpm_checkbox_x, gameplay_field_y + input_field_gap*0, input_field_h, input_field_h},
               "Sync", &project_panel->is_sync);
 
@@ -147,7 +148,7 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
   gameplay_label_rect.y += input_field_gap;
   gameplay_field_rect.y += input_field_gap;
   GuiLabel(gameplay_label_rect, "Chart Constant");
-  rgui_floatinput_textbox(&project_panel->cc, gameplay_field_rect, PROJ_FLOAT_DECIMALS);
+  rgui_floatinput_textbox(&project_panel->cc, gameplay_field_rect, PROJ_FLOAT_DECIMALS, -FLT_MAX, FLT_MAX);
 
   gameplay_label_rect.y += input_field_gap;
   gameplay_field_rect.y += input_field_gap;
