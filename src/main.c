@@ -98,9 +98,10 @@ int main()
 
   SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
   InitWindow(app_configs.screen_width,
-             aspect_ratio_get_height((float)app_configs.screen_width, app_configs.playfield_ratio),
+             (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.playfield_ratio),
              "arkohra");
   SetExitKey(KEY_NULL);
+
 
   CachedFontProbes font_probes       = cached_font_probes_init();
   TrackService track_service         = track_service_init  (GLSL_VERSION);
@@ -114,6 +115,11 @@ int main()
   ChartReader chart_reader  = { 0 };
   RenderContext render_ctx = render_context_init(&app_configs);
 
+  // Initial resize to prevent auto aligning to screen
+  {
+    SetWindowSize(app_configs.screen_width, (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.playfield_ratio));
+    recalibrate_camera(&render_ctx.camera);
+  }
 
   // TODO: Figure out where to put these elsewhere more sensible:
   // - chart shader + uniform locations
