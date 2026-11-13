@@ -207,13 +207,19 @@ static void draw_events_panel_list(ChartTimingGroup *tg, enum BuiltinSCOption sc
   EndScissorMode();
 }
 
-void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, Shader sdf_shader, List *timing_groups)
+void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, bool is_chart_initiailzed, Shader sdf_shader, List *timing_groups)
 {
   int content_x = window_inst->x + 8;
   int toggle_y  = (int)window_inst->y + 32;
   int scroll_y  = toggle_y + 32;
   int scroll_w  = (int)window_inst->width  - 16;
   int scroll_h  = (int)window_inst->height - (scroll_y - (int)window_inst->y) - 8;
+
+  if (!is_chart_initiailzed)
+  {
+    GuiLabel((Rectangle){content_x, scroll_y, scroll_w, 24}, "No chart currently loaded.");
+    return;
+  }
 
   BeginShaderMode(sdf_shader);
 

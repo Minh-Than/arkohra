@@ -41,7 +41,7 @@ typedef struct {
 } ProjectPanel;
 
 ProjectPanel project_panel_init();
-void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel,
+void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel, bool is_chart_initiailzed,
                         AppConfigs *app_configs, Shader sdf_shader, List *font_fallbacks);
 void project_panel_add_missing_codepoints(ProjectPanel *project_panel, List *codepoints, List *font_fallbacks);
 void project_panel_add_str_to_codepoints(ProjectPanel *project_panel, List *codepoints);

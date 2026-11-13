@@ -31,7 +31,7 @@ typedef struct {
 } EventsPanel;
 
 EventsPanel events_panel_init();
-void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, Shader sdf_shader, List *timing_groups);
+void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, bool is_chart_initiailzed, Shader sdf_shader, List *timing_groups);
 void events_panel_apply_chart(EventsPanel *events_panel);
 
 #endif // EVENTS_PANEL_H

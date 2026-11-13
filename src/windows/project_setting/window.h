@@ -31,7 +31,7 @@ typedef struct
 
 ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs, CachedFontProbes *font_probes);
 void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs,
-                       List *timing_groups, CachedFontProbes *font_probes);
+                       List *timing_groups, CachedFontProbes *font_probes, bool is_chart_initiailzed);
 void proj_setting_unload(ProjSettingData *proj_setting);
 void proj_setting_reload_font(ProjSettingData *proj_setting, CachedFontProbes *font_probes);
 void proj_setting_apply_chart(ProjSettingData *project_setting, ChartSettings *chart_settings, CachedFontProbes *font_probes);

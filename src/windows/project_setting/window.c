@@ -30,7 +30,7 @@ ProjSettingData proj_setting_init(int glsl, AppConfigs *app_configs, CachedFontP
 }
 
 void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfigs *app_configs,
-                       List *timing_groups, CachedFontProbes *font_probes)
+                       List *timing_groups, CachedFontProbes *font_probes, bool is_chart_initiailzed)
 {
   if (!window_inst->is_visible) return;
 
@@ -49,10 +49,10 @@ void proj_setting_draw(WindowInst* window_inst, ProjSettingData *data, AppConfig
   switch (data->setting_options_active)
   {
     case SETTING_PROJECT:
-      project_panel_draw(window_inst, &data->project_panel, app_configs, data->sdf_shader, &data->font_fallbacks);
+      project_panel_draw(window_inst, &data->project_panel, is_chart_initiailzed, app_configs, data->sdf_shader, &data->font_fallbacks);
       break;
     case SETTING_EVENTS:
-      events_panel_draw(window_inst, &data->events_panel, data->sdf_shader, timing_groups);
+      events_panel_draw(window_inst, &data->events_panel, is_chart_initiailzed, data->sdf_shader, timing_groups);
       break;
     case SETTING_GENERAL:
       general_setting_panel_draw(window_inst, &data->gen_set_panel, app_configs, data->sdf_shader, &data->font_fallbacks);

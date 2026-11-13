@@ -254,7 +254,7 @@ int main()
       // Windows
       cmd_palette_draw (&window_service.command_palette, (CmdPltData *)window_service.command_palette.data);
       proj_setting_draw(&window_service.project_setting, (ProjSettingData *)window_service.project_setting.data,
-                        &app_configs, &chart_reader.timing_groups, &font_probes);
+                        &app_configs, &chart_reader.timing_groups, &font_probes, chart_reader.initialized);
 
       // Debug FPS
       DrawFPS(5, 5);
