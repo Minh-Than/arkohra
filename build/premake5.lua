@@ -114,10 +114,10 @@ function platform_defines()
 end
 
 -- if you don't want to download raylib, then set this to false, and set the raylib dir to where you want raylib to be pulled from, must be full sources.
-downloadRaylib = true
-raylib_dir = "external/raylib-master"
+downloadRaylib = false
+raylib_dir = "../../raylib"
 
-workspaceName = "MyGame"
+workspaceName = "arkohra"
 baseName = path.getbasename(path.getdirectory(os.getcwd()))
 
 --if (baseName ~= 'raylib-quickstart') then
