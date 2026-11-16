@@ -162,7 +162,7 @@ int main()
     if (IsFileDropped())
     {
       FilePathList dropped_file = LoadDroppedFiles();
-      char *project_file = dropped_file.paths[0];
+      const char *project_file = dropped_file.paths[0];
       process_imported_project(project_file, &music,
                                &app_configs, &font_probes,
                                &track_service, &notes_service, &hud_service, &window_service,
