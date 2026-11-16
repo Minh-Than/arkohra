@@ -22,7 +22,7 @@ typedef struct
   int           screen_width;
   char          ffmpeg_path[MAXPATHLEN], recent_project[MAXPATHLEN];
   float         scroll_speed, music_volume, hit_volume;
-  AspectRatio   playfield_ratio;
+  AspectRatio   screen_ratio;
   bool          kohra, colorblind, show_framerate;
 
   bool should_recalibrate_camera;

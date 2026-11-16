@@ -15,7 +15,7 @@ GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
   data.scroll_speed = rgui_floatinput_init(data.scroll_speed.text);
   snprintf(data.screen_width.text, sizeof(data.screen_width.text), "%d", app_configs->screen_width);
   data.screen_width = rgui_intinput_init(data.screen_width.text);
-  data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->playfield_ratio);
+  data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->screen_ratio);
   data.colorblind = app_configs->colorblind;
   data.show_framerate = app_configs->show_framerate;
 
@@ -128,7 +128,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   EndScissorMode();
   if (rgui_selectinput_dropdown(&gen_set_panel->aspect_ratio, gameplay_field_rect))
   {
-    app_configs->playfield_ratio = gen_set_panel->aspect_ratio.option;
+    app_configs->screen_ratio = gen_set_panel->aspect_ratio.option;
     app_configs->should_recalibrate_camera = true;
   }
 

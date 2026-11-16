@@ -35,7 +35,7 @@ HudService hud_service_init(int glsl, AppConfigs *app_configs, CachedFontProbes 
   service.progress_glow = LoadTexture("resources/gameplay/HUD/ProgressGlow.png");
   SetTextureFilter(service.jacket_img, TEXTURE_FILTER_BILINEAR);
 
-  service.playfield_ratio = app_configs->playfield_ratio;
+  service.playfield_ratio = app_configs->screen_ratio;
   text_copy_bounded(service.jacket_path, sizeof(service.jacket_path), "");
 
   return service;

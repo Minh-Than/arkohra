@@ -99,7 +99,7 @@ int main()
 
   SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
   InitWindow(app_configs.screen_width,
-             (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.playfield_ratio),
+             (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.screen_ratio),
              "arkohra");
   SetExitKey(KEY_NULL);
 
@@ -118,7 +118,7 @@ int main()
 
   // Initial resize to prevent auto aligning to screen
   {
-    SetWindowSize(app_configs.screen_width, (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.playfield_ratio));
+    SetWindowSize(app_configs.screen_width, (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.screen_ratio));
     recalibrate_camera(&render_ctx.camera);
   }
 
@@ -171,7 +171,7 @@ int main()
       UnloadDroppedFiles(dropped_file);
     }
 
-    camera_handle_main_window_resize(&render_ctx.camera, app_configs.playfield_ratio);
+    camera_handle_main_window_resize(&render_ctx.camera, app_configs.screen_ratio);
     window_services_handle_inputs(&window_service);
     selection_service_handle_inputs(&selection_service, &track_service, &window_service, chart_reader.initialized);
     window_services_window_check_oob(&window_service);
@@ -290,8 +290,8 @@ int main()
     {
       if(app_configs.colorblind != notes_service.colorblind)
         notes_service.colorblind = app_configs.colorblind;
-      if (app_configs.playfield_ratio != hud_service.playfield_ratio)
-        hud_service.playfield_ratio = app_configs.playfield_ratio;
+      if (app_configs.screen_ratio != hud_service.playfield_ratio)
+        hud_service.playfield_ratio = app_configs.screen_ratio;
       if(chart_reader.initialized)
       {
         if(fabsf(app_configs.scroll_speed - render_ctx.chart_settings.scroll_speed) > 1e-6)
@@ -304,13 +304,13 @@ int main()
       }
       if(app_configs.should_recalibrate_camera)
       {
-        SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.playfield_ratio));
+        SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.screen_ratio));
         recalibrate_camera(&render_ctx.camera);
         app_configs.should_recalibrate_camera = false;
       }
       if(app_configs.should_apply_screen_scale)
       {
-        SetWindowSize(app_configs.screen_width, (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.playfield_ratio));
+        SetWindowSize(app_configs.screen_width, (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.screen_ratio));
         recalibrate_camera(&render_ctx.camera);
         app_configs.should_apply_screen_scale = false;
       }
