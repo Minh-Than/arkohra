@@ -24,7 +24,6 @@ typedef struct
   float         scroll_speed, music_volume, hit_volume;
   AspectRatio   playfield_ratio;
   bool          kohra, colorblind, show_framerate;
-  rini_data     rini_d;
 
   bool should_recalibrate_camera;
   bool should_apply_screen_scale;
@@ -32,6 +31,5 @@ typedef struct
 
 AppConfigs app_configs_init();
 void app_configs_write_to_file(AppConfigs *app_configs);
-void app_configs_unload(AppConfigs *app_configs);
 
 #endif // APP_CONFIG_H

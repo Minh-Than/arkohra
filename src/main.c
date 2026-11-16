@@ -361,7 +361,6 @@ int main()
 
   // One last config writing just in case
   app_configs_write_to_file(&app_configs);
-  app_configs_unload(&app_configs);
 
   // destroy the window and cleanup the OpenGL context
   CloseWindow();
