@@ -11,6 +11,7 @@ rini_data fetch_rini_config();
 bool rini_key_exists(rini_data *data, const char *key);
 int get_appdata_path(const char* appName, char* outPath, int maxLen);
 void text_copy_bounded(char *dst, size_t dst_size, const char *src);
+const char* get_readable_mem_size(size_t bytes);
 
 #ifdef _WIN32
     #include <direct.h>   // For _mkdir on Windows

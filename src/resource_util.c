@@ -82,3 +82,39 @@ void text_copy_bounded(char *dst, size_t dst_size, const char *src)
   if (src == NULL) { dst[0] = '\0'; return; }
   snprintf(dst, dst_size, "%s", src);
 }
+
+enum MemoryPrefix {
+  MEM_B  = 0,
+  MEM_KB = 1,
+  MEM_MB = 2,
+  MEM_GB = 3
+};
+
+static enum MemoryPrefix get_prefix_from_bytes(size_t bytes)
+{
+  enum MemoryPrefix prefix = MEM_B;
+
+  while (bytes >= 1024 && prefix < MEM_GB)
+  {
+    bytes /= 1024;
+    prefix++;
+  }
+
+  return prefix;
+}
+
+const char* get_readable_mem_size(size_t bytes)
+{
+  static const char  *names[] = { "B", "KB", "MB", "GB" };
+  static const double scale[] = {
+    1.0,
+    1.0 / 1024.0,
+    1.0 / (1024.0 * 1024.0),
+    1.0 / (1024.0 * 1024.0 * 1024.0)
+  };
+
+  // I absolutely did not write this myself
+  enum MemoryPrefix prefix = get_prefix_from_bytes(bytes);
+  if (prefix == MEM_B) return TextFormat("%zu B", bytes);
+  else                 return TextFormat("%.1f %s", (double)bytes * scale[prefix], names[prefix]);
+}

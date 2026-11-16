@@ -18,6 +18,9 @@ typedef struct {
   RguiFloatInput music_volume;
   RguiFloatInput effect_volume;
 
+  // Display
+  bool show_framerate;
+
   Rectangle scroll_rect;
   Vector2 scroll;
 } GeneralSettingPanel;

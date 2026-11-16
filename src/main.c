@@ -3,16 +3,17 @@ Cloned from quickstart `https://github.com/raylib-extras/raylib-quickstart` by J
 To view a copy of this license, visit https://creativecommons.org/publicdomain/zero/1.0/
 */
 
-#include "data/fonts/fonts_service.h"
-#include "gameplay/arc_formula.h"
 #include "raylib.h"
 #include "libraries/raygui.h"
 #include "raymath.h"
 #include "rlgl.h"
+#include "libraries/memu.h"
 #include "constants.h"
 #include "data/app_configs/app_config.h"
 #include "data/chart_settings/chart_settings.h"
+#include "data/fonts/fonts_service.h"
 #include "data/selection/selection_service.h"
+#include "gameplay/arc_formula.h"
 #include "gameplay/audio_service.h"
 #include "gameplay/camera/camera_service.h"
 #include "gameplay/chart_reader.h"
@@ -262,8 +263,14 @@ int main()
       proj_setting_draw(&window_service.project_setting, (ProjSettingData *)window_service.project_setting.data,
                         &app_configs, &chart_reader.timing_groups, &font_probes, chart_reader.initialized);
 
-      // Debug FPS
-      DrawFPS(5, 5);
+      // Draw framerate stuffs
+      if (app_configs.show_framerate)
+      {
+        DrawRectangle(0, 0, 270, 70, (Color){50, 50, 50, 180});
+        DrawFPS(5, 5);
+        DrawText(TextFormat("curr mem usage: %s", get_readable_mem_size(memu_get_curr_rss())), 5, 25, 20, LIME);
+        DrawText(TextFormat("peak mem usage: %s", get_readable_mem_size(memu_get_peak_rss())), 5, 45, 20, LIME);
+      }
 
       GuiWindowFileDialog(&open_proj_input.state);
 

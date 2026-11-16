@@ -17,6 +17,7 @@ GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
   data.screen_width = rgui_intinput_init(data.screen_width.text);
   data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->playfield_ratio);
   data.colorblind = app_configs->colorblind;
+  data.show_framerate = app_configs->show_framerate;
 
   snprintf(data.music_volume.text, sizeof(data.music_volume.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->music_volume);
   data.music_volume = rgui_floatinput_init(data.music_volume.text);
@@ -39,10 +40,11 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
 
   int gameplay_panel_h = 168;
   int audio_panel_h = 80;
+  int display_panel_h = 48;
 
   int input_field_h = 24;
   int input_field_gap = 30;
-  int total_content_h = gameplay_panel_h +audio_panel_h + 12*2 + 8;
+  int total_content_h = gameplay_panel_h +audio_panel_h + display_panel_h + 12*3 + 8;
   GuiScrollPanel((Rectangle){content_x, scroll_y, scroll_w, scroll_h},
                  NULL, (Rectangle){0, 0, scroll_w, total_content_h},
                  &gen_set_panel->scroll, &gen_set_panel->scroll_rect);
@@ -132,6 +134,25 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
 
   gameplay_label_rect.y += input_field_gap*2;
   gameplay_field_rect.y += input_field_gap*2;
+
+  // Display
+  int display_panel_x = content_x + 8    + (int)gen_set_panel->scroll.x;
+  int display_panel_y = scroll_y  + 12*3 + (int)gen_set_panel->scroll.y + gameplay_panel_h + audio_panel_h;
+  int display_panel_w = scroll_w  - scroll_padding;
+  GuiGroupBox ((Rectangle){display_panel_x, display_panel_y, display_panel_w, display_panel_h}, "[ DISPLAY ]");
+
+  int display_field_x = display_panel_x + 8;
+  int display_field_y = display_panel_y + 16;
+  int display_input_x = display_field_x + label_xs;
+
+  Rectangle display_label_rect = { display_field_x, display_field_y, label_xs, input_field_h };
+  Rectangle display_field_rect = { display_input_x, display_field_y, display_panel_w - 16 - label_xs, input_field_h };
+
+  if(GuiCheckBox((Rectangle){ display_field_x, display_label_rect.y, input_field_h, input_field_h},
+              "Show Framerate", &gen_set_panel->show_framerate))
+  {
+    app_configs->show_framerate = gen_set_panel->show_framerate;
+  }
 
   EndShaderMode();
 
