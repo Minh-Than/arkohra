@@ -1,5 +1,5 @@
 #include <string.h>
-#include "raygui.h"
+#include "libraries/raygui.h"
 #include "raylib.h"
 #include "data/fonts/fonts_service.h"
 #include "windows/project_setting/events_panel.h"

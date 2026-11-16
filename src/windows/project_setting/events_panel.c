@@ -1,12 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "data/chart_timing_groups/chart_timing_group.h"
-#include "data/gameplay_events/timing_event.h"
-#include "data/keyframe/value_channel.h"
-#include "raygui.h"
+#include "libraries/raygui.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "resource_util.h"
+#include "data/chart_timing_groups/chart_timing_group.h"
+#include "data/gameplay_events/timing_event.h"
+#include "data/keyframe/value_channel.h"
 #include "windows/rgui_input_data.h"
 #include "windows/window_inst.h"
 #include "events_panel.h"

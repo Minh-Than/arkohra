@@ -6,7 +6,7 @@ To view a copy of this license, visit https://creativecommons.org/publicdomain/z
 #include "data/fonts/fonts_service.h"
 #include "gameplay/arc_formula.h"
 #include "raylib.h"
-#include "raygui.h"
+#include "libraries/raygui.h"
 #include "raymath.h"
 #include "rlgl.h"
 #include "constants.h"

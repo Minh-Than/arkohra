@@ -1,7 +1,7 @@
 #include <ctype.h>
 #include <float.h>
 #include "raylib.h"
-#include "raygui.h"
+#include "libraries/raygui.h"
 #include "constants.h"
 #include "rgui_input_data.h"
 #include "data/app_configs/app_config.h"

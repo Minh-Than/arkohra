@@ -4,7 +4,7 @@
 #include "color_services.h"
 #include "constants.h"
 #include "raylib.h"
-#include "cJSON.h"
+#include "libraries/cJSON.h"
 #include "render/texture/single_line_type.h"
 #include "render/texture/skin_side.h"
 

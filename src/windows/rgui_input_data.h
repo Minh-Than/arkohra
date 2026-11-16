@@ -3,7 +3,7 @@
 
 #include <sys/param.h>
 #include "data/custom_types/dynamic_list.h"
-#include "gui_window_file_dialog.h"
+#include "libraries/gui_window_file_dialog.h"
 
 #define RGUI_INPUT_TEXT_CAP 256
 

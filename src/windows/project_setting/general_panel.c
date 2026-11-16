@@ -1,7 +1,7 @@
 #include <float.h>
 #include <limits.h>
 #include "constants.h"
-#include "raygui.h"
+#include "libraries/raygui.h"
 #include "raymath.h"
 #include "general_panel.h"
 

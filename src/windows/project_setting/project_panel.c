@@ -1,6 +1,6 @@
 #include <float.h>
 #include <limits.h>
-#include "raygui.h"
+#include "libraries/raygui.h"
 #include "raymath.h"
 #include "constants.h"
 #include "data/fonts/fonts_service.h"

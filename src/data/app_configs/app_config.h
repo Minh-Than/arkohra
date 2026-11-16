@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <sys/param.h>
-#include "rini.h"
+#include "libraries/rini.h"
 #include "resource_util.h"
 
 typedef enum {

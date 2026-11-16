@@ -1,5 +1,5 @@
 #include <math.h>
-#include "../../acutest.h"
+#include "../../libraries/acutest.h"
 #include "../../constants.h"
 #include "../../data/custom_types/dynamic_list.c"
 #include "../../data/gameplay_events/timing_event.c"

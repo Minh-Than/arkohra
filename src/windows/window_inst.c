@@ -1,6 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
-#include "raygui.h"
+#include "libraries/raygui.h"
 #include "raylib.h"
 #include "windows/command_palette/window.h"
 #include "window_inst.h"
