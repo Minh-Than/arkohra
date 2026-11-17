@@ -72,38 +72,35 @@ void window_inst_drag_resize(WindowInst *window_inst, int min_width, int min_hei
 {
   Rectangle rect = (Rectangle){ window_inst->x, window_inst->y,
                                     window_inst->width, window_inst->height };
-  static bool resizing = false;
   Rectangle handle  = (Rectangle){ rect.x + rect.width  - 10,
                                    rect.y + rect.height - 10,
                                    20, 20 };
-  if (resizing)
+  if (window_inst->resizing)
   {
     window_inst->width  = fmaxf(min_width, fminf(GetScreenWidth() , GetMouseX() - window_inst->x));
     window_inst->height = fmaxf(min_height, fminf(GetScreenHeight(), GetMouseY() - window_inst->y));
-    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) resizing = false;
+    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) window_inst->resizing = false;
   }
   else if (CheckCollisionPointRec(GetMousePosition(), handle) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-    resizing = true;
+    window_inst->resizing = true;
 
-  static bool dragging = false;
-  static Vector2 dragging_pos = { 0, 0 };
   Rectangle top_bar = (Rectangle){ rect.x, rect.y, rect.width, 24.0f };
-  if(dragging)
+  if(window_inst->dragging)
   {
     window_inst->x = fmaxf(top_bar.height - top_bar.width + 16.0f,
                            fminf(GetScreenWidth() - top_bar.height - 16.0f,
-                                 GetMouseX() - dragging_pos.x));
+                                 GetMouseX() - window_inst->dragging_pos.x));
     window_inst->y = fmaxf(0.0f,
                            fminf(GetScreenHeight() - top_bar.height,
-                                 GetMouseY() - dragging_pos.y));
-    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) dragging = false;
+                                 GetMouseY() - window_inst->dragging_pos.y));
+    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) window_inst->dragging = false;
   }
   else if (CheckCollisionPointRec(GetMousePosition(), top_bar) &&
            IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
   {
-    dragging = true;
-    dragging_pos.x = GetMouseX() - window_inst->x;
-    dragging_pos.y = GetMouseY() - window_inst->y;
+    window_inst->dragging = true;
+    window_inst->dragging_pos.x = GetMouseX() - window_inst->x;
+    window_inst->dragging_pos.y = GetMouseY() - window_inst->y;
   }
 
   DrawTriangle((Vector2){ handle.x + 8, handle.y + 8 },

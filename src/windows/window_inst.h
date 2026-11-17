@@ -16,6 +16,9 @@ typedef struct
   float      x, y, width, height;
   WindowType type;
   bool       is_visible;
+
+  bool    resizing, dragging;
+  Vector2 dragging_pos;
 } WindowInst;
 
 WindowInst window_inst_init(WindowType type, int x, int y, int width, int height);
