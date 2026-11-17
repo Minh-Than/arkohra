@@ -15,10 +15,10 @@ ProjectPanel project_panel_init()
   data.title = data.composer = data.illustrator = data.charter = data.diff_text = data.alias  = rgui_textinput_init("");
 
   data.bpm_text = data.search_tags = rgui_textinput_init("");
-  data.base_bpm = rgui_floatinput_init("0.0000");
-  data.cc = rgui_floatinput_init("0.00");
-  data.chart_offset = data.judge_density = data.preview_from = rgui_intinput_init("0");
-  data.preview_to = rgui_intinput_init("10000");
+  data.base_bpm = rgui_floatinput_init(0.0f, PROJ_BASE_BPM_DECIMALS);
+  data.cc = rgui_floatinput_init(0.0f, PROJ_FLOAT_DECIMALS);
+  data.chart_offset = data.judge_density = data.preview_from = rgui_intinput_init(0);
+  data.preview_to = rgui_intinput_init(10000);
 
   data.audio = data.jacket = data.background = data.bg_video = rgui_fileinput_init("");
   list_push(&data.audio.extensions, ".ogg");
@@ -74,7 +74,7 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel, bo
   int info_field_y = info_panel_y + 16;
   int gameplay_input_x = info_field_x + label_xs;
 
-  char *info_labels[] = { "Title", "Composer", "Illustrator", "Charter", "Difficulty Name", "Alias" };
+  const char *info_labels[] = { "Title", "Composer", "Illustrator", "Charter", "Difficulty Name", "Alias" };
   char *info_values[] = {
     project_panel->title.text, project_panel->composer.text,
     project_panel->illustrator.text, project_panel->charter.text,
@@ -264,19 +264,14 @@ void project_panel_apply_chart(ProjectPanel *project_panel, ChartSettings *chart
   project_panel->diff_text = rgui_textinput_init(chart_settings->difficulty);
   project_panel->alias = rgui_textinput_init(chart_settings->alias);
 
-  snprintf(project_panel->base_bpm.text, sizeof(project_panel->base_bpm.text), "%.*f", PROJ_BASE_BPM_DECIMALS, chart_settings->base_bpm);
-  project_panel->base_bpm = rgui_floatinput_init(project_panel->base_bpm.text);
+  project_panel->base_bpm = rgui_floatinput_init(chart_settings->base_bpm, PROJ_BASE_BPM_DECIMALS);
   project_panel->is_sync = chart_settings->sync_base_bpm;
   project_panel->bpm_text = rgui_textinput_init(chart_settings->bpm_text);
-  snprintf(project_panel->chart_offset.text, sizeof(project_panel->chart_offset.text), "%d", chart_settings->audio_offset);
-  project_panel->chart_offset = rgui_intinput_init(project_panel->chart_offset.text);
-  project_panel->judge_density = rgui_intinput_init("0");
-  snprintf(project_panel->cc.text, sizeof(project_panel->cc.text), "%.*f", PROJ_FLOAT_DECIMALS, chart_settings->chart_constant);
-  project_panel->cc = rgui_floatinput_init(project_panel->cc.text);
-  snprintf(project_panel->preview_from.text, sizeof(project_panel->preview_from.text), "%d", chart_settings->preview_from);
-  project_panel->preview_from = rgui_intinput_init(project_panel->preview_from.text);
-  snprintf(project_panel->preview_to.text, sizeof(project_panel->preview_to.text), "%d", chart_settings->preview_to);
-  project_panel->preview_to = rgui_intinput_init(project_panel->preview_to.text);
+  project_panel->chart_offset = rgui_intinput_init(chart_settings->audio_offset);
+  project_panel->judge_density = rgui_intinput_init(0);
+  project_panel->cc = rgui_floatinput_init(chart_settings->chart_constant, PROJ_FLOAT_DECIMALS);
+  project_panel->preview_from = rgui_intinput_init(chart_settings->preview_from);
+  project_panel->preview_to = rgui_intinput_init(chart_settings->preview_to);
   project_panel->search_tags = rgui_textinput_init(chart_settings->search_tags);
 
   text_copy_bounded(project_panel->audio.file, sizeof(project_panel->audio.file), chart_settings->audio_path);

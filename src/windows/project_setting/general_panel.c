@@ -12,10 +12,8 @@ GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
   data.scroll = Vector2Zero();
   data.scroll_rect = (Rectangle){ 0, 0 };
 
-  snprintf(data.scroll_speed.text, sizeof(data.scroll_speed.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->scroll_speed);
-  data.scroll_speed = rgui_floatinput_init(data.scroll_speed.text);
-  snprintf(data.screen_width.text, sizeof(data.screen_width.text), "%d", app_configs->screen_width);
-  data.screen_width = rgui_intinput_init(data.screen_width.text);
+  data.scroll_speed = rgui_floatinput_init(app_configs->scroll_speed, PROJ_FLOAT_DECIMALS);
+  data.screen_width = rgui_intinput_init(app_configs->screen_width);
   data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->screen_ratio);
   data.colorblind = app_configs->colorblind;
   data.show_framerate = app_configs->show_framerate;
@@ -23,10 +21,8 @@ GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
   data.kohra_speed = rgui_rawfloatinput_init(app_configs->kohra_speed);
   data.kohra_scale = rgui_rawfloatinput_init(app_configs->kohra_scale);
 
-  snprintf(data.music_volume.text, sizeof(data.music_volume.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->music_volume);
-  data.music_volume = rgui_floatinput_init(data.music_volume.text);
-  snprintf(data.effect_volume.text, sizeof(data.effect_volume.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->hit_volume);
-  data.effect_volume = rgui_floatinput_init(data.effect_volume.text);
+  data.music_volume = rgui_floatinput_init(app_configs->music_volume, PROJ_FLOAT_DECIMALS);
+  data.effect_volume = rgui_floatinput_init(app_configs->hit_volume, PROJ_FLOAT_DECIMALS);
 
   return data;
 }

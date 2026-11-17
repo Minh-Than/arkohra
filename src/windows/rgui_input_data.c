@@ -1,5 +1,3 @@
-#include <ctype.h>
-#include <float.h>
 #include "raylib.h"
 #include "libraries/raygui.h"
 #include "constants.h"
@@ -16,10 +14,11 @@ RguiTextInput rgui_textinput_init(const char* value)
   return input;
 }
 
-RguiIntInput rgui_intinput_init(const char* value)
+RguiIntInput rgui_intinput_init(int value)
 {
   RguiIntInput input = { 0 };
-  TextCopy(input.text, value);
+  input.value = value;
+  snprintf(input.text, sizeof(input.text), "%d", value);
 
   return input;
 }
@@ -40,10 +39,11 @@ int rgui_intinput_textbox(RguiIntInput *input, Rectangle rect, float min, float 
   return result;
 }
 
-RguiFloatInput rgui_floatinput_init(const char* value)
+RguiFloatInput rgui_floatinput_init(float value, int decimals)
 {
   RguiFloatInput input = { 0 };
-  TextCopy(input.text, value);
+  input.value = value;
+  snprintf(input.text, sizeof(input.text), "%.*f", decimals, value);
 
   return input;
 }

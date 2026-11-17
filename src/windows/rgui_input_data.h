@@ -29,7 +29,7 @@ typedef struct {
   int value;
 } RguiIntInput;
 
-RguiIntInput rgui_intinput_init(const char* value);
+RguiIntInput rgui_intinput_init(int value);
 int rgui_intinput_textbox(RguiIntInput *input, Rectangle rect, float min, float max);
 
 typedef struct {
@@ -38,7 +38,7 @@ typedef struct {
   float value;
 } RguiFloatInput;
 
-RguiFloatInput rgui_floatinput_init(const char* value);
+RguiFloatInput rgui_floatinput_init(float value, int decimals);
 int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal, float min, float max);
 
 typedef struct {
