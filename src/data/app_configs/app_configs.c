@@ -47,6 +47,8 @@ AppConfigs app_configs_init()
   if (!rini_key_exists(&rini_d, "recent_project")) rini_set_value_text(&rini_d, "recent_project",   "", "Most recent chart path");
   if (!rini_key_exists(&rini_d, "colorblind"))     rini_set_value     (&rini_d, "colorblind"    ,    0, "Is colorblind");
   if (!rini_key_exists(&rini_d, "show_framerate")) rini_set_value     (&rini_d, "show_framerate",    0, "Show framerate");
+  if (!rini_key_exists(&rini_d, "kohra_speed"))    rini_set_float     (&rini_d, "kohra_speed"  , 25.0f, "kohra speed");
+  if (!rini_key_exists(&rini_d, "kohra_scale"))    rini_set_float     (&rini_d, "kohra_scale"  ,  1.0f, "kohra speed");
 
   configs.screen_width    =   (int)Clamp(rini_get_value_fallback(rini_d, "screen_width", BASE_APP_WINDOW_WIDTH), MINIMUM_SCREEN_WIDTH, MAXIMUM_SCREEN_WIDTH);
   configs.scroll_speed    =        Clamp(rini_get_float_fallback(rini_d, "scroll_speed", 3.0f), MINIMUM_SCROLL_SPEED, MAXIMUM_SCROLL_SPEED);
@@ -54,6 +56,8 @@ AppConfigs app_configs_init()
   configs.hit_volume      =        Clamp(rini_get_float_fallback(rini_d, "hit_volume"  , 0.2f), MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
   configs.colorblind      =        (bool)rini_get_value_fallback(rini_d, "colorblind"     , 0);
   configs.show_framerate  =        (bool)rini_get_value_fallback(rini_d, "show_framerate" , 0);
+  configs.kohra_speed     =        Clamp(rini_get_float_fallback(rini_d, "kohra_speed", 25.0f), MINIMUM_KOHRA_SPEED, MAXIMUM_KOHRA_SPEED);
+  configs.kohra_scale     =        Clamp(rini_get_float_fallback(rini_d, "kohra_scale",  1.0f), MINIMUM_KOHRA_SCALE, MAXIMUM_KOHRA_SCALE);
   configs.screen_ratio = (AspectRatio)rini_get_value_fallback(rini_d, "screen_ratio", 0);
   if (!aspect_ratio_is_valid(configs.screen_ratio)) configs.screen_ratio = ASPECT_16_9;
 
@@ -78,10 +82,12 @@ void app_configs_write_to_file(AppConfigs *app_configs)
   rini_set_value_text(&rini_d, "recent_project", app_configs->recent_project     , rini_get_value_description(rini_d, "recent_project"));
   rini_set_value     (&rini_d, "colorblind"    , (int)app_configs->colorblind    , rini_get_value_description(rini_d, "colorblind"));
   rini_set_value     (&rini_d, "show_framerate", (int)app_configs->show_framerate, rini_get_value_description(rini_d, "show_framerate"));
+  rini_set_float     (&rini_d, "kohra_speed"   , app_configs->kohra_speed        , rini_get_value_description(rini_d, "kohra_speed"));
+  rini_set_float     (&rini_d, "kohra_scale"   , app_configs->kohra_scale        , rini_get_value_description(rini_d, "kohra_scale"));
 
   char app_dir [MAXPATHLEN];
   char ini_path[MAXPATHLEN];
-  if (get_appdata_path("arckohra", app_dir, MAXPATHLEN) != 0) return;
+  if (get_appdata_path("arkohra", app_dir, MAXPATHLEN) != 0) return;
 
   if (!dir_exists(app_dir)) {
     printf("Creating directory: %s\n", app_dir);

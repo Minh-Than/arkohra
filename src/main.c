@@ -149,6 +149,10 @@ int main()
   PauseMusicStream(music);
   audio_clock_pause(&render_ctx.audio_clock);
 
+  // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA
+  float kohrotation = 0.0f;
+  // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA
+
   SetTargetFPS(60);
   rlSetClipPlanes(0.01f, 100.0f);
 
@@ -213,10 +217,14 @@ int main()
         (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) &&
         IsKeyPressed(KEY_R))
     {
+      bool kohra = app_configs.kohra;
       app_configs = app_configs_init();
+      app_configs.kohra = kohra;
       app_configs.should_recalibrate_camera = true;
       SetMusicVolume(music, app_configs.music_volume);
       selection_service_unload(&selection_service);
+
+      window_service = window_services_init(GLSL_VERSION, &app_configs, &font_probes);
     }
 
     // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA
@@ -277,8 +285,16 @@ int main()
       // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA
       if (app_configs.kohra)
       {
+        kohrotation += 8.0f * GetFrameTime() * app_configs.kohra_speed;
+        if (kohrotation > 360.0f) kohrotation = 0.0f;
+        Vector3 rotations = { 0.0f, kohrotation + 180.0f, -kohrotation };
+        Vector3 axes = { 0.0f, 1.0f, 1.0f };
+        Vector3 translation = { 0.0f, 2.0f, 0.0f };
+        Vector3 scale = Vector3Scale(Vector3One(), app_configs.kohra_scale);
         BeginMode3D(render_ctx.camera);
-          DrawCubeTexture(texture_group.kohra, (Vector3){0.0f, KOHRA_SIZE, 0.0f}, KOHRA_SIZE, KOHRA_SIZE, KOHRA_SIZE, WHITE);
+          DrawKohraCube(texture_group.kohra, Vector3Zero(),
+                        KOHRA_SIZE, KOHRA_SIZE, KOHRA_SIZE,
+                        rotations, axes, translation, scale, WHITE);
         EndMode3D();
       }
       // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA

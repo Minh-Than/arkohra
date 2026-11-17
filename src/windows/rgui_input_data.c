@@ -129,3 +129,11 @@ int rgui_selectinput_toggles(RguiSelectInput *input, Rectangle rect)
 
   return result;
 }
+
+RguiRawFloatInput rgui_rawfloatinput_init(float value)
+{
+  RguiRawFloatInput input = { 0 };
+  input.value = value;
+
+  return input;
+}

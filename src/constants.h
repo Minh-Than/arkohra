@@ -20,6 +20,10 @@ static const float MINIMUM_SCROLL_SPEED = 0.01f;
 static const float MAXIMUM_SCROLL_SPEED = 10.0f;
 static const float MINIMUM_AUDIO_VOLUME = 0.0f;
 static const float MAXIMUM_AUDIO_VOLUME = 1.0f;
+static const float MINIMUM_KOHRA_SPEED = 0.1f;
+static const float MAXIMUM_KOHRA_SPEED = 100.0f;
+static const float MINIMUM_KOHRA_SCALE = 0.0f;
+static const float MAXIMUM_KOHRA_SCALE = 3.0f;
 
 static const float JACKET_HUD_SIZE  = 200.0f;
 static const float INFO_PANEL_SCALE = 0.5f;

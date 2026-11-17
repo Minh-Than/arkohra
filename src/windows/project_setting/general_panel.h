@@ -21,6 +21,9 @@ typedef struct {
   // Display
   bool show_framerate;
 
+  // Kohra
+  RguiRawFloatInput kohra_speed, kohra_scale;
+
   Rectangle scroll_rect;
   Vector2 scroll;
 } GeneralSettingPanel;

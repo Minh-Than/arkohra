@@ -25,6 +25,8 @@ typedef struct
   AspectRatio   screen_ratio;
   bool          kohra, colorblind, show_framerate;
 
+  float kohra_speed, kohra_scale;
+
   bool should_recalibrate_camera;
   bool should_apply_screen_scale;
 } AppConfigs;

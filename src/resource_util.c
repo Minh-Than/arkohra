@@ -20,7 +20,7 @@ rini_data fetch_rini_config()
   char ini_path[MAXPATHLEN];
 
   // Step 1: Get the app data directory path
-  if (get_appdata_path("arckohra", app_dir, MAXPATHLEN) != 0) {
+  if (get_appdata_path("arkohra", app_dir, MAXPATHLEN) != 0) {
     printf("ERROR: Could not resolve app data path.\n");
     return (rini_data){ 0 };
   }

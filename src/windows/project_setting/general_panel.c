@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "libraries/raygui.h"
 #include "raymath.h"
+#include "windows/rgui_input_data.h"
 #include "general_panel.h"
 
 GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
@@ -18,6 +19,9 @@ GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
   data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->screen_ratio);
   data.colorblind = app_configs->colorblind;
   data.show_framerate = app_configs->show_framerate;
+
+  data.kohra_speed = rgui_rawfloatinput_init(app_configs->kohra_speed);
+  data.kohra_scale = rgui_rawfloatinput_init(app_configs->kohra_scale);
 
   snprintf(data.music_volume.text, sizeof(data.music_volume.text), "%.*f", PROJ_FLOAT_DECIMALS, app_configs->music_volume);
   data.music_volume = rgui_floatinput_init(data.music_volume.text);
@@ -39,12 +43,13 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   BeginShaderMode(sdf_shader);
 
   int gameplay_panel_h = 168;
-  int audio_panel_h = 80;
+  int audio_panel_h = 78;
   int display_panel_h = 48;
+  int kohra_panel_h = 78;
 
   int input_field_h = 24;
   int input_field_gap = 30;
-  int total_content_h = gameplay_panel_h +audio_panel_h + display_panel_h + 12*3 + 8;
+  int total_content_h = gameplay_panel_h +audio_panel_h + display_panel_h + kohra_panel_h + 12*4 + 8;
   GuiScrollPanel((Rectangle){content_x, scroll_y, scroll_w, scroll_h},
                  NULL, (Rectangle){0, 0, scroll_w, total_content_h},
                  &gen_set_panel->scroll, &gen_set_panel->scroll_rect);
@@ -125,7 +130,6 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   gameplay_label_rect.y -= input_field_gap*2 + 15;
   gameplay_field_rect.y -= input_field_gap*2 + 15;
   GuiLabel(gameplay_label_rect, "Aspect Ratio");
-  EndScissorMode();
   if (rgui_selectinput_dropdown(&gen_set_panel->aspect_ratio, gameplay_field_rect))
   {
     app_configs->screen_ratio = gen_set_panel->aspect_ratio.option;
@@ -154,6 +158,34 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
     app_configs->show_framerate = gen_set_panel->show_framerate;
   }
 
-  EndShaderMode();
+  // Display
+  int kohra_panel_x = content_x + 8    + (int)gen_set_panel->scroll.x;
+  int kohra_panel_y = scroll_y  + 12*4 + (int)gen_set_panel->scroll.y + gameplay_panel_h + audio_panel_h + display_panel_h;
+  int kohra_panel_w = scroll_w  - scroll_padding;
+  GuiGroupBox ((Rectangle){kohra_panel_x, kohra_panel_y, kohra_panel_w, kohra_panel_h}, "[ KOHRA ]");
 
+  int kohra_field_x = kohra_panel_x + 8;
+  int kohra_field_y = kohra_panel_y + 16;
+  int kohra_input_x = kohra_field_x + label_xs;
+
+  Rectangle kohra_label_rect = { kohra_field_x, kohra_field_y, label_xs, input_field_h };
+  Rectangle kohra_field_rect = { kohra_input_x, kohra_field_y, kohra_panel_w - 16 - label_xs, input_field_h };
+
+  GuiLabel(kohra_label_rect, "Kohra Speed");
+  if(GuiSliderBar(kohra_field_rect, NULL, NULL, &gen_set_panel->kohra_speed.value, MINIMUM_KOHRA_SPEED, MAXIMUM_KOHRA_SPEED))
+  {
+    app_configs->kohra_speed = gen_set_panel->kohra_speed.value;
+  }
+
+  kohra_label_rect.y += input_field_gap;
+  kohra_field_rect.y += input_field_gap;
+  GuiLabel(kohra_label_rect, "Kohra Scale");
+  if(GuiSliderBar(kohra_field_rect, NULL, NULL, &gen_set_panel->kohra_scale.value, MINIMUM_KOHRA_SCALE, MAXIMUM_KOHRA_SCALE))
+  {
+    app_configs->kohra_scale = gen_set_panel->kohra_scale.value;
+  }
+
+  EndScissorMode();
+  EndShaderMode();
 }
+

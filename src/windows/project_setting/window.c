@@ -1,4 +1,3 @@
-#include <string.h>
 #include "libraries/raygui.h"
 #include "raylib.h"
 #include "data/fonts/fonts_service.h"

@@ -61,4 +61,10 @@ RguiSelectInput rgui_selectinput_init(const char* list, int option);
 int rgui_selectinput_dropdown(RguiSelectInput *input, Rectangle rect);
 int rgui_selectinput_toggles(RguiSelectInput *input, Rectangle rect);
 
+typedef struct {
+  float value;
+} RguiRawFloatInput;
+
+RguiRawFloatInput rgui_rawfloatinput_init(float value);
+
 #endif // RGUI_INPUT_DATA_H
