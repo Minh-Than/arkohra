@@ -54,7 +54,7 @@ typedef struct {
   int timing_group;
   double start_fp, end_fp;
   float start_timing, end_timing;
-  float arc_start_timing, arc_end_timing;
+  int arc_start_timing, arc_end_timing;
 
   float world_x1, world_y1, world_x2, world_y2;
 } ArcSegmentRender;
