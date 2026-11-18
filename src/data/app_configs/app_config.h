@@ -29,6 +29,7 @@ typedef struct
 
   bool should_recalibrate_camera;
   bool should_apply_screen_scale;
+  bool should_apply_music_volume;
 } AppConfigs;
 
 AppConfigs app_configs_init();

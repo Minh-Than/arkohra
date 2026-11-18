@@ -69,12 +69,16 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   Rectangle audio_field_rect = { audio_input_x, audio_field_y, audio_panel_w - 16 - label_xs, input_field_h };
 
   GuiLabel(audio_label_rect, "Music Volume");
-  rgui_floatinput_textbox(&gen_set_panel->music_volume, audio_field_rect, PROJ_FLOAT_DECIMALS, -FLT_MAX, FLT_MAX);
+  if(rgui_floatinput_textbox(&gen_set_panel->music_volume, audio_field_rect, PROJ_FLOAT_DECIMALS, MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME))
+  {
+    app_configs->music_volume = gen_set_panel->music_volume.value;
+    app_configs->should_apply_music_volume = true;
+  }
 
   audio_label_rect.y += input_field_gap;
   audio_field_rect.y += input_field_gap;
   GuiLabel(audio_label_rect, "Effect Volume");
-  rgui_floatinput_textbox(&gen_set_panel->effect_volume, audio_field_rect, PROJ_FLOAT_DECIMALS, -FLT_MAX, FLT_MAX);
+  rgui_floatinput_textbox(&gen_set_panel->effect_volume, audio_field_rect, PROJ_FLOAT_DECIMALS, MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
 
   // Gameplay
   // WARNING: the dropdown area are treated in rendering the same way, meaning anything drawn after WILL BE DRAWN ON TOP OF IT

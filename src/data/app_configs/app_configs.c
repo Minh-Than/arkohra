@@ -38,30 +38,30 @@ AppConfigs app_configs_init()
   AppConfigs configs = { 0 };
   rini_data rini_d = fetch_rini_config();
   
-  if (!rini_key_exists(&rini_d, "screen_width"))   rini_set_value     (&rini_d, "screen_width"  , BASE_APP_WINDOW_WIDTH, "Screen width in pixel");
-  if (!rini_key_exists(&rini_d, "screen_ratio"))   rini_set_value     (&rini_d, "screen_ratio"  ,    0, "Window aspect ratio");
-  if (!rini_key_exists(&rini_d, "scroll_speed"))   rini_set_float     (&rini_d, "scroll_speed"  , 3.0f, "Chart scrolling speed");
-  if (!rini_key_exists(&rini_d, "music_volume"))   rini_set_float     (&rini_d, "music_volume"  , 1.0f, "Chart music volume (0.0 - 1.0)");
-  if (!rini_key_exists(&rini_d, "hit_volume"))     rini_set_float     (&rini_d, "hit_volume"    , 0.2f, "Notes' sound effect volume (0.0 - 1.0)");
-  if (!rini_key_exists(&rini_d, "ffmpeg_path"))    rini_set_value_text(&rini_d, "ffmpeg_path"   ,   "", "FFMPEG Executable Path");
-  if (!rini_key_exists(&rini_d, "recent_project")) rini_set_value_text(&rini_d, "recent_project",   "", "Most recent chart path");
-  if (!rini_key_exists(&rini_d, "colorblind"))     rini_set_value     (&rini_d, "colorblind"    ,    0, "Is colorblind");
-  if (!rini_key_exists(&rini_d, "show_framerate")) rini_set_value     (&rini_d, "show_framerate",    0, "Show framerate");
-  if (!rini_key_exists(&rini_d, "kohra_speed"))    rini_set_float     (&rini_d, "kohra_speed"  , 25.0f, "kohra speed");
-  if (!rini_key_exists(&rini_d, "kohra_scale"))    rini_set_float     (&rini_d, "kohra_scale"  ,  1.0f, "kohra speed");
+  if (!rini_key_exists(&rini_d, "screen_width"))   rini_set_value     (&rini_d, "screen_width", BASE_APP_WINDOW_WIDTH, "Screen width (960 - 3480px)");
+  if (!rini_key_exists(&rini_d, "screen_ratio"))   rini_set_value     (&rini_d, "screen_ratio"  ,     0, "Window aspect ratio");
+  if (!rini_key_exists(&rini_d, "scroll_speed"))   rini_set_float     (&rini_d, "scroll_speed"  ,  3.0f, "Chart speed (0.01 - 10.0)");
+  if (!rini_key_exists(&rini_d, "music_volume"))   rini_set_float     (&rini_d, "music_volume"  ,  1.0f, "Chart music volume (0.0 - 1.0)");
+  if (!rini_key_exists(&rini_d, "hit_volume"))     rini_set_float     (&rini_d, "hit_volume"    ,  0.2f, "Notes' sound effect volume (0.0 - 1.0)");
+  if (!rini_key_exists(&rini_d, "ffmpeg_path"))    rini_set_value_text(&rini_d, "ffmpeg_path"   ,    "", "FFMPEG Executable Path");
+  if (!rini_key_exists(&rini_d, "recent_project")) rini_set_value_text(&rini_d, "recent_project",    "", "Most recent chart path");
+  if (!rini_key_exists(&rini_d, "colorblind"))     rini_set_value     (&rini_d, "colorblind"    ,     0, "Is colorblind");
+  if (!rini_key_exists(&rini_d, "show_framerate")) rini_set_value     (&rini_d, "show_framerate",     0, "Show framerate");
+  if (!rini_key_exists(&rini_d, "kohra_speed"))    rini_set_float     (&rini_d, "kohra_speed"   , 25.0f, "kohra speed");
+  if (!rini_key_exists(&rini_d, "kohra_scale"))    rini_set_float     (&rini_d, "kohra_scale"   ,  1.0f, "kohra scale");
 
-  configs.screen_width    =   (int)Clamp(rini_get_value_fallback(rini_d, "screen_width", BASE_APP_WINDOW_WIDTH), MINIMUM_SCREEN_WIDTH, MAXIMUM_SCREEN_WIDTH);
-  configs.scroll_speed    =        Clamp(rini_get_float_fallback(rini_d, "scroll_speed", 3.0f), MINIMUM_SCROLL_SPEED, MAXIMUM_SCROLL_SPEED);
-  configs.music_volume    =        Clamp(rini_get_float_fallback(rini_d, "music_volume", 1.0f), MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
-  configs.hit_volume      =        Clamp(rini_get_float_fallback(rini_d, "hit_volume"  , 0.2f), MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
-  configs.colorblind      =        (bool)rini_get_value_fallback(rini_d, "colorblind"     , 0);
-  configs.show_framerate  =        (bool)rini_get_value_fallback(rini_d, "show_framerate" , 0);
-  configs.kohra_speed     =        Clamp(rini_get_float_fallback(rini_d, "kohra_speed", 25.0f), MINIMUM_KOHRA_SPEED, MAXIMUM_KOHRA_SPEED);
-  configs.kohra_scale     =        Clamp(rini_get_float_fallback(rini_d, "kohra_scale",  1.0f), MINIMUM_KOHRA_SCALE, MAXIMUM_KOHRA_SCALE);
-  configs.screen_ratio = (AspectRatio)rini_get_value_fallback(rini_d, "screen_ratio", 0);
+  configs.screen_width   =   (int)Clamp(rini_get_value_fallback(rini_d, "screen_width", BASE_APP_WINDOW_WIDTH), MINIMUM_SCREEN_WIDTH, MAXIMUM_SCREEN_WIDTH);
+  configs.scroll_speed   =        Clamp(rini_get_float_fallback(rini_d, "scroll_speed"  ,  3.0f), MINIMUM_SCROLL_SPEED, MAXIMUM_SCROLL_SPEED);
+  configs.music_volume   =        Clamp(rini_get_float_fallback(rini_d, "music_volume"  ,  1.0f), MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
+  configs.hit_volume     =        Clamp(rini_get_float_fallback(rini_d, "hit_volume"    ,  0.2f), MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
+  configs.colorblind     =        (bool)rini_get_value_fallback(rini_d, "colorblind"    ,     0);
+  configs.show_framerate =        (bool)rini_get_value_fallback(rini_d, "show_framerate",     0);
+  configs.kohra_speed    =        Clamp(rini_get_float_fallback(rini_d, "kohra_speed"   , 25.0f), MINIMUM_KOHRA_SPEED, MAXIMUM_KOHRA_SPEED);
+  configs.kohra_scale    =        Clamp(rini_get_float_fallback(rini_d, "kohra_scale"   ,  1.0f), MINIMUM_KOHRA_SCALE, MAXIMUM_KOHRA_SCALE);
+  configs.screen_ratio   = (AspectRatio)rini_get_value_fallback(rini_d, "screen_ratio", 0);
   if (!aspect_ratio_is_valid(configs.screen_ratio)) configs.screen_ratio = ASPECT_16_9;
 
-  text_copy_bounded(configs.ffmpeg_path   , sizeof(configs.ffmpeg_path),    rini_get_value_text_fallback(rini_d, "ffmpeg_path"   , ""));
+  text_copy_bounded(configs.ffmpeg_path   , sizeof(configs.ffmpeg_path)   , rini_get_value_text_fallback(rini_d, "ffmpeg_path"   , ""));
   text_copy_bounded(configs.recent_project, sizeof(configs.recent_project), rini_get_value_text_fallback(rini_d, "recent_project", ""));
 
   rini_unload(&rini_d);

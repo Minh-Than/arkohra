@@ -318,6 +318,11 @@ int main()
           chart_reader.high_z_clip      = z_to_floor_position(-100.0, chart_settings->base_bpm, chart_settings->scroll_speed);
         }
       }
+      if (IsMusicValid(music) && app_configs.should_apply_music_volume)
+      {
+        SetMusicVolume(music, app_configs.music_volume);
+        app_configs.should_apply_music_volume = false;
+      }
       if(app_configs.should_recalibrate_camera)
       {
         SetWindowSize(GetScreenWidth(), (int)aspect_ratio_get_height((float)GetScreenWidth(), app_configs.screen_ratio));
