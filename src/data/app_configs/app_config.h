@@ -19,7 +19,7 @@ float aspect_ratio_get_width(float height, AspectRatio ratio);
 
 typedef struct
 {
-  int           screen_width;
+  int           screen_width, framerate;
   char          ffmpeg_path[MAXPATHLEN], recent_project[MAXPATHLEN];
   float         scroll_speed, music_volume, hit_volume;
   AspectRatio   screen_ratio;
@@ -30,6 +30,7 @@ typedef struct
   bool should_recalibrate_camera;
   bool should_apply_screen_scale;
   bool should_apply_music_volume;
+  bool should_apply_cap_framerate;
 } AppConfigs;
 
 AppConfigs app_configs_init();

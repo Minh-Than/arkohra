@@ -30,7 +30,7 @@ typedef struct {
 } RguiIntInput;
 
 RguiIntInput rgui_intinput_init(int value);
-int rgui_intinput_textbox(RguiIntInput *input, Rectangle rect, float min, float max);
+int rgui_intinput_textbox(RguiIntInput *input, Rectangle rect, int min, int max);
 
 typedef struct {
   char text[RGUI_INPUT_TEXT_CAP];

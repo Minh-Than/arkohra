@@ -16,6 +16,8 @@ static const char* DEFAULT_CHART_SHADER_FS = "resources/shaders/glsl%i/chart_def
 
 static const int MINIMUM_SCREEN_WIDTH = 960;
 static const int MAXIMUM_SCREEN_WIDTH = 3480;
+static const int MINIMUM_FRAMERATE = 15;
+static const int MAXIMUM_FRAMERATE = 240;
 static const float MINIMUM_SCROLL_SPEED = 0.01f;
 static const float MAXIMUM_SCROLL_SPEED = 10.0f;
 static const float MINIMUM_AUDIO_VOLUME = 0.0f;

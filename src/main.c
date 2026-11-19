@@ -153,7 +153,7 @@ int main()
   float kohrotation = 0.0f;
   // KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA KOHRA
 
-  SetTargetFPS(60);
+  SetTargetFPS(app_configs.framerate);
   rlSetClipPlanes(0.01f, 100.0f);
 
   while (!WindowShouldClose())
@@ -334,6 +334,11 @@ int main()
         SetWindowSize(app_configs.screen_width, (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.screen_ratio));
         recalibrate_camera(&render_ctx.camera);
         app_configs.should_apply_screen_scale = false;
+      }
+      if(app_configs.should_apply_cap_framerate)
+      {
+        SetTargetFPS(app_configs.framerate);
+        app_configs.should_apply_cap_framerate = false;
       }
     }
 

@@ -40,6 +40,7 @@ AppConfigs app_configs_init()
   
   if (!rini_key_exists(&rini_d, "screen_width"))   rini_set_value     (&rini_d, "screen_width", BASE_APP_WINDOW_WIDTH, "Screen width (960 - 3480px)");
   if (!rini_key_exists(&rini_d, "screen_ratio"))   rini_set_value     (&rini_d, "screen_ratio"  ,     0, "Window aspect ratio");
+  if (!rini_key_exists(&rini_d, "framerate"))      rini_set_value     (&rini_d, "framerate"     ,    60, "Capped framerate");
   if (!rini_key_exists(&rini_d, "scroll_speed"))   rini_set_float     (&rini_d, "scroll_speed"  ,  3.0f, "Chart speed (0.01 - 10.0)");
   if (!rini_key_exists(&rini_d, "music_volume"))   rini_set_float     (&rini_d, "music_volume"  ,  1.0f, "Chart music volume (0.0 - 1.0)");
   if (!rini_key_exists(&rini_d, "hit_volume"))     rini_set_float     (&rini_d, "hit_volume"    ,  0.2f, "Notes' sound effect volume (0.0 - 1.0)");
@@ -51,6 +52,7 @@ AppConfigs app_configs_init()
   if (!rini_key_exists(&rini_d, "kohra_scale"))    rini_set_float     (&rini_d, "kohra_scale"   ,  1.0f, "kohra scale");
 
   configs.screen_width   =   (int)Clamp(rini_get_value_fallback(rini_d, "screen_width", BASE_APP_WINDOW_WIDTH), MINIMUM_SCREEN_WIDTH, MAXIMUM_SCREEN_WIDTH);
+  configs.framerate      =   (int)Clamp(rini_get_value_fallback(rini_d, "framerate"     ,    60), MINIMUM_FRAMERATE, MAXIMUM_FRAMERATE);
   configs.scroll_speed   =        Clamp(rini_get_float_fallback(rini_d, "scroll_speed"  ,  3.0f), MINIMUM_SCROLL_SPEED, MAXIMUM_SCROLL_SPEED);
   configs.music_volume   =        Clamp(rini_get_float_fallback(rini_d, "music_volume"  ,  1.0f), MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
   configs.hit_volume     =        Clamp(rini_get_float_fallback(rini_d, "hit_volume"    ,  0.2f), MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
@@ -74,6 +76,7 @@ void app_configs_write_to_file(AppConfigs *app_configs)
 {
   rini_data rini_d = fetch_rini_config();
   rini_set_value     (&rini_d, "screen_ratio"  , app_configs->screen_ratio       , rini_get_value_description(rini_d, "screen_ratio"));
+  rini_set_value     (&rini_d, "framerate"     , app_configs->framerate          , rini_get_value_description(rini_d, "framerate"));
   rini_set_float     (&rini_d, "scroll_speed"  , app_configs->scroll_speed       , rini_get_value_description(rini_d, "scroll_speed"));
   rini_set_value     (&rini_d, "screen_width"  , app_configs->screen_width       , rini_get_value_description(rini_d, "screen_width"));
   rini_set_float     (&rini_d, "music_volume"  , app_configs->music_volume       , rini_get_value_description(rini_d, "music_volume"));

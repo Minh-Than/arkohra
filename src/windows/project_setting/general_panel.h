@@ -19,6 +19,7 @@ typedef struct {
   RguiFloatInput effect_volume;
 
   // Display
+  RguiIntInput framerate;
   bool show_framerate;
 
   // Kohra

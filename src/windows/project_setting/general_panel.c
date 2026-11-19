@@ -12,6 +12,7 @@ GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
 
   data.scroll_speed = rgui_floatinput_init(app_configs->scroll_speed, PROJ_FLOAT_DECIMALS);
   data.screen_width = rgui_intinput_init(app_configs->screen_width);
+  data.framerate = rgui_intinput_init(app_configs->framerate);
   data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->screen_ratio);
   data.colorblind = app_configs->colorblind;
   data.show_framerate = app_configs->show_framerate;
@@ -38,7 +39,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
 
   int gameplay_panel_h = 168;
   int audio_panel_h = 78;
-  int display_panel_h = 48;
+  int display_panel_h = 78;
   int kohra_panel_h = 78;
 
   int input_field_h = 24;
@@ -150,6 +151,15 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   Rectangle display_label_rect = { display_field_x, display_field_y, label_xs, input_field_h };
   Rectangle display_field_rect = { display_input_x, display_field_y, display_panel_w - 16 - label_xs, input_field_h };
 
+  GuiLabel(display_label_rect, "Cap Framerate");
+  if (rgui_intinput_textbox(&gen_set_panel->framerate, display_field_rect, MINIMUM_FRAMERATE, MAXIMUM_FRAMERATE))
+  {
+    app_configs->framerate = gen_set_panel->framerate.value;
+    app_configs->should_apply_cap_framerate = true;
+  }
+
+  display_label_rect.y += input_field_gap;
+  display_field_rect.y += input_field_gap;
   if(GuiCheckBox((Rectangle){ display_field_x, display_label_rect.y, input_field_h, input_field_h},
               "Show Framerate", &gen_set_panel->show_framerate))
   {

@@ -24,7 +24,7 @@ RguiIntInput rgui_intinput_init(int value)
   return input;
 }
 
-int rgui_intinput_textbox(RguiIntInput *input, Rectangle rect, float min, float max)
+int rgui_intinput_textbox(RguiIntInput *input, Rectangle rect, int min, int max)
 {
   int result = GuiTextBox(rect, input->text, sizeof(input->text), input->edit);
   if (result)
