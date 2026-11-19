@@ -108,7 +108,9 @@ RguiFileInput rgui_fileinput_init(const char* path)
 
 int rgui_fileinput_button(RguiFileInput *input, Rectangle rect)
 {
-  int result = GuiButton(rect, GetFileName(input->file));
+  int result = GuiButton(rect, input->file[0] != '\0'
+                               ? GetFileName(input->file)
+                               : GuiIconText(ICON_FILE_OPEN, "Upload a file . . ."));
 
   if(result) input->state.windowActive = true;
 

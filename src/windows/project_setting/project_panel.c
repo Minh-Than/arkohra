@@ -49,9 +49,9 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel, bo
 
   BeginShaderMode(sdf_shader);
 
-  int info_panel_h = 200;
-  int gameplay_panel_h = 230;
-  int files_panel_h = 140;
+  int info_panel_h = 198;
+  int gameplay_panel_h = 228;
+  int files_panel_h = 138;
 
   int input_field_h = 24;
   int input_field_gap = 30;
