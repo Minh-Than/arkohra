@@ -4,6 +4,7 @@
 #include "rgui_input_data.h"
 #include "data/app_configs/app_config.h"
 #include "data/fonts/fonts_service.h"
+#include "raymath.h"
 
 RguiTextInput rgui_textinput_init(const char* value)
 {
@@ -60,6 +61,38 @@ int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal, 
     input->value = text_to_float_validated(input->text, input->value, min, max);
 
   return result;
+}
+
+int rgui_floatinput_spinner(RguiFloatInput *input, Rectangle rect, int decimal, float min, float max, float increment)
+{
+  static const float button_width = 24.0f;
+  static const float gap = 4.0f;
+
+  Rectangle decrement_button_rect = { rect.x,                             rect.y, button_width, rect.height };
+  Rectangle increment_button_rect = { rect.x + rect.width - button_width, rect.y, button_width, rect.height };
+  Rectangle field_rect = { rect.x + button_width + gap, rect.y, rect.width - (button_width + gap)*2, rect.height };
+
+  int decrement_result = GuiButton(decrement_button_rect, GuiIconText(ICON_ARROW_LEFT_FILL , NULL));
+  int increment_result = GuiButton(increment_button_rect, GuiIconText(ICON_ARROW_RIGHT_FILL, NULL));
+  int field_result = GuiTextBox(field_rect, input->text, sizeof(input->text), input->edit);
+
+  if (decrement_result ^ increment_result)
+  {
+    float sign = decrement_result ? -1.0f : 1.0f;
+    input->value = Clamp(input->value + increment*sign, min, max);
+    snprintf(input->text, sizeof(input->text), "%.*f", decimal, input->value);
+    return 1;
+  }
+
+  if (field_result)
+  {
+    input->edit = !input->edit;
+    input->value = text_to_float_validated(input->text, input->value, min, max);
+    snprintf(input->text, sizeof(input->text), "%.*f", decimal, input->value);
+  } else
+    input->value = text_to_float_validated(input->text, input->value, min, max);
+
+  return field_result;
 }
 
 RguiFileInput rgui_fileinput_init(const char* path)

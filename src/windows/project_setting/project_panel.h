@@ -23,7 +23,7 @@ typedef struct {
   bool is_sync;
   RguiTextInput bpm_text;
   RguiIntInput chart_offset;
-  RguiIntInput judge_density;
+  RguiFloatInput judge_density;
   RguiFloatInput cc;
   RguiIntInput preview_from, preview_to;
   RguiTextInput search_tags;

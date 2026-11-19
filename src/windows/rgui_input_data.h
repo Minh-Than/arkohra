@@ -40,6 +40,7 @@ typedef struct {
 
 RguiFloatInput rgui_floatinput_init(float value, int decimals);
 int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal, float min, float max);
+int rgui_floatinput_spinner(RguiFloatInput *input, Rectangle rect, int decimal, float min, float max, float increment);
 
 typedef struct {
   List extensions;

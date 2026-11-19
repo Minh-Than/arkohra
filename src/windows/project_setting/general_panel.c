@@ -1,5 +1,3 @@
-#include <float.h>
-#include <limits.h>
 #include "constants.h"
 #include "libraries/raygui.h"
 #include "raymath.h"
@@ -69,7 +67,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   Rectangle audio_field_rect = { audio_input_x, audio_field_y, audio_panel_w - 16 - label_xs, input_field_h };
 
   GuiLabel(audio_label_rect, "Music Volume");
-  if(rgui_floatinput_textbox(&gen_set_panel->music_volume, audio_field_rect, PROJ_FLOAT_DECIMALS, MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME))
+  if(rgui_floatinput_spinner(&gen_set_panel->music_volume, audio_field_rect, PROJ_FLOAT_DECIMALS, MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME, 0.1f))
   {
     app_configs->music_volume = gen_set_panel->music_volume.value;
     app_configs->should_apply_music_volume = true;
@@ -78,7 +76,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   audio_label_rect.y += input_field_gap;
   audio_field_rect.y += input_field_gap;
   GuiLabel(audio_label_rect, "Effect Volume");
-  rgui_floatinput_textbox(&gen_set_panel->effect_volume, audio_field_rect, PROJ_FLOAT_DECIMALS, MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME);
+  rgui_floatinput_spinner(&gen_set_panel->effect_volume, audio_field_rect, PROJ_FLOAT_DECIMALS, MINIMUM_AUDIO_VOLUME, MAXIMUM_AUDIO_VOLUME, 0.1f);
 
   // Gameplay
   // WARNING: the dropdown area are treated in rendering the same way, meaning anything drawn after WILL BE DRAWN ON TOP OF IT
@@ -95,7 +93,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   Rectangle gameplay_field_rect = { gameplay_input_x, gameplay_field_y, gameplay_panel_w - 16 - label_xs, input_field_h };
 
   GuiLabel(gameplay_label_rect, "Chart Speed");
-  if(rgui_floatinput_textbox(&gen_set_panel->scroll_speed, gameplay_field_rect, PROJ_FLOAT_DECIMALS, MINIMUM_SCROLL_SPEED, MAXIMUM_SCROLL_SPEED))
+  if(rgui_floatinput_spinner(&gen_set_panel->scroll_speed, gameplay_field_rect, PROJ_FLOAT_DECIMALS, MINIMUM_SCROLL_SPEED, MAXIMUM_SCROLL_SPEED, 0.1f))
   {
     app_configs->scroll_speed = gen_set_panel->scroll_speed.value;
   }

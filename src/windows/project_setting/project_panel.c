@@ -17,7 +17,8 @@ ProjectPanel project_panel_init()
   data.bpm_text = data.search_tags = rgui_textinput_init("");
   data.base_bpm = rgui_floatinput_init(0.0f, PROJ_BASE_BPM_DECIMALS);
   data.cc = rgui_floatinput_init(0.0f, PROJ_FLOAT_DECIMALS);
-  data.chart_offset = data.judge_density = data.preview_from = rgui_intinput_init(0);
+  data.judge_density = rgui_floatinput_init(0.0f, PROJ_FLOAT_DECIMALS);
+  data.chart_offset = data.preview_from = rgui_intinput_init(0);
   data.preview_to = rgui_intinput_init(10000);
 
   data.audio = data.jacket = data.background = data.bg_video = rgui_fileinput_init("");
@@ -151,12 +152,12 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel, bo
   gameplay_label_rect.y += input_field_gap;
   gameplay_field_rect.y += input_field_gap;
   GuiLabel(gameplay_label_rect, "Judge Density");
-  rgui_intinput_textbox(&project_panel->judge_density, gameplay_field_rect, INT_MIN, INT_MAX);
+  rgui_floatinput_spinner(&project_panel->judge_density, gameplay_field_rect, PROJ_FLOAT_DECIMALS, INT_MIN, INT_MAX, 0.1f);
 
   gameplay_label_rect.y += input_field_gap;
   gameplay_field_rect.y += input_field_gap;
   GuiLabel(gameplay_label_rect, "Chart Constant");
-  rgui_floatinput_textbox(&project_panel->cc, gameplay_field_rect, PROJ_FLOAT_DECIMALS, -FLT_MAX, FLT_MAX);
+  rgui_floatinput_spinner(&project_panel->cc, gameplay_field_rect, PROJ_FLOAT_DECIMALS, -FLT_MAX, FLT_MAX, 0.1f);
 
   gameplay_label_rect.y += input_field_gap;
   gameplay_field_rect.y += input_field_gap;
@@ -268,7 +269,7 @@ void project_panel_apply_chart(ProjectPanel *project_panel, ChartSettings *chart
   project_panel->is_sync = chart_settings->sync_base_bpm;
   project_panel->bpm_text = rgui_textinput_init(chart_settings->bpm_text);
   project_panel->chart_offset = rgui_intinput_init(chart_settings->audio_offset);
-  project_panel->judge_density = rgui_intinput_init(0);
+  project_panel->judge_density = rgui_floatinput_init(0.0f, PROJ_FLOAT_DECIMALS);
   project_panel->cc = rgui_floatinput_init(chart_settings->chart_constant, PROJ_FLOAT_DECIMALS);
   project_panel->preview_from = rgui_intinput_init(chart_settings->preview_from);
   project_panel->preview_to = rgui_intinput_init(chart_settings->preview_to);
