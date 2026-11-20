@@ -65,8 +65,8 @@ int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal, 
 
 int rgui_floatinput_spinner(RguiFloatInput *input, Rectangle rect, int decimal, float min, float max, float increment)
 {
-  static const float button_width = 24.0f;
-  static const float gap = 4.0f;
+  const float button_width = 24.0f;
+  const float gap = 4.0f;
 
   Rectangle decrement_button_rect = { rect.x,                             rect.y, button_width, rect.height };
   Rectangle increment_button_rect = { rect.x + rect.width - button_width, rect.y, button_width, rect.height };
