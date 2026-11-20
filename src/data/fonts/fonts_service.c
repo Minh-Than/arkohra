@@ -1,6 +1,11 @@
 #include <string.h>
-#include "data/custom_types/dynamic_list.h"
+#include <math.h>
 #include "fonts_service.h"
+#include "raymath.h"
+#include "libraries/ceval.h"
+#include "resource_util.h"
+#include "data/custom_types/dynamic_list.h"
+#include "windows/rgui_input_data.h"
 
 Font font_generate_sdf(const unsigned char *font_file_data, int font_file_size, int base_size, int *codepoints, int glyph_count)
 {
@@ -221,55 +226,30 @@ float fonts_measure_text(List *font_list, const char *text, float size, float sp
   return width;
 }
 
-bool text_is_valid_int(const char *text)
-{
-  int i = 0, digits = 0;
-
-  if (text[0] == '+' || text[0] == '-') i = 1;
-
-  for (; text[i] != '\0'; i++)
-  {
-    if (text[i] < '0' || text[i] > '9') return false;
-    digits++;
-  }
-
-  return digits > 0;
-}
-
 int text_to_int_validated(const char *text, int fallback, int min, int max)
 {
-  if (!text_is_valid_int(text)) return fallback;
+  if (sizeof(text) > RGUI_INPUT_TEXT_CAP) return fallback;
 
-  int v = strtol(text, NULL, 10);
-  if (v < min) v = min;
-  if (v > max) v = max;
-  return v;
-}
+  char expr[RGUI_INPUT_TEXT_CAP];
+  text_copy_bounded(expr, sizeof(expr), text);
 
-bool text_is_valid_decimal(const char *text)
-{
-  int i = 0, dots = 0, digits = 0;
+  int v = ceval_result(expr);
+  if (isnan(v)) return fallback;
 
-  if (text[0] == '+' || text[0] == '-') i = 1;
-
-  for (; text[i] != '\0'; i++)
-  {
-    if (text[i] == '.') { dots++; continue; }
-    if (text[i] < '0' || text[i] > '9') return false;
-    digits++;
-  }
-
-  return (digits > 0 && dots <= 1);
+  return roundf(Clamp(v, min, max));
 }
 
 float text_to_float_validated(const char *text, float fallback, float min, float max)
 {
-  if (!text_is_valid_decimal(text)) return fallback;
+  if (sizeof(text) > RGUI_INPUT_TEXT_CAP) return fallback;
 
-  float v = strtof(text, NULL);
-  if (v < min) v = min;
-  if (v > max) v = max;
-  return v;
+  char expr[RGUI_INPUT_TEXT_CAP];
+  text_copy_bounded(expr, sizeof(expr), text);
+
+  float v = ceval_result(expr);
+  if (isnan(v)) return fallback;
+
+  return Clamp(v, min, max);
 }
 
 int count_decimals(const char *text)
