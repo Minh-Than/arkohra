@@ -329,11 +329,12 @@ void track_service_render_sky_input(TrackService *track_service, RenderContext *
     rlDisableDepthTest();
     rlPushMatrix();
       rlScalef(FUCKASS_SCALE, 1.0f, 1.0f);
-      rlRotatef(180.0f, 0.0, 1.0f, 0.0f);
       rlTranslatef(0.0f, 5.5f + interpolation * SKY_DELTA_Y, 0.0f);
 
+      rlDisableBackfaceCulling();
       renderable_draw(&track_service->sky_input_line);
       renderable_draw(&track_service->sky_label);
+      rlEnableBackfaceCulling();
     rlPopMatrix();
     rlEnableDepthTest();
   EndMode3D();
