@@ -27,12 +27,6 @@ List  fonts_init(List *font_path_list, int base_size, int *codepoints, int glyph
 void  fonts_draw_text(List *font_list, const char *text, Vector2 pos, float size, float spacing, Color tint);
 float fonts_measure_text(List *font_list, const char *text, float size, float spacing);
 
-bool text_is_valid_int(const char *text);
-int text_to_int_validated(const char *text, int fallback, int min, int max);
-bool text_is_valid_decimal(const char *text);
-float text_to_float_validated(const char *text, float fallback, float min, float max);
-int count_decimals(const char *text);
-
 typedef struct {
   FontProbe saira_reg, saira_med;
   FontProbe noto_reg, noto_sc_reg, noto_jp_reg, noto_kr_reg, noto_math_reg;

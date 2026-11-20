@@ -148,7 +148,7 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
       {
         HoldRender *hold_render = (HoldRender *)list_get(hold_list, i);
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, hold_render->timing_group);
-        Hold compare_hold = { .start_fp = hold_render->start_fp, .id = hold_render->hold_id };
+        Hold compare_hold = { .id = hold_render->hold_id, .start_fp = hold_render->start_fp };
         Hold *hold = (Hold *)list_find_sorted(&tg->holds, &compare_hold, hold_compare_start_fp_asc, hold_compare_id_eq);
         if (hold == NULL) continue;
 
@@ -177,7 +177,7 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
       {
         TapRender *tap_render = (TapRender *)list_get(tap_list, i);
         ChartTimingGroup *tg = (ChartTimingGroup *)list_get(timing_groups, tap_render->timing_group);
-        Tap compare_tap = { .fp = tap_render->fp, .id = tap_render->tap_id };
+        Tap compare_tap = { .id = tap_render->tap_id, .fp = tap_render->fp };
         Tap *tap = (Tap *)list_find_sorted(&tg->taps, &compare_tap, tap_compare_fp_asc, tap_compare_id_eq);
         if (tap == NULL) continue;
 

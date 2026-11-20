@@ -1,11 +1,6 @@
 #include <string.h>
-#include <math.h>
 #include "fonts_service.h"
-#include "raymath.h"
-#include "libraries/ceval.h"
-#include "resource_util.h"
 #include "data/custom_types/dynamic_list.h"
-#include "windows/rgui_input_data.h"
 
 Font font_generate_sdf(const unsigned char *font_file_data, int font_file_size, int base_size, int *codepoints, int glyph_count)
 {
@@ -224,42 +219,6 @@ float fonts_measure_text(List *font_list, const char *text, float size, float sp
     offset += cpsize;
   }
   return width;
-}
-
-int text_to_int_validated(const char *text, int fallback, int min, int max)
-{
-  if (sizeof(text) > RGUI_INPUT_TEXT_CAP) return fallback;
-
-  char expr[RGUI_INPUT_TEXT_CAP];
-  text_copy_bounded(expr, sizeof(expr), text);
-
-  int v = ceval_result(expr);
-  if (isnan(v)) return fallback;
-
-  return roundf(Clamp(v, min, max));
-}
-
-float text_to_float_validated(const char *text, float fallback, float min, float max)
-{
-  if (sizeof(text) > RGUI_INPUT_TEXT_CAP) return fallback;
-
-  char expr[RGUI_INPUT_TEXT_CAP];
-  text_copy_bounded(expr, sizeof(expr), text);
-
-  float v = ceval_result(expr);
-  if (isnan(v)) return fallback;
-
-  return Clamp(v, min, max);
-}
-
-int count_decimals(const char *text)
-{
-  const char *dot = strchr(text, '.');
-  if (dot == NULL) return 1;
-  int n = 0;
-  while (dot[1 + n] >= '0' && dot[1 + n] <= '9') n++;
-  if (n == 0) n = 1;
-  return n;
 }
 
 CachedFontProbes cached_font_probes_init()

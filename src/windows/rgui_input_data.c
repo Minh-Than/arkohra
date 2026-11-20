@@ -3,7 +3,7 @@
 #include "constants.h"
 #include "rgui_input_data.h"
 #include "data/app_configs/app_config.h"
-#include "data/fonts/fonts_service.h"
+#include "data/custom_types/custom_types.h"
 #include "raymath.h"
 
 RguiTextInput rgui_textinput_init(const char* value)
