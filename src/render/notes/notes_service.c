@@ -184,8 +184,8 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
         double curr_fp = curr_fps[tg->value];
         double diff_fp = tap->fp - curr_fp;
         double z_pos   = floor_position_to_z(diff_fp, base_bpm, scroll_speed);
-        float z_scale  = Clamp(Lerp(1.8f, 5.8f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
-                               1.8f, 5.8f);
+        float z_scale  = Clamp(Lerp(1.7f, 6.0f, floor_position_to_z(diff_fp, base_bpm, scroll_speed) / -100.0f),
+                               1.7f, 6.0f);
 
         Matrix tr = MatrixMultiply(MatrixRotateX(-180.0f * DEG2RAD),
                                    MatrixMultiply(MatrixScale(1.0f, 1.0f, z_scale),
