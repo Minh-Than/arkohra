@@ -32,10 +32,8 @@ int rgui_intinput_textbox(RguiIntInput *input, Rectangle rect, int min, int max)
     input->edit = !input->edit;
     input->value = text_to_int_validated(input->text, input->value, min, max);
     snprintf(input->text, sizeof(input->text), "%d", input->value);
-  } else
-  {
+  } else if (!input->edit)
     input->value = text_to_int_validated(input->text, input->value, min, max);
-  }
 
   return result;
 }
@@ -57,7 +55,7 @@ int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal, 
     input->edit = !input->edit;
     input->value = text_to_float_validated(input->text, input->value, min, max);
     snprintf(input->text, sizeof(input->text), "%.*f", decimal, input->value);
-  } else
+  } else if (!input->edit)
     input->value = text_to_float_validated(input->text, input->value, min, max);
 
   return result;
@@ -89,7 +87,7 @@ int rgui_floatinput_spinner(RguiFloatInput *input, Rectangle rect, int decimal, 
     input->edit = !input->edit;
     input->value = text_to_float_validated(input->text, input->value, min, max);
     snprintf(input->text, sizeof(input->text), "%.*f", decimal, input->value);
-  } else
+  } else if (!input->edit)
     input->value = text_to_float_validated(input->text, input->value, min, max);
 
   return field_result;
