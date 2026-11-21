@@ -179,6 +179,7 @@ static ceval_token_info_ ceval_token_info[] = {
     { CEVAL_NUMBER, "7", CEVAL_PREC_NUMERIC, CEVAL_OTHER },
     { CEVAL_NUMBER, "8", CEVAL_PREC_NUMERIC, CEVAL_OTHER },
     { CEVAL_NUMBER, "9", CEVAL_PREC_NUMERIC, CEVAL_OTHER },
+    { CEVAL_NUMBER, ".", CEVAL_PREC_NUMERIC, CEVAL_OTHER },
 }; 
 #ifndef CEVAL_TOKEN_TABLE_SIZE
 #define CEVAL_TOKEN_TABLE_SIZE sizeof(ceval_token_info) / sizeof(ceval_token_info[0])
@@ -944,7 +945,12 @@ void * ceval_make_tree(char * expression) {
                 }
                 number[i] = '\0';
                 //copy the contents of the number array at &node.number
-                sscanf(number, "%lf", & node.number);
+                if (sscanf(number, "%lf", &node.number) != 1) {
+                    ceval_error("Malformed number '%s'.", number);
+                    ceval_delete_tree(root.right);
+                    root.right = NULL;
+                    return NULL;
+                }
                 node.id = CEVAL_NUMBER;
                 goto END;
             } else if (token_found == CEVAL_WHITESPACE) {
