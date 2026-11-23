@@ -125,7 +125,8 @@ int rgui_fileinput_button(RguiFileInput *input, Rectangle rect)
       }
     }
     if(is_valid)
-      strcpy(input->file, TextFormat("%s%s%s", input->state.dirPathText, PATH_SEPERATOR, input->state.fileNameText));
+      text_copy_bounded(input->file, sizeof(input->file),
+                        TextFormat("%s%s%s", input->state.dirPathText, PATH_SEPERATOR, input->state.fileNameText));
     input->state.SelectFilePressed = false;
   }
 

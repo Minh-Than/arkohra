@@ -356,7 +356,8 @@ int main()
         }
       }
       if(is_valid)
-        strcpy(open_proj_input.file, TextFormat("%s%s%s", open_proj_input.state.dirPathText, PATH_SEPERATOR, open_proj_input.state.fileNameText));
+        text_copy_bounded(open_proj_input.file, sizeof(open_proj_input.file),
+                          TextFormat("%s%s%s", open_proj_input.state.dirPathText, PATH_SEPERATOR, open_proj_input.state.fileNameText));
 
       const char* project_file = open_proj_input.file;
       process_imported_project(project_file, &music,
