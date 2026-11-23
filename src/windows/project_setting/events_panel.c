@@ -37,6 +37,8 @@ static void draw_timing_groups_panel_list(List *timing_groups, WindowInst *windo
                                          int groups_panel_x, int groups_panel_y, int groups_panel_w, int groups_panel_h,
                                          int content_x, int scroll_y, int scroll_w, int scroll_h)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wc++11-narrowing"
   Rectangle timing_events_rect = { .x = groups_panel_x, .y = groups_panel_y, .width = groups_panel_w, .height = groups_panel_h };
   Rectangle scissoring_rect = GetCollisionRec(timing_events_rect, (Rectangle){content_x, scroll_y, scroll_w, scroll_h});
   if (scissoring_rect.width == 0 || scissoring_rect.height == 0) return;
@@ -73,6 +75,7 @@ static void draw_timing_groups_panel_list(List *timing_groups, WindowInst *windo
                TextFormat("%s", tg->props.name[0] != '\0' ? tg->props.name : "-"));
     }
   }
+#pragma GCC diagnostic pop
   EndScissorMode();
 }
 
@@ -80,6 +83,8 @@ static void draw_timings_panel_list(ChartTimingGroup *tg, WindowInst *window_ins
                                     int events_panel_x, int events_panel_y, int events_panel_w, int events_panel_h,
                                     int content_x, int scroll_y, int scroll_w, int scroll_h)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wc++11-narrowing"
   Rectangle timing_events_rect = { .x = events_panel_x, .y = events_panel_y, .width = events_panel_w, .height = events_panel_h - 30 };
   Rectangle scissoring_rect = GetCollisionRec(timing_events_rect, window_inst_get_rect(window_inst));
   if (scissoring_rect.width == 0 || scissoring_rect.height == 0) return;
@@ -112,6 +117,7 @@ static void draw_timings_panel_list(ChartTimingGroup *tg, WindowInst *window_ins
       GuiLabel((Rectangle){events_panel_x + 8 + 104*2, timings_panel_y + 30*i, events_panel_w - 28, 30}, div_str);
     }
   }
+#pragma GCC diagnostic pop
   EndScissorMode();
 }
 
@@ -126,16 +132,18 @@ static size_t get_builtin_sc_size(enum BuiltinSCOption option, ChartTimingGroup 
   }
 }
 
-static void draw_events_panel_list(ChartTimingGroup *tg, enum BuiltinSCOption sc_option, WindowInst *window_inst, EventsPanel *events_panel,
+static void draw_events_panel_list(ChartTimingGroup *tg, WindowInst *window_inst, EventsPanel *events_panel,
                                    int events_panel_x, int events_panel_y, int events_panel_w, int events_panel_h,
                                    int content_x, int scroll_y, int scroll_w, int scroll_h)
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wc++11-narrowing"
   Rectangle timing_events_rect = { .x = events_panel_x, .y = events_panel_y, .width = events_panel_w, .height = events_panel_h - 30};
   Rectangle scissoring_rect = GetCollisionRec(timing_events_rect, window_inst_get_rect(window_inst));
   if (scissoring_rect.width == 0 || scissoring_rect.height == 0) return;
 
-  int total_height = tg != NULL ? get_builtin_sc_size(events_panel->scenecontrol.option, tg) * 30 : 0;
-  char result[16]; builtin_sc_option_get_label_text(events_panel->scenecontrol.option, result, 256);
+  int total_height = tg != NULL ? get_builtin_sc_size((enum BuiltinSCOption)events_panel->scenecontrol.option, tg) * 30 : 0;
+  char result[16]; builtin_sc_option_get_label_text((enum BuiltinSCOption)events_panel->scenecontrol.option, result, 256);
   GuiScrollPanel(timing_events_rect, TextFormat("[ EVENTS - %s ]", result),
                  (Rectangle){0, 0, scroll_w - 28, total_height},
                  &events_panel->event_scroll, &events_panel->event_scroll_rect);
@@ -203,6 +211,7 @@ static void draw_events_panel_list(ChartTimingGroup *tg, enum BuiltinSCOption sc
     //     }
     // }
   }
+#pragma GCC diagnostic pop
   EndScissorMode();
 }
 
@@ -214,6 +223,8 @@ void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, bool 
   int scroll_w  = (int)window_inst->width  - 16;
   int scroll_h  = (int)window_inst->height - (scroll_y - (int)window_inst->y) - 8;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wc++11-narrowing"
   if (!is_chart_initiailzed)
   {
     GuiLabel((Rectangle){content_x, scroll_y, scroll_w, 24}, "No chart currently loaded.");
@@ -265,7 +276,7 @@ void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, bool 
     }
     case EVENTS_PANEL_EVENTS:
     {
-      draw_events_panel_list(tg, events_panel->scenecontrol.option, window_inst, events_panel,
+      draw_events_panel_list(tg, window_inst, events_panel,
                              events_panel_x, events_panel_y, events_panel_w, events_panel_h,
                              content_x, scroll_y, scroll_w, scroll_h);
       break;
@@ -277,6 +288,7 @@ void events_panel_draw(WindowInst* window_inst, EventsPanel *events_panel, bool 
   if (events_panel->timings_events.option == EVENTS_PANEL_EVENTS)
     rgui_selectinput_dropdown(&events_panel->scenecontrol,
                               (Rectangle){events_panel_x + events_panel_w - 120, events_panel_y - 24 - 8, 120, 24});
+#pragma GCC diagnostic pop
 
   EndScissorMode();
   EndShaderMode();

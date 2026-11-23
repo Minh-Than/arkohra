@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "data/app_configs/app_config.h"
 #include "libraries/raygui.h"
 #include "raymath.h"
 #include "windows/rgui_input_data.h"
@@ -45,6 +46,9 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   int input_field_h = 24;
   int input_field_gap = 30;
   int total_content_h = gameplay_panel_h +audio_panel_h + display_panel_h + kohra_panel_h + 12*4 + 8;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wc++11-narrowing"
   GuiScrollPanel((Rectangle){content_x, scroll_y, scroll_w, scroll_h},
                  NULL, (Rectangle){0, 0, scroll_w, total_content_h},
                  &gen_set_panel->scroll, &gen_set_panel->scroll_rect);
@@ -131,7 +135,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   GuiLabel(gameplay_label_rect, "Aspect Ratio");
   if (rgui_selectinput_dropdown(&gen_set_panel->aspect_ratio, gameplay_field_rect))
   {
-    app_configs->screen_ratio = gen_set_panel->aspect_ratio.option;
+    app_configs->screen_ratio = (AspectRatio)gen_set_panel->aspect_ratio.option;
     app_configs->should_recalibrate_camera = true;
   }
 
@@ -178,6 +182,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
 
   Rectangle kohra_label_rect = { kohra_field_x, kohra_field_y, label_xs, input_field_h };
   Rectangle kohra_field_rect = { kohra_input_x, kohra_field_y, kohra_panel_w - 16 - label_xs, input_field_h };
+#pragma GCC diagnostic pop
 
   GuiLabel(kohra_label_rect, "Kohra Speed");
   if(GuiSliderBar(kohra_field_rect, NULL, NULL, &gen_set_panel->kohra_speed.value, MINIMUM_KOHRA_SPEED, MAXIMUM_KOHRA_SPEED))

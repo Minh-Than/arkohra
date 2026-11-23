@@ -41,6 +41,8 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel, bo
   int scroll_w  = (int)window_inst->width  - 16;
   int scroll_h  = (int)window_inst->height - (scroll_y - (int)window_inst->y) - 8;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wc++11-narrowing"
   if (!is_chart_initiailzed)
   {
     GuiLabel((Rectangle){content_x, scroll_y, scroll_w, 24}, "No chart currently loaded.");
@@ -196,6 +198,7 @@ void project_panel_draw(WindowInst* window_inst, ProjectPanel *project_panel, bo
 
   Rectangle files_label_rect = { files_field_x, files_field_y, label_xs, input_field_h };
   Rectangle files_field_rect = { files_input_x, files_field_y, files_panel_w - 16 - label_xs, input_field_h };
+#pragma GCC diagnostic pop
 
   GuiLabel(files_label_rect, "Audio");
   rgui_fileinput_button(&project_panel->audio, files_field_rect);
