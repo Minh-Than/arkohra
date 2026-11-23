@@ -1,14 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include "raylib.h"
-#include "rlgl.h"
-#include "raymath.h"
 #include "arc.h"
+#include "raymath.h"
 #include "constants.h"
 #include "color_services.h"
 #include "resource_util.h"
-#include "data/custom_types/custom_types.h"
 #include "data/gameplay_events/arctap.h"
 #include "gameplay/arc_formula.h"
 
@@ -467,7 +461,7 @@ void draw_arc_segment(ChartTimingGroup *tg, ArcSegmentRender *segment_render, st
   DrawMesh(mesh_r->mesh, mesh_r->material, tr);
 }
 
-void draw_height_indicator(ArcSegmentRender *segment_render, struct Arc *arc, Mesh *mesh, Material mat, double z_pos, float add_fade, bool colorblind)
+void draw_height_indicator(ArcSegmentRender *segment_render, struct Arc *arc, MeshRenderable *mesh_r, double z_pos, float add_fade, bool colorblind)
 {
   if (!should_draw_height_indicator(segment_render, arc)) return;
 
@@ -477,10 +471,8 @@ void draw_height_indicator(ArcSegmentRender *segment_render, struct Arc *arc, Me
   Matrix tr = MatrixMultiply(MatrixScale(1.0f, arc_world_y, 1.0f),
                              MatrixTranslate(arc_world_x, arc_world_y * 0.5f, z_pos));
 
-  rlDisableDepthMask();
-  mat.maps->color = Fade(arc_get_color_high(arc->color, colorblind), Clamp(fade_ratio, 0.0f, ARC_ALPHA * add_fade));
-  DrawMesh(*mesh, mat, MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), tr));
-  rlEnableDepthMask();
+  mesh_r->material.maps->color = Fade(arc_get_color_high(arc->color, colorblind), Clamp(fade_ratio, 0.0f, ARC_ALPHA * add_fade));
+  DrawMesh(mesh_r->mesh, mesh_r->material, MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), tr));
 }
 
 void draw_arccap(ArcSegmentRender *segment_render, struct Arc *arc, Mesh *mesh, Material mat, float scale, float alpha, float current_ms)

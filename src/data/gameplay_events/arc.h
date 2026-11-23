@@ -1,8 +1,8 @@
 #ifndef ARC_H
 #define ARC_H
 
-#include <string.h>
 #include <stdbool.h>
+#include "raylib.h"
 #include "data/chart_timing_groups/chart_timing_group.h"
 #include "data/custom_types/custom_types.h"
 #include "data/gameplay_events/arc_shader.h"
@@ -66,7 +66,7 @@ void draw_arc_head(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struc
                    float current_ms, float curr_bpm, float base_bpm, float scroll_speed, double curr_fp, float add_fade, bool colorblind);
 void draw_arc_segment(ChartTimingGroup *tg, ArcSegmentRender *segment_render, struct Arc *arc, ArcShader *arc_shader, MeshRenderable *mesh_r,
                       float current_ms, float curr_bpm, double z_pos, float add_fade, bool colorblind, Matrix tr);
-void draw_height_indicator(ArcSegmentRender *segment_render, struct Arc *arc, Mesh *mesh, Material mat, double z_pos, float add_fade, bool colorblind);
+void draw_height_indicator(ArcSegmentRender *segment_render, struct Arc *arc, MeshRenderable *mesh_r, double z_pos, float add_fade, bool colorblind);
 void draw_arccap(ArcSegmentRender *segment_render, struct Arc *arc, Mesh *mesh, Material mat, float scale, float alpha, float current_ms);
 bool should_draw_height_indicator(ArcSegmentRender *segment_render, struct Arc *arc);
 int arc_segment_render_compare_start_fp_asc(const void *a, const void *b);

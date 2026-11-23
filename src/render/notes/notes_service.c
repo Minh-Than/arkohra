@@ -1,5 +1,4 @@
 #include "raylib.h"
-#include "raymath.h"
 #include "rlgl.h"
 #include "constants.h"
 #include "notes_service.h"
@@ -126,15 +125,12 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
   Ray rayclust = GetScreenToWorldRay(GetMousePosition(), final_camera);
   list_clear(raycast_results);
 
-  // GROUND NOTES
+  // BEATLINES
   BeginMode3D(final_camera);
-    rlDisableDepthTest();
-    rlDisableBackfaceCulling();
     rlPushMatrix();
       rlScalef(FUCKASS_SCALE, 1.0f, 1.0f);
       BeginBlendMode(BLEND_ALPHA);
 
-      // Beatlines
       for(int i = 0; i < beatline_list->size; i++)
       {
         BeatLine *beatline = (BeatLine *)list_get(beatline_list, i);
@@ -142,6 +138,16 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
         double z_pos   = floor_position_to_z(beatline->fp - curr_fp, base_bpm, scroll_speed);
         DrawBeatline(z_pos, Lerp(beatline->thickness, beatline->thickness * 5, z_pos / -100.0f), beatline->color);
       }
+    rlPopMatrix();
+  EndMode3D();
+
+  // GROUND NOTES
+  BeginMode3D(final_camera);
+    rlDisableDepthTest();
+    rlDisableBackfaceCulling();
+    rlPushMatrix();
+      rlScalef(FUCKASS_SCALE, 1.0f, 1.0f);
+      BeginBlendMode(BLEND_ALPHA);
 
       // Holds
       for(int i = hold_list->size - 1; i >= 0; i--)
@@ -352,7 +358,7 @@ void notes_service_render(NotesService *notes_service, RenderContext *render_ctx
         if (!tg->props.no_height_indicator &&
             !(!tg->props.no_clip && tg->props.no_input && arc->start_timing - current_ms < 0))
         {
-          draw_height_indicator(segment_render, arc, &notes_service->height_indicator.mesh, notes_service->height_indicator.material,
+          draw_height_indicator(segment_render, arc, &notes_service->height_indicator,
                                 z_pos, alpha, notes_service->colorblind);
         }
         if (!tg->props.no_clip && arc->is_void && arc->end_timing < current_ms) continue;
