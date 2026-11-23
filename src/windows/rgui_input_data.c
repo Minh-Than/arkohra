@@ -24,17 +24,19 @@ RguiIntInput rgui_intinput_init(int value)
   return input;
 }
 
+static void text_to_int_commit(RguiIntInput *input, int min, int max)
+{
+  input->value = text_to_int_validated(input->text, input->value, min, max);
+  snprintf(input->text, sizeof(input->text), "%d", input->value);
+}
+
 int rgui_intinput_textbox(RguiIntInput *input, Rectangle rect, int min, int max)
 {
   int result = GuiTextBox(rect, input->text, sizeof(input->text), input->edit);
-  if (result)
-  {
-    input->edit = !input->edit;
-    input->value = text_to_int_validated(input->text, input->value, min, max);
-    snprintf(input->text, sizeof(input->text), "%d", input->value);
-  } else if (!input->edit)
-    input->value = text_to_int_validated(input->text, input->value, min, max);
 
+  if (!result) return 0;
+  if (input->edit) text_to_int_commit(input, min, max);
+  input->edit = !input->edit;
   return result;
 }
 
@@ -47,17 +49,19 @@ RguiFloatInput rgui_floatinput_init(float value, int decimals)
   return input;
 }
 
+static void text_to_float_commit(RguiFloatInput *input, int decimal, int min, int max)
+{
+  input->value = text_to_float_validated(input->text, input->value, min, max);
+  snprintf(input->text, sizeof(input->text), "%.*f", decimal, input->value);
+}
+
 int rgui_floatinput_textbox(RguiFloatInput *input, Rectangle rect, int decimal, float min, float max)
 {
   int result = GuiTextBox(rect, input->text, sizeof(input->text), input->edit);
-  if (result)
-  {
-    input->edit = !input->edit;
-    input->value = text_to_float_validated(input->text, input->value, min, max);
-    snprintf(input->text, sizeof(input->text), "%.*f", decimal, input->value);
-  } else if (!input->edit)
-    input->value = text_to_float_validated(input->text, input->value, min, max);
 
+  if (!result) return 0;
+  if (input->edit) text_to_float_commit(input, decimal, min, max);
+  input->edit = !input->edit;
   return result;
 }
 
@@ -82,14 +86,9 @@ int rgui_floatinput_spinner(RguiFloatInput *input, Rectangle rect, int decimal, 
     return 1;
   }
 
-  if (field_result)
-  {
-    input->edit = !input->edit;
-    input->value = text_to_float_validated(input->text, input->value, min, max);
-    snprintf(input->text, sizeof(input->text), "%.*f", decimal, input->value);
-  } else if (!input->edit)
-    input->value = text_to_float_validated(input->text, input->value, min, max);
-
+  if (!field_result) return 0;
+  if (input->edit) text_to_float_commit(input, decimal, min, max);
+  input->edit = !input->edit;
   return field_result;
 }
 
@@ -109,9 +108,9 @@ int rgui_fileinput_button(RguiFileInput *input, Rectangle rect)
   int result = GuiButton(rect, input->file[0] != '\0'
                                ? GetFileName(input->file)
                                : GuiIconText(ICON_FILE_OPEN, "Upload a file . . ."));
+  if(!result) return 0;
 
-  if(result) input->state.windowActive = true;
-
+  input->state.windowActive = true;
   if(input->state.SelectFilePressed)
   {
     bool is_valid = false;
