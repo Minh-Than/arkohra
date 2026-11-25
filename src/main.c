@@ -97,7 +97,8 @@ int main()
 {
   AppConfigs app_configs = app_configs_init();
 
-  SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
+  if(app_configs.vsync)   SetConfigFlags(FLAG_VSYNC_HINT);
+  if(app_configs.highdpi) SetConfigFlags(FLAG_WINDOW_HIGHDPI);
   InitWindow(app_configs.screen_width,
              (int)aspect_ratio_get_height((float)app_configs.screen_width, app_configs.screen_ratio),
              "arkohra");

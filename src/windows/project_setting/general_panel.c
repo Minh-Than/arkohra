@@ -17,6 +17,8 @@ GeneralSettingPanel general_setting_panel_init(AppConfigs *app_configs)
   data.aspect_ratio = rgui_selectinput_init("16 : 9;20 : 9;18 : 9;4 : 3;3 : 2", app_configs->screen_ratio);
   data.colorblind = app_configs->colorblind;
   data.show_framerate = app_configs->show_framerate;
+  data.vsync = app_configs->vsync;
+  data.highdpi = app_configs->highdpi;
 
   data.kohra_speed = rgui_rawfloatinput_init(app_configs->kohra_speed);
   data.kohra_scale = rgui_rawfloatinput_init(app_configs->kohra_scale);
@@ -40,7 +42,7 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
 
   int gameplay_panel_h = 168;
   int audio_panel_h = 78;
-  int display_panel_h = 78;
+  int display_panel_h = 179;
   int kohra_panel_h = 78;
 
   int input_field_h = 24;
@@ -162,6 +164,12 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
     app_configs->should_apply_cap_framerate = true;
   }
 
+  display_label_rect.y += 20;
+  display_field_rect.y += 20;
+  GuiLabel(display_field_rect, TextFormat("Allowed input range: %d - %d", MINIMUM_FRAMERATE, MAXIMUM_FRAMERATE));
+  display_label_rect.y -= 5;
+  display_field_rect.y -= 5;
+
   display_label_rect.y += input_field_gap;
   display_field_rect.y += input_field_gap;
   if(GuiCheckBox((Rectangle){ display_field_x, display_label_rect.y, input_field_h, input_field_h},
@@ -169,6 +177,27 @@ void general_setting_panel_draw(WindowInst* window_inst, GeneralSettingPanel *ge
   {
     app_configs->show_framerate = gen_set_panel->show_framerate;
   }
+
+  display_label_rect.y += input_field_gap;
+  display_field_rect.y += input_field_gap;
+  if(GuiCheckBox((Rectangle){ display_field_x, display_label_rect.y, input_field_h, input_field_h},
+              "VSync *", &gen_set_panel->vsync))
+  {
+    app_configs->vsync = gen_set_panel->vsync;
+  }
+
+  display_label_rect.y += input_field_gap;
+  display_field_rect.y += input_field_gap;
+  if(GuiCheckBox((Rectangle){ display_field_x, display_label_rect.y, input_field_h, input_field_h},
+              "High DPI *", &gen_set_panel->highdpi))
+  {
+    app_configs->highdpi = gen_set_panel->highdpi;
+  }
+  display_label_rect.y += input_field_gap;
+  display_field_rect.y += input_field_gap;
+  Rectangle note_vsync_dpi_rect = display_label_rect;
+  note_vsync_dpi_rect.width = scroll_w;
+  GuiLabel(note_vsync_dpi_rect, "(*): Requires app restart to take effect.");
 
   // Display
   int kohra_panel_x = content_x + 8    + (int)gen_set_panel->scroll.x;

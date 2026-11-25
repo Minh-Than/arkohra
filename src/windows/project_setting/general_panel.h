@@ -20,7 +20,7 @@ typedef struct {
 
   // Display
   RguiIntInput framerate;
-  bool show_framerate;
+  bool show_framerate, vsync, highdpi;
 
   // Kohra
   RguiRawFloatInput kohra_speed, kohra_scale;

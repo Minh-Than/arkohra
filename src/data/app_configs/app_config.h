@@ -23,7 +23,7 @@ typedef struct
   char          ffmpeg_path[MAXPATHLEN], recent_project[MAXPATHLEN];
   float         scroll_speed, music_volume, hit_volume;
   AspectRatio   screen_ratio;
-  bool          kohra, colorblind, show_framerate;
+  bool          kohra, colorblind, show_framerate, vsync, highdpi;
 
   float kohra_speed, kohra_scale;
 
